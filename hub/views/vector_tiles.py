@@ -61,14 +61,14 @@ class ExternalDataSourceTileView(MVTView):
     async def get(self, request, z, x, y, *args, **kwargs):
         try:
             id = self.get_id()
-            logger.debug(f"Tile request received: {z} {x} {y} {id}")
+            logger.info(f"Tile request received: {z} {x} {y} {id}")
             response = await sync_to_async(super().get)(
                 request, z, x, y, *args, **kwargs
             )
-            logger.debug(f"Tile request completed: {z} {x} {y} {id}")
+            logger.info(f"Tile request completed: {z} {x} {y} {id}")
             return response
         except CancelledError:
-            logger.debug(f"Tile request cancelled: {z} {x} {y} {id}")
+            logger.info(f"Tile request cancelled: {z} {x} {y} {id}")
             raise
 
     def get_id(self):
