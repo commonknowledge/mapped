@@ -1,10 +1,12 @@
 import logging
+from asyncio import CancelledError
 
 from django.core.exceptions import PermissionDenied
 from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.views.generic import DetailView
 
+from asgiref.sync import sync_to_async
 from gqlauth.core.middlewares import UserOrError, get_user_or_error
 from vectortiles import VectorLayer
 from vectortiles.views import MVTView, TileJSONView
@@ -52,12 +54,25 @@ class GenericDataVectorLayer(VectorLayer):
         return default
 
 
-class ExternalDataSourceTileView(MVTView, DetailView):
+class ExternalDataSourceTileView(MVTView):
     model = ExternalDataSource
     layer_classes = [GenericDataVectorLayer]
 
+    async def get(self, request, z, x, y, *args, **kwargs):
+        try:
+            id = self.get_id()
+            logger.debug(f"Tile request received: {z} {x} {y} {id}")
+            response = await sync_to_async(super().get)(
+                request, z, x, y, *args, **kwargs
+            )
+            logger.debug(f"Tile request completed: {z} {x} {y} {id}")
+            return response
+        except CancelledError:
+            logger.debug(f"Tile request cancelled: {z} {x} {y} {id}")
+            raise
+
     def get_id(self):
-        return self.kwargs.get(self.pk_url_kwarg)
+        return self.kwargs.get("pk")
 
     def get_hostname(self):
         return self.kwargs.get("hostname", None)

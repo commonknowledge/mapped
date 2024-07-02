@@ -1,6 +1,6 @@
 import logging
 import re
-from asyncio import sleep
+from asyncio import CancelledError, sleep
 
 from django.conf import settings
 from django.db import connection
@@ -19,12 +19,16 @@ logger = logging.getLogger(__name__)
 
 
 async def async_healthcheck(request: HttpRequest):
-    if not request.GET.get("sleep"):
-        return HttpResponse("Hello, async Django!")
-    logger.info("async healthcheck start")
-    await sleep(5)
-    logger.info("async healthcheck done")
-    return HttpResponse("Hello, sleepy async Django!")
+    try:
+        if not request.GET.get("sleep"):
+            return HttpResponse("Hello, async Django!")
+        logger.info("async healthcheck start")
+        await sleep(5)
+        logger.info("async healthcheck done")
+        return HttpResponse("Hello, sleepy async Django!")
+    except CancelledError:
+        logger.error("async healthcheck cancelled")
+        return
 
 
 class NotFoundPageView(TitleMixin, TemplateView):
