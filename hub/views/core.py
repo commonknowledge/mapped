@@ -1,9 +1,11 @@
+import logging
 import re
+from asyncio import sleep
 
 from django.conf import settings
 from django.db import connection
 from django.db.utils import OperationalError
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.generic import FormView, TemplateView
 
 import mailchimp_marketing as MailChimp
@@ -13,9 +15,16 @@ from hub.forms import MailingListSignupForm
 from hub.mixins import TitleMixin
 from hub.models import Area, DataSet
 
+logger = logging.getLogger(__name__)
 
-async def async_healthcheck(request):
-    return HttpResponse("Hello, async Django!")
+
+async def async_healthcheck(request: HttpRequest):
+    if not request.GET.get("sleep"):
+        return HttpResponse("Hello, async Django!")
+    logger.info("async healthcheck start")
+    await sleep(5)
+    logger.info("async healthcheck done")
+    return HttpResponse("Hello, sleepy async Django!")
 
 
 class NotFoundPageView(TitleMixin, TemplateView):
