@@ -212,7 +212,7 @@ builtin_mapping_sources = {
                 "label": "Nearest Polling Station ID",
             },
             {
-                "value": "address_picker", 
+                "value": "address_picker",
                 "label": "Address Picker",
                 "description": "True if we need to show this user an address picker, as their postcode has more than one polling station",
             },
