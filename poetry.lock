@@ -662,17 +662,17 @@ files = [
 
 [[package]]
 name = "django"
-version = "4.2.11"
+version = "5.0.6"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 files = [
-    {file = "Django-4.2.11-py3-none-any.whl", hash = "sha256:ddc24a0a8280a0430baa37aff11f28574720af05888c62b7cfe71d219f4599d3"},
-    {file = "Django-4.2.11.tar.gz", hash = "sha256:6e6ff3db2d8dd0c986b4eec8554c8e4f919b5c1ff62a5b4390c17aff2ed6e5c4"},
+    {file = "Django-5.0.6-py3-none-any.whl", hash = "sha256:8363ac062bb4ef7c3f12d078f6fa5d154031d129a15170a1066412af49d30905"},
+    {file = "Django-5.0.6.tar.gz", hash = "sha256:ff1b61005004e476e0aeea47c7f79b85864c70124030e95146315396f1e7951f"},
 ]
 
 [package.dependencies]
-asgiref = ">=3.6.0,<4"
+asgiref = ">=3.7.0,<4"
 sqlparse = ">=0.3.1"
 tzdata = {version = "*", markers = "sys_platform == \"win32\""}
 
@@ -766,19 +766,23 @@ asgiref = ">=3.6"
 django = ">=3.2"
 
 [[package]]
-name = "django-cryptography"
-version = "1.1"
-description = "Easily encrypt data in Django"
+name = "django-cryptography-django5"
+version = "2.2"
+description = "Easily encrypt data in Django - Fork for Django 5 support"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 files = [
-    {file = "django_cryptography-1.1-py2.py3-none-any.whl", hash = "sha256:93702fcf0d75865d55362f20ecd95274c4eef60ccdce46cbdade0420acee07cb"},
+    {file = "django_cryptography_django5-2.2-py2.py3-none-any.whl", hash = "sha256:73b5d4597d2fd4accca0c971dad7aacfcef24cb7322512f4f94b020cd55b57ff"},
+    {file = "django_cryptography_django5-2.2.tar.gz", hash = "sha256:b149685032cbbaf8b88c1b3ff6d8de7a107bb1b3cff9e84e9b32d0c61ca08346"},
 ]
 
 [package.dependencies]
-cryptography = "*"
-Django = "*"
+cryptography = ">=42.0"
+Django = ">=3.2"
 django-appconf = "*"
+
+[package.extras]
+mypy = ["django-stubs", "mypy"]
 
 [[package]]
 name = "django-debug-toolbar"
@@ -3633,4 +3637,4 @@ wand = ["Wand (>=0.6,<1.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.11,<=3.12.3"
-content-hash = "86897d0ff33018daaf9707273b3ed5e5ab27dc3a46b9546eb71322d73007f8c6"
+content-hash = "7a785a811cfe25483e7445f08fbedaa79ac2a92a2a78d8b99ce69632cd2bfa72"

@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 from typing import List, Optional, cast
 
 from django.conf import settings
@@ -25,6 +26,8 @@ from hub.graphql.types import model_types
 from hub.graphql.types.electoral_commission import ElectoralCommissionPostcodeLookup
 from hub.graphql.types.postcodes import PostcodesIOResult
 from utils.postcodesIO import get_bulk_postcode_geo
+
+logger = logging.getLogger(__name__)
 
 
 @strawberry.type
@@ -61,8 +64,24 @@ class UnauthenticatedPostcodeQueryResponse:
         self, address_slug: Optional[str] = None
     ) -> Optional[ElectoralCommissionPostcodeLookup]:
         if address_slug:
-            return await electoral_commision_address_lookup(address_slug)
-        return await electoral_commision_postcode_lookup(self.postcode)
+            result = await electoral_commision_address_lookup(address_slug)
+        else:
+            result = await electoral_commision_postcode_lookup(self.postcode)
+
+        logger.info(f"electoral commission result: {result}")
+
+        expected_keys = [
+            "address_picker",
+            "dates",
+            "electoral_services",
+            "registration",
+            "postcode_location",
+            "addresses",
+        ]
+        for key in expected_keys:
+            if key not in result:
+                return None
+        return result
 
 
 @strawberry.type

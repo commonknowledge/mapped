@@ -1,12 +1,22 @@
+from __future__ import annotations
+
 import logging
+import re
 from datetime import timedelta
 from inspect import isawaitable
+from typing import Awaitable
+from urllib.parse import urlsplit
 
 from django.http import HttpRequest
+from django.http.response import HttpResponse, HttpResponseBase
+from django.utils.cache import patch_vary_headers
 from django.utils.decorators import sync_and_async_middleware
 from django.utils.timezone import now
 
-from asgiref.sync import iscoroutinefunction, sync_to_async
+from asgiref.sync import async_to_sync, iscoroutinefunction, sync_to_async
+from corsheaders import middleware as cors_middleware
+from corsheaders.conf import conf
+from corsheaders.signals import check_request_enabled
 from gqlauth.core.middlewares import USER_OR_ERROR_KEY, UserOrError
 from gqlauth.core.middlewares import django_jwt_middleware as _django_jwt_middleware
 from gqlauth.core.types_ import GQLAuthError, GQLAuthErrors
@@ -103,3 +113,123 @@ def django_jwt_middleware(get_response):
             return get_response(request)
 
     return middleware
+
+
+class CorsMiddleware(cors_middleware.CorsMiddleware):
+    """
+    Override library CorsMiddleware to support async signals, required
+    for running the app in ASGI mode (see hub.handlers.py).
+    """
+
+    def __call__(
+        self, request: HttpRequest
+    ) -> HttpResponseBase | Awaitable[HttpResponseBase]:
+        if self.async_mode:
+            return self.__acall__(request)
+        response: HttpResponseBase | None = async_to_sync(self.check_preflight)(request)
+        if response is None:
+            result = self.get_response(request)
+            assert isinstance(result, HttpResponseBase)
+            response = result
+        async_to_sync(self.add_response_headers)(request, response)
+        return response
+
+    async def __acall__(self, request: HttpRequest) -> HttpResponseBase:
+        response = await self.check_preflight(request)
+        if response is None:
+            result = self.get_response(request)
+            assert not isinstance(result, HttpResponseBase)
+            response = await result
+        await self.add_response_headers(request, response)
+        return response
+
+    async def check_preflight(self, request: HttpRequest) -> HttpResponseBase | None:
+        """
+        Generate a response for CORS preflight requests.
+        """
+        request._cors_enabled = await self.is_enabled(request)  # type: ignore [attr-defined]
+        if (
+            request._cors_enabled  # type: ignore [attr-defined]
+            and request.method == "OPTIONS"
+            and "access-control-request-method" in request.headers
+        ):
+            return HttpResponse(headers={"content-length": "0"})
+        return None
+
+    async def add_response_headers(
+        self, request: HttpRequest, response: HttpResponseBase
+    ) -> HttpResponseBase:
+        """
+        Add the respective CORS headers
+        """
+        enabled = getattr(request, "_cors_enabled", None)
+        if enabled is None:
+            enabled = await self.is_enabled(request)
+
+        if not enabled:
+            return response
+
+        patch_vary_headers(response, ("origin",))
+
+        origin = request.headers.get("origin")
+        if not origin:
+            return response
+
+        try:
+            url = urlsplit(origin)
+        except ValueError:
+            return response
+
+        if (
+            not conf.CORS_ALLOW_ALL_ORIGINS
+            and not self.origin_found_in_white_lists(origin, url)
+            and not await self.check_signal(request)
+        ):
+            return response
+
+        if conf.CORS_ALLOW_ALL_ORIGINS and not conf.CORS_ALLOW_CREDENTIALS:
+            response[cors_middleware.ACCESS_CONTROL_ALLOW_ORIGIN] = "*"
+        else:
+            response[cors_middleware.ACCESS_CONTROL_ALLOW_ORIGIN] = origin
+
+        if conf.CORS_ALLOW_CREDENTIALS:
+            response[cors_middleware.ACCESS_CONTROL_ALLOW_CREDENTIALS] = "true"
+
+        if len(conf.CORS_EXPOSE_HEADERS):
+            response[cors_middleware.ACCESS_CONTROL_EXPOSE_HEADERS] = ", ".join(
+                conf.CORS_EXPOSE_HEADERS
+            )
+
+        if request.method == "OPTIONS":
+            response[cors_middleware.ACCESS_CONTROL_ALLOW_HEADERS] = ", ".join(
+                conf.CORS_ALLOW_HEADERS
+            )
+            response[cors_middleware.ACCESS_CONTROL_ALLOW_METHODS] = ", ".join(
+                conf.CORS_ALLOW_METHODS
+            )
+            if conf.CORS_PREFLIGHT_MAX_AGE:
+                response[cors_middleware.ACCESS_CONTROL_MAX_AGE] = str(
+                    conf.CORS_PREFLIGHT_MAX_AGE
+                )
+
+        if (
+            conf.CORS_ALLOW_PRIVATE_NETWORK
+            and request.headers.get(
+                cors_middleware.ACCESS_CONTROL_REQUEST_PRIVATE_NETWORK
+            )
+            == "true"
+        ):
+            response[cors_middleware.ACCESS_CONTROL_ALLOW_PRIVATE_NETWORK] = "true"
+
+        return response
+
+    async def is_enabled(self, request: HttpRequest) -> bool:
+        return bool(
+            re.match(conf.CORS_URLS_REGEX, request.path_info)
+        ) or await self.check_signal(request)
+
+    async def check_signal(self, request: HttpRequest) -> bool:
+        signal_responses = await check_request_enabled.asend(
+            sender=None, request=request
+        )
+        return any(return_value for function, return_value in signal_responses)

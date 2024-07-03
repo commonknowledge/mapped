@@ -8,7 +8,7 @@ authors = ["Your Name <you@example.com>"]
 # TODO: Revert to <3.13 once this issue is fixed (for us the error is in pyairtable):
 # https://stackoverflow.com/questions/78593700/langchain-community-langchain-packages-giving-error-missing-1-required-keywor
 python = ">3.11,<=3.12.3"
-Django = "4.2.11"
+Django = ">=5.0,<5.1"
 django-bootstrap5 = "^22.1"
 django-environ = "^0.9.0"
 django-libsass = "^0.9"
@@ -42,7 +42,7 @@ django-minio-storage = "^0.5.7"
 mailchimp3 = "^3.0.21"
 scalene = "^1.5.38"
 django-vectortiles = { git = "https://github.com/submarcos/django-vectortiles.git" }
-django-cryptography = "^1.1"
+django-cryptography-django5 = "^2.2"
 posthog = "^3.5.0"
 mailchimp-marketing = {git = "https://github.com/mailchimp/mailchimp-marketing-python.git"}
 cryptography = "^42.0.5"
