@@ -6,7 +6,7 @@ import { FormEvent, useState } from "react"
 
 export function SearchPanel({
   onSearch,
-  isLoading
+  isLoading,
 }: {
   onSearch: (postcode: string) => void,
   isLoading: boolean
@@ -20,6 +20,7 @@ export function SearchPanel({
 
   const hub = useHubRenderContext()
 
+
   if (hub.hostname === 'peopleclimatenature.org') {
     return (
       <div className="flex flex-col gap-4 p-6">
@@ -29,7 +30,12 @@ export function SearchPanel({
         <p className='text-lg leading-tight text-hub-primary-neutral'>
           Explore our map of Husting events happening all over the UK or input your postcode to see what{"’"}s happening near you.
         </p>
-
+        <div className="flex flex-wrap gap-y-2">
+          <div className="flex basis-1/2 gap-2 items-center"><img src={"/markers/tcc-husting.svg"}></img>Hustings</div>
+          <div className="flex basis-1/2 gap-2 items-center"><img src={"/markers/tcc-canvassing.svg"}></img>Canvassing</div>
+          <div className="flex basis-1/2 gap-2 items-center"><img src={"/markers/tcc-training.svg"}></img>Trainings</div>
+          <div className="flex basis-1/2gap-2 items-center"><img src={"/markers/tcc-general.svg"}></img>Other/general</div>
+        </div>
         <form onSubmit={onSubmit}>
           <input
             type="text"
@@ -84,7 +90,7 @@ export function SearchPanel({
   }
 }
 
-export function HustingsCTA () {
+export function HustingsCTA() {
   return (
     <>
       <p>
@@ -92,7 +98,7 @@ export function HustingsCTA () {
       </p>
       <Link href="https://docs.google.com/forms/d/e/1FAIpQLSeQ6L2fko9q1xNvEYt0ZNbIIPDNAq6cs93Pn2Vx8ARtMf6FIg/viewform" target="_blank" className="">
         <Button className="bg-white border border-hub-primary-600 text-hub-primary-600 gap-2 hover:bg-hub-primary-50">
-          <Plus/>
+          <Plus />
           Add Event
         </Button>
       </Link>
