@@ -2,6 +2,7 @@ import logging
 
 import posthog
 from strawberry.extensions import SchemaExtension
+from django.contrib.auth.models import AnonymousUser
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,12 @@ class APIAnalyticsExtension(SchemaExtension):
                 }
 
                 if not posthog.disabled:
-                    posthog.identify(user.id, {"email": user.email})
-                    posthog.capture(user.id, "API request", properties=payload)
+                    if isinstance(user, AnonymousUser):
+                        posthog.identify(0, {"email": "anonymous"})
+                        posthog.capture(0, "API request", properties=payload)
+                    else:
+                        posthog.identify(user.id, {"email": user.email})
+                        posthog.capture(user.id, "API request", properties=payload)
+
         except Exception as e:
             logger.error(f"API Analytics Extension error: {e}")
