@@ -1064,6 +1064,8 @@ class ExternalDataSource(PolymorphicModel, Analytics):
     public_url_field = models.CharField(max_length=250, blank=True, null=True)
     social_url_field = models.CharField(max_length=250, blank=True, null=True)
     can_display_point_field = models.CharField(max_length=250, blank=True, null=True)
+    include_title_in_address_for_geocoding = models.BooleanField(default=False, help_text="Useful when the title field is a business name, and/or the address field is simply a street name.")
+    geocoding_hint = models.CharField(max_length=250, blank=True, null=True, help_text="A hint to help the geocoder understand the data in the address field; for example if all the data is about Glasgow.")
 
     import_fields = [
         "postcode_field",
@@ -1582,10 +1584,24 @@ class ExternalDataSource(PolymorphicModel, Analytics):
                 ):
                     address_data = None
                 else:
+                    query = address.strip()
+
+                    # e.g. tack ", Glasgow" onto the end of the address
+                    if self.geocoding_hint is not None and len(self.geocoding_hint) > 0:
+                        query = f"{query}, {self.geocoding_hint}"
+
+                    # e.g. tack "Tesco, " onto the start of the address
+                    if self.include_title_in_address_for_geocoding:
+                        title = self.get_record_field(record, self.title_field)
+                        if title is not None and len(title) > 0:
+                            query = f"{title}, {query}"
+
+                    print("Geocoding query:", query)
+
                     # async-ify the function because it uses sync cache queries
                     address_data = await sync_to_async(google_maps.geocode_address)(
                         google_maps.GeocodingQuery(
-                            query=address,
+                            query=query,
                             country=self.countries,
                         )
                     )
