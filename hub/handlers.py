@@ -1,5 +1,6 @@
 from corsheaders.signals import check_request_enabled
 from wagtail.models import Site
+from urllib.parse import urlparse
 
 
 def cors_logic(sender, request, **kwargs):
@@ -10,7 +11,9 @@ def cors_logic(sender, request, **kwargs):
         return True
 
     # And multi-tenant sites can acces the API and media assets etc.
-    return Site.objects.filter(hostname=request.headers["origin"]).exists()
+    request_origin = urlparse(request.headers["origin"])
+    request_hostname = request_origin.hostname
+    return Site.objects.filter(hostname=request_hostname).exists()
 
 
 # https://pypi.org/project/django-cors-headers/#:~:text=com%22%2C%0A%5D-,Signals,-If%20you%20have
