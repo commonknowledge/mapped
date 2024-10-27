@@ -10,22 +10,8 @@ export default async function Page({ params: { pageId } }: { params: { pageId?: 
   await useRequireAuth();
   const client = getClient();
   const pId = pageId && pageId.length > 0 ? pageId[pageId.length - 1] : null
-  const hubLandingPage = await client.query<GetEditableHubsQuery, GetEditableHubsQueryVariables>({
-    query: gql`
-      query GetEditableHubs {
-        hubHomepages {
-          id
-        }
-      }
-    `
-  })
-  if (!hubLandingPage.data?.hubHomepages?.length) {
-    console.error("No hub homepages found")
-    return redirect("/");
-  }
-  const hub = hubLandingPage.data.hubHomepages?.[0]
   if (!pId) {
-    return redirect(`/hub/editor/${hub.id}`);
+    return redirect(`/hub/select`);
   } else {
     // Check it exists
     try {
@@ -52,7 +38,7 @@ export default async function Page({ params: { pageId } }: { params: { pageId?: 
         <HubPageEditor hubId={pageHub.data.hubPage.hub.id} pageId={pId} />
       )
     } catch (e) {
-      return redirect(`/hub/editor/${hub.id}`);
+      return redirect(`/hub/select`);
     }
   }
 }

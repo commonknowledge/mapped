@@ -1258,6 +1258,7 @@ class HubPage:
     title: str
     slug: str
     path: str
+    last_published_at: auto
     full_url: Optional[str] = attr_field()
 
     search_description: Optional[str]

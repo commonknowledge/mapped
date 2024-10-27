@@ -90,8 +90,8 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             Data
           </Link>
           <Link
-            className={`link ${pathname.includes('/hub/editor') ? 'active' : 'flex items-center'}`}
-            href="/hub/editor"
+            className={`link ${pathname.includes('/hub/select') ? 'active' : 'flex items-center'}`}
+            href="/hub/select"
           >
             Hub
           </Link>
