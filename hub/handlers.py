@@ -7,7 +7,7 @@ def cors_logic(sender, request, **kwargs):
     # if not already handled by CORS_ALLOWED_ORIGINS
 
     # Anyone can access the public API
-    if request.path.startswith("/api/"):
+    if isinstance(request.path, str) and request.path.startswith("/api/"):
         return True
 
     # And multi-tenant sites can acces the API and media assets etc.
