@@ -1106,6 +1106,7 @@ class MapLayer:
     id: str = dict_key_field()
     name: str = dict_key_field()
     type: str = dict_key_field("events")
+    popup: Optional[bool] = dict_key_field()
     visible: Optional[bool] = dict_key_field()
     custom_marker_text: Optional[str] = dict_key_field()
     icon_image: Optional[str] = dict_key_field()

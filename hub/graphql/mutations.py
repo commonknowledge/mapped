@@ -51,6 +51,7 @@ class MapLayerInput:
     id: str
     name: str
     source: str
+    popup: Optional[bool] = False
     visible: Optional[bool] = True
     custom_marker_text: Optional[str] = None
 

@@ -15,8 +15,10 @@ export const GET_HUB_MAP_DATA = gql`
         type
         visible
         iconImage
+        popup
         source {
           id
+          dataType
         }
         mapboxPaint
         mapboxLayout

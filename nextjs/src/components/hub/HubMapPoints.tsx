@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { Layer, Point, Popup, Source } from "react-map-gl";
 import { BACKEND_URL } from "@/env";
 import { useHubRenderContext } from "./HubRenderContext";
-import { GetHubMapDataQuery } from "@/__generated__/graphql";
+import { DataSourceType, GetHubMapDataQuery } from "@/__generated__/graphql";
 
 export function HubPointMarkers({
   layer,
@@ -44,14 +44,23 @@ export function HubPointMarkers({
           canvas.style.cursor = "";
         }
       );
-      if (layer.type === "events" || layer.type === "groups") {
+
+      // Popups for events, groups, locations
+      if (layer.popup) {
         mapbox.loadedMap?.on("click", `${layer.source.id}-marker`, (event) => {
+          console.log(event)
           const feature = event.features?.[0];
           if (feature?.properties?.id) {
-            if (layer.type === "events") {
-              context.goToEventId(feature.properties.id);
+            if (selectedSourceMarker?.properties?.id === feature.properties.id) {
+              // Toggle off
+              // setSelectedSourceMarker(null);
             } else {
-              setSelectedSourceMarker(feature);
+              // Toggle on
+              if (layer.source.dataType === DataSourceType.Event) {
+                context.goToEventId(feature.properties.id);
+              } else {
+                setSelectedSourceMarker(feature);
+              }
             }
           }
         });
@@ -146,7 +155,7 @@ export function HubPointMarkers({
             beforeId={beforeId}
             id={`${layer.source.id}-marker`}
             source={layer.source.id}
-            type="symbol"
+            type={layer.mapboxType as any || "symbol"}
             filter={["all", ["!", ["has", "sum"]], ["==", ["get", "count"], 1]]}
             layout={{
               "icon-image": layer.iconImage
@@ -156,6 +165,9 @@ export function HubPointMarkers({
               "icon-ignore-placement": true,
               "icon-size": 0.75,
               "icon-anchor": "bottom",
+              "symbol-z-order": "auto",
+              'symbol-placement': 'point',
+              'symbol-z-elevate': true,
               ...(layer.mapboxLayout || {}),
             }}
             paint={layer.mapboxPaint || {}}
@@ -188,7 +200,7 @@ export function HubPointMarkers({
             }}
             paint={layer.mapboxPaint || {}}
           />
-          {selectedSourceMarker ? (
+          {!!selectedSourceMarker ? (
             <Popup
               key={selectedSourceMarker.properties?.id}
               longitude={coordinates[0]}
@@ -196,6 +208,7 @@ export function HubPointMarkers({
               offset={[0, -15] as [number, number]}
               onClose={() => setSelectedSourceMarker(null)}
             >
+              {JSON.stringify(selectedSourceMarker, null, 2)}
               <h2 className="text-lg">
                 {selectedSourceMarker.properties?.title}
               </h2>
