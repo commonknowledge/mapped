@@ -23,6 +23,8 @@ import { HTMLEmbed, HTMLEmbedProps } from "./blocks/HTMLEmbed";
 import { RichText, RichTextProps } from "./blocks/RichText";
 import { Iframe, IframeProps } from "./blocks/Iframe";
 import { MemberForm, MemberFormProps } from "./blocks/MemberForm";
+import { MapMockupRoot } from "./map/root";
+import { Markdown } from "./blocks/Markdown";
 
 export type Props = {
   EventList: EventListProps;
@@ -129,4 +131,45 @@ export const conf: UserConfig = {
     Iframe,
     MemberForm
   },
+};
+
+export const mapPageConf: UserConfig = {
+  root: {
+    render: (props) => <MapMockupRoot />,
+    defaultProps: {
+      cta: false,
+    },
+    // @ts-ignore
+    resolveFields(data, params) {
+      const fields = {
+        title: {
+          type: "text",
+        },
+        slug: {
+          type: "text",
+        },
+        seoDescription: {
+          type: "text",
+        },
+        introTitle: {
+          type: "text",
+        },
+        cta: {
+          type: "radio",
+          options: [
+            { label: "Search", value: "search" },
+            { label: "Default", value: "default" },
+          ]
+        }
+      }
+
+      return fields;
+    },
+  },
+  components: {
+    Markdown,
+    // MapSearch,
+    // MapForm,
+    // MapButton
+  }
 };

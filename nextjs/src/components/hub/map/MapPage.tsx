@@ -8,7 +8,7 @@ import { Provider as JotaiProvider, useAtomValue } from "jotai";
 import { MapProvider } from "react-map-gl";
 import { HubMap } from "@/components/hub/HubMap";
 import { ConstituencyView } from "@/components/hub/ConstituencyView";
-import { GetEventDataQuery, GetEventDataQueryVariables, GetHubMapDataQuery, GetHubMapDataQueryVariables, GetLocalDataQuery, GetLocalDataQueryVariables } from "@/__generated__/graphql";
+import { GetEventDataQuery, GetEventDataQueryVariables, GetHubMapDataQuery, GetHubMapDataQueryVariables, GetLocalDataQuery, GetLocalDataQueryVariables, GetPageQuery, GetPageQueryVariables } from "@/__generated__/graphql";
 import { SIDEBAR_WIDTH, selectedHubSourceMarkerAtom } from "@/components/hub/data";
 import { usePathname, useParams } from 'next/navigation' 
 import { SearchPanel } from './SearchPanel';
@@ -17,25 +17,29 @@ import { useBreakpoint } from '@/hooks/css';
 import { GET_EVENT_DATA, GET_HUB_MAP_DATA, GET_LOCAL_DATA } from './queries';
 import { HubRenderContextProvider, useHubRenderContext } from '@/components/hub/HubRenderContext';
 import { twMerge } from 'tailwind-merge';
+import { PuckData } from '@/app/hub/render/[hostname]/RenderPuck';
+import { GET_PAGE } from '@/app/hub/render/[hostname]/query';
+import { DropZone, DropZoneProvider } from '@measured/puck';
+import { mapPageConf } from '@/data/puck/config';
 
-
-type Params = {
-  hostname: string
-}
-
-export default function Page(props: { params: Params }) {
+export default function MapPage(props: {
+  hostname: string;
+  path: string;
+  page: PuckData;
+  isPuckEditing?: boolean;
+}) {
   const hub = useQuery<GetHubMapDataQuery, GetHubMapDataQueryVariables>(GET_HUB_MAP_DATA, {
-    variables: { hostname: props.params.hostname },
+    variables: { hostname: props.hostname },
   });
 
   const isDesktop = useBreakpoint("md");
 
   const [postcode, setPostcode] = useState("");
 
-  return (
+  const view = (
     <JotaiProvider>
-      <HubRenderContextProvider hostname={props.params.hostname}>
-        <Root renderCSS={false} fullScreen={true} navLinks={hub.data?.hubByHostname?.navLinks || []}>
+      <HubRenderContextProvider hostname={props.hostname} path={props.path} page={props.page}>
+        <Root renderCSS={true} fullScreen={true} navLinks={hub.data?.hubByHostname?.navLinks || []}>
           <MapProvider>
             <PageContent {...props} isDesktop={isDesktop} hub={hub.data} postcode={postcode} setPostcode={setPostcode} />
           </MapProvider>
@@ -43,9 +47,23 @@ export default function Page(props: { params: Params }) {
       </HubRenderContextProvider>
     </JotaiProvider>
   );
+
+  if (!props.isPuckEditing) {
+    return (
+      <DropZoneProvider value={{
+        data: props.page,
+        config: mapPageConf,
+        mode: "render"
+      }}>
+        {view}
+      </DropZoneProvider>
+    )
+  }
+
+  return view;
 }
 
-function PageContent ({ params: { hostname }, isDesktop, hub, postcode, setPostcode }: { params: Params, isDesktop: boolean, hub?: GetHubMapDataQuery, postcode: string, setPostcode: React.Dispatch<React.SetStateAction<string>> }) {
+function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, page }: { hostname: string, path: string, isDesktop: boolean, hub?: GetHubMapDataQuery, postcode: string, setPostcode: React.Dispatch<React.SetStateAction<string>>, page: PuckData }) {
   const hubContext = useHubRenderContext();
 
   const localData = useQuery<GetLocalDataQuery, GetLocalDataQueryVariables>(GET_LOCAL_DATA, {
@@ -57,6 +75,15 @@ function PageContent ({ params: { hostname }, isDesktop, hub, postcode, setPostc
     variables: { eventId: hubContext.eventId?.toString()!, hostname },
     skip: !hubContext.eventId
   });
+
+  // const pageLayout = useQuery<GetPageQuery, GetPageQueryVariables>(GET_PAGE, {
+  //   variables: { path: `/${path}`, hostname }
+  // });
+
+  const pageProps: (typeof page.root.props & {
+    introTitle?: string
+    cta?: "search" | "default"
+  }) | undefined = page.root.props
   
   return (
     <main className="h-full relative overflow-x-hidden flex-grow md:overflow-y-hidden">
@@ -85,26 +112,36 @@ function PageContent ({ params: { hostname }, isDesktop, hub, postcode, setPostc
                   <span className="inline-block w-[4rem] h-2 bg-meepGray-300 rounded-full"/>
                 </div>
               )}
-              {hubContext.eventId && eventData.data ? (
-                <ConstituencyView
-                  data={
-                    eventData.data?.importedDataGeojsonPoint?.properties
-                      ?.constituency
-                  }
-                  postcode={postcode}
-                />
-              ) : !localData.data ? (
-                <SearchPanel
-                  onSearch={(postcode) => hubContext.goToPostcode(postcode)}
-                  isLoading={localData.loading}
-                  postcode={postcode}
-                  setPostcode={setPostcode}
-                />
+              {pageProps?.cta === "search" ? (
+                hubContext.eventId && eventData.data ? (
+                  <ConstituencyView
+                    data={
+                      eventData.data?.importedDataGeojsonPoint?.properties
+                        ?.constituency
+                    }
+                    postcode={postcode}
+                  />
+                ) : !localData.data ? (
+                  <SearchPanel
+                    onSearch={(postcode) => hubContext.goToPostcode(postcode)}
+                    isLoading={localData.loading}
+                    postcode={postcode}
+                    setPostcode={setPostcode}
+                    title={pageProps?.introTitle}
+                  />
+                ) : (
+                  <ConstituencyView
+                    data={localData.data?.postcodeSearch.constituency}
+                    postcode={postcode}
+                  />
+                )
               ) : (
-                <ConstituencyView
-                  data={localData.data?.postcodeSearch.constituency}
-                  postcode={postcode}
-                />
+                <div className="flex flex-col gap-4 p-6">
+                  <h1 className='text-2xl md:text-4xl tracking-tight mb-4 text-hub-primary-500'>
+                    {pageProps?.introTitle}
+                  </h1>
+                  <DropZone zone="introPanel" />
+                </div>
               )}
             </div>
           </aside>

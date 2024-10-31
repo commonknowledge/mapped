@@ -1,3 +1,5 @@
+"use client"
+
 import { useAtomValue } from "jotai";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo } from "react";
@@ -6,6 +8,7 @@ import { UseQueryStateReturn, parseAsInteger, parseAsString, useQueryState } fro
 import { gql, useQuery } from "@apollo/client";
 import { GetHubContextQuery, GetHubContextQueryVariables } from "@/__generated__/graphql";
 import { getColors } from "theme-colors";
+import { PuckData } from "@/app/hub/render/[hostname]/RenderPuck";
 
 export const HubRenderContext = createContext<{
     hostname: string,
@@ -15,7 +18,9 @@ export const HubRenderContext = createContext<{
     setPostcode: UseQueryStateReturn<string, undefined>[1],
     eventId: number | null,
     setEventId: UseQueryStateReturn<number, undefined>[1],
-    hubData: GetHubContextQuery['hubByHostname']
+    hubData: GetHubContextQuery['hubByHostname'],
+    path: string,
+    page: PuckData
 }>({
     hostname: "",
     shouldZoomOut: false,
@@ -56,7 +61,7 @@ export const useHubRenderContext = () => {
     }
 }
 
-export const HubRenderContextProvider = ({ hostname, children }: { hostname: string, children: any }) => {
+export const HubRenderContextProvider = ({ hostname, children, path, page }: { hostname: string, children: any, path: string, page: PuckData }) => {
   const pathname = usePathname()
   const isMultitenancyMode = !pathname.includes("hub/render")
   const [postcode, setPostcode] = useQueryState("postcode", parseAsString)
@@ -73,7 +78,9 @@ export const HubRenderContextProvider = ({ hostname, children }: { hostname: str
       setPostcode,
       eventId,
       setEventId,
-      hubData: hubData.data?.hubByHostname
+      hubData: hubData.data?.hubByHostname,
+      path,
+      page
     }}>
       {children}
     </HubRenderContext.Provider>

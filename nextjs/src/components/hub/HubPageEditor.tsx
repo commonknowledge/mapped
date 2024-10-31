@@ -19,8 +19,9 @@ import { CreateChildPageMutation, CreateChildPageMutationVariables, GetHubPagesQ
 import { toastPromise } from "@/lib/toast";
 import { useRouter } from "next/navigation";
 import { ChevronDownIcon, Slash } from "lucide-react";
-import { getPuckConfigForHostname } from "@/data/puck/ui";
+import { getMapPagePuckConfigForHostname, getPuckConfigForHostname } from "@/data/puck/ui";
 import { HubRenderContextProvider } from "@/components/hub/HubRenderContext";
+import { PuckData } from "@/app/hub/render/[hostname]/RenderPuck";
 
 export default function HubPageEditor({ hubId, pageId }: { hubId: string, pageId: string }) {
   const router = useRouter()
@@ -38,9 +39,12 @@ export default function HubPageEditor({ hubId, pageId }: { hubId: string, pageId
 
   const config = useMemo(() => {
     if (hubData.data?.hubHomepage.hostname) {
+      if ((pageData.data?.hubPage.puckJsonContent as PuckData).root.props?.isMap) {
+        return getMapPagePuckConfigForHostname(hubData.data?.hubHomepage.hostname)
+      }
       return getPuckConfigForHostname(hubData.data?.hubHomepage.hostname)
     }
-  }, [hubData.data?.hubHomepage.hostname])
+  }, [pageData.data, hubData.data?.hubHomepage.hostname])
 
   // unique b64 key that updates each time we add / remove components
   const dbDataKey = useMemo(() => {
@@ -67,12 +71,13 @@ export default function HubPageEditor({ hubId, pageId }: { hubId: string, pageId
   }
 
   return (
-    <HubRenderContextProvider hostname={hubData.data.hubHomepage.hostname}>
+    <HubRenderContextProvider hostname={hubData.data.hubHomepage.hostname} path={pageData.data.hubPage.path} page={puckJsonContent}>
       <Puck
         // To force refresh data after deferred initialisation
         key={dbDataKey}
         config={config}
-        // Initial data
+        // 31 Oct 2024: This seems to fix the mapbox preview (not sure why), but spills the hub CSS out into the editor. 
+        // iframe={{ enabled: false }}
         data={puckJsonContent}
         onPublish={publish}
         overrides={{

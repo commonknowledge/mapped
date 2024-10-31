@@ -1,5 +1,6 @@
 import { useHubRenderContext } from "@/components/hub/HubRenderContext"
 import { Button } from "@/components/ui/button"
+import { DropZone } from "@measured/puck"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { FormEvent, useState } from "react"
@@ -8,12 +9,14 @@ export function SearchPanel({
   onSearch,
   isLoading,
   postcode,
-  setPostcode
+  setPostcode,
+  title
 }: {
   onSearch: (postcode: string) => void,
   isLoading: boolean,
   postcode: string,
-  setPostcode: React.Dispatch<React.SetStateAction<string>>
+  setPostcode: React.Dispatch<React.SetStateAction<string>>,
+  title?: string
 }) {
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -70,11 +73,9 @@ export function SearchPanel({
     return (
       <div className="flex flex-col gap-4 p-6">
         <h1 className='text-2xl md:text-4xl tracking-tight mb-4 text-hub-primary-500'>
-          Upcoming events
+          {title}
         </h1>
-        <p className='text-lg leading-tight text-hub-primary-neutral'>
-          Explore our map of upcoming events happening all over the UK or search your postcode to see what{"’"}s happening near you.
-        </p>
+        <DropZone zone="introPanel" />
         <form onSubmit={onSubmit}>
           <input
             type="text"

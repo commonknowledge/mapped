@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-import { ComponentConfig, Data } from "@measured/puck";
+import { ComponentConfig } from "@measured/puck";
+import { PuckData } from '@/app/hub/render/[hostname]/RenderPuck';
 import { FilterableGridProps, FilterableGridRenderer } from "../FilterableGrid";
 import { gql, useQuery } from "@apollo/client";
 import { LoadingIcon } from "@/components/ui/loadingIcon";
@@ -32,8 +33,8 @@ const HomepageItemsAliasRenderer = () => {
         skip: !hubContext.hostname
     })
 
-    const puckData = data.data?.hubPageByPath?.puckJsonContent as Data<FilterableGridProps>
-    const gridProps = puckData?.content?.find((item) => (
+    const puckData = data.data?.hubPageByPath?.puckJsonContent as PuckData<FilterableGridProps>
+    const gridProps = puckData?.content?.find((item: any) => (
         // @ts-ignore — Puck types aren't good here.
         item.type === "FilterableGrid"
     ))?.props
