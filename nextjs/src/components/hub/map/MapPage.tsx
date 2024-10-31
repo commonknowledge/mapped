@@ -83,6 +83,7 @@ function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, p
   const pageProps: (typeof page.root.props & {
     introTitle?: string
     cta?: "search" | "default",
+    mapStyle?: string
     mapBounds?: {
       minLat: number
       minLng: number
@@ -111,6 +112,7 @@ function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, p
               [pageProps.mapBounds?.minLng, pageProps.mapBounds?.minLat],
               [pageProps.mapBounds?.maxLng, pageProps.mapBounds?.maxLat]
             ] : undefined}
+            mapStyle={pageProps?.mapStyle}
           />
         </div>
         {!localData.loading && (

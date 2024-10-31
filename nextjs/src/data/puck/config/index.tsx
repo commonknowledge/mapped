@@ -138,6 +138,7 @@ export const mapPageConf: UserConfig = {
     render: (props) => <MapMockupRoot />,
     defaultProps: {
       cta: false,
+      mapStyle: "mapbox://styles/commonknowledge/clwqeu7rb012301nyh52n3kss/draft"
     },
     // @ts-ignore
     fields: {
@@ -159,6 +160,9 @@ export const mapPageConf: UserConfig = {
           { label: "Search", value: "search" },
           { label: "Default", value: "default" },
         ]
+      },
+      mapStyle: {
+        type: "text",
       },
       mapBounds: {
         type: "object",
