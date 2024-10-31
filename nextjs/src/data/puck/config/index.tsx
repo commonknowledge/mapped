@@ -1,4 +1,4 @@
-import { Config } from "@measured/puck";
+import { AutoField, Config, FieldLabel } from "@measured/puck";
 import Root, { RootProps } from "./root";
 import { ButtonGroup, ButtonGroupProps } from "./blocks/ButtonGroup";
 import { Card, CardProps } from "./blocks/Card";
@@ -140,31 +140,44 @@ export const mapPageConf: UserConfig = {
       cta: false,
     },
     // @ts-ignore
-    resolveFields(data, params) {
-      const fields = {
-        title: {
-          type: "text",
-        },
-        slug: {
-          type: "text",
-        },
-        seoDescription: {
-          type: "text",
-        },
-        introTitle: {
-          type: "text",
-        },
-        cta: {
-          type: "radio",
-          options: [
-            { label: "Search", value: "search" },
-            { label: "Default", value: "default" },
-          ]
+    fields: {
+      title: {
+        type: "text",
+      },
+      slug: {
+        type: "text",
+      },
+      seoDescription: {
+        type: "text",
+      },
+      introTitle: {
+        type: "text",
+      },
+      cta: {
+        type: "radio",
+        options: [
+          { label: "Search", value: "search" },
+          { label: "Default", value: "default" },
+        ]
+      },
+      mapBounds: {
+        type: "object",
+        objectFields: {
+          minLat: {
+            type: "number",
+          },
+          minLng: {
+            type: "number",
+          },
+          maxLat: {
+            type: "number",
+          },
+          maxLng: {
+            type: "number",
+          },
         }
       }
-
-      return fields;
-    },
+    }
   },
   components: {
     Markdown,

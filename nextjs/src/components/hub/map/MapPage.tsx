@@ -82,8 +82,16 @@ function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, p
 
   const pageProps: (typeof page.root.props & {
     introTitle?: string
-    cta?: "search" | "default"
+    cta?: "search" | "default",
+    mapBounds?: {
+      minLat: number
+      minLng: number
+      maxLat: number
+      maxLng: number
+    }
   }) | undefined = page.root.props
+  
+  const [collapsed, setCollapsed] = useState(false);
   
   return (
     <main className="h-full relative overflow-x-hidden flex-grow md:overflow-y-hidden">
@@ -99,6 +107,10 @@ function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, p
                 : undefined
             }
             localDataLoading={localData.loading || eventData.loading}
+            mapBounds={pageProps?.mapBounds ? [
+              [pageProps.mapBounds?.minLng, pageProps.mapBounds?.minLat],
+              [pageProps.mapBounds?.maxLng, pageProps.mapBounds?.maxLat]
+            ] : undefined}
           />
         </div>
         {!localData.loading && (
@@ -137,10 +149,12 @@ function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, p
                 )
               ) : (
                 <div className="flex flex-col gap-4 p-6">
-                  <h1 className='text-2xl md:text-4xl tracking-tight mb-4 text-hub-primary-500'>
+                  <h1 className='text-2xl md:text-4xl tracking-tight mb-4 text-hub-primary-500 cursor-pointer' onClick={() => setCollapsed(b => !b)}>
                     {pageProps?.introTitle}
                   </h1>
-                  <DropZone zone="introPanel" />
+                  {!collapsed && (
+                    <DropZone zone="introPanel" />
+                  )}
                 </div>
               )}
             </div>

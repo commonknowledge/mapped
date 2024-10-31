@@ -23,12 +23,14 @@ export function HubMap ({
   mapStyle,
   layers,
   currentConstituency,
-  localDataLoading
+  localDataLoading,
+  mapBounds
 }: {
   mapStyle?: string | mapboxgl.Style | ImmutableLike<mapboxgl.Style> | undefined,
   layers?: NonNullable<GetHubMapDataQuery['hubByHostname']>['layers'],
-  currentConstituency: GetLocalDataQuery['postcodeSearch']['constituency'],
-  localDataLoading: boolean
+  currentConstituency?: GetLocalDataQuery['postcodeSearch']['constituency'],
+  localDataLoading?: boolean,
+  mapBounds?: [[minLng: number, minLat: number], [maxLng: number, maxLat: number]]
 }) {
   const hub = useHubRenderContext()
   const [viewState, setViewState] = useAtom(viewStateAtom)
@@ -54,6 +56,16 @@ export function HubMap ({
           // TODO: change for small screen
           padding: FIT_BOUNDS_PADDING
         })
+      } else if (mapBounds) {
+        mapbox.loadedMap?.fitBounds(
+          mapBounds,
+          {padding: {
+            top: 50,
+            bottom: 50,
+            left: SIDEBAR_WIDTH / 3,
+            right: 50
+          }, duration: 0}
+        );
       } else if (!localDataLoading) {
         // Fly to UK bounds
         mapbox.loadedMap?.fitBounds(UK_BOUNDS, {
@@ -62,7 +74,7 @@ export function HubMap ({
         })
       }
     } catch(e) {}
-  }, [currentConstituency, mapbox.loadedMap, localDataLoading])
+  }, [currentConstituency, mapbox.loadedMap, localDataLoading, mapBounds])
 
   return (
     <>
