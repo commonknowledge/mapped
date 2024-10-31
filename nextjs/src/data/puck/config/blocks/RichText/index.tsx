@@ -52,7 +52,7 @@ export const RichText: ComponentConfig<RichTextProps> = {
     },
     render: ({ width, content }) => {
         return (
-            <div className={`${width === "standard" ? 'max-w-[50ch]' : ''} mb-4 text-meepGray-500`}
+            <div className={`custom-puck-rich-text ${width === "standard" ? 'max-w-[50ch]' : ''} mb-4 text-meepGray-500`}
                 dangerouslySetInnerHTML={{ __html: content }}
             />
         );

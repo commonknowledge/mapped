@@ -166,9 +166,9 @@ export default function HubPageEditor({ hubId, pageId }: { hubId: string, pageId
                         Visit page
                       </PuckButton>
                     </Link>
-                    <Link target="_blank" href={`https://api.mapped.commonknowledge.coop/cms/pages/${pageData.data?.hubPage.id}/history`}>
+                    <Link target="_blank" href={`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/cms/pages/${pageData.data?.hubPage.id}/history`}>
                       <PuckButton variant="secondary">
-                        View version history
+                        Version history
                       </PuckButton>
                     </Link></>
                 )}

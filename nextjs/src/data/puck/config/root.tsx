@@ -76,8 +76,8 @@ export default function Root({
       <>
         {renderCSS && (
           <RootCSS
-            primaryColour={pageQuery.data?.hubPageByPath?.hub.primaryColour || hub.hubData?.primaryColour || "#0f8c6c"}
-            secondaryColour={pageQuery.data?.hubPageByPath?.hub.secondaryColour || hub.hubData?.secondaryColour || "#0f8c6c"}
+            primaryColour={pageQuery.data?.hubPageByPath?.hub.primaryColour || hub.hubData?.primaryColour || "#555"}
+            secondaryColour={pageQuery.data?.hubPageByPath?.hub.secondaryColour || hub.hubData?.secondaryColour || "#555"}
             customCss={hub.hubData?.customCss || ""}
           />
         )}
@@ -96,7 +96,6 @@ export default function Root({
           >
             {children}
           </div>
-          {!fullScreen && <HubFooter />}
         </main>
       </>
     )

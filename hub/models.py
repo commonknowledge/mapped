@@ -4283,7 +4283,7 @@ def update_site_filter_cache_on_save(sender, instance: HubHomepage, *args, **kwa
 
 class HubContentPage(Page):
     parent_page_type = ["hub.HubHomepage"]
-    subpage_types = ["hub.HubContentPage"]
+    subpage_types = []
     puck_json_content = models.JSONField(
         blank=True, null=False, default=generate_puck_json_content
     )
