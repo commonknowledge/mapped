@@ -4109,6 +4109,9 @@ class MapReport(Report, Analytics):
         name: str
         source: str
         popup: Optional[bool] = False
+        # What properties to include in the popup
+        fields: Optional[list[str]] = list
+        cluster: Optional[bool] = False
         icon_image: Optional[str] = None
         mapbox_paint: Optional[dict] = {}
         mapbox_layout: Optional[dict] = {}

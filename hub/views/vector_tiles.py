@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.views.generic import DetailView
 
+from benedict import benedict
 from gqlauth.core.middlewares import UserOrError, get_user_or_error
 from vectortiles import VectorLayer
 from vectortiles.views import MVTView, TileJSONView
@@ -31,34 +32,36 @@ class GenericDataVectorLayer(VectorLayer):
 
     def __init__(self, *args, **kwargs):
         self.external_data_source_id = kwargs.pop("external_data_source_id", None)
+        self.source: ExternalDataSource = ExternalDataSource.objects.get(
+            id=self.external_data_source_id
+        ).get_real_instance()
         if self.external_data_source_id is None:
             raise ValueError("external_data_source is required")
-        self.filter = kwargs.pop("filter", {})
         self.permissions = kwargs.pop("permissions", {})
-        self.type = kwargs.pop("type", "events")
+        self.layer_options = benedict(kwargs.pop("layer_options", {}))
         super().__init__(*args, **kwargs)
 
     def get_queryset(self) -> QuerySet:
-        source: ExternalDataSource = ExternalDataSource.objects.get(
-            id=self.external_data_source_id
-        )
-        source = source.get_real_instance()
-
-        return source.get_import_data().filter(**self.filter)
+        return self.source.get_import_data().filter(**self.filter)
 
     def get_tile_fields(self):
-        if self.type == "members":
-            return ("count",)
-        if self.type == "groups":
-            return ("id", "title", "public_url", "social_url")
-        default = (
-            "id",
-            "start_time__ispast",
-            "start_time__isfuture",
-        )
+        fields = []
+        if self.layer_options.get("popup"):
+            fields.append("id")
+        if self.layer_options.get("cluster"):
+            fields.append("cluster")
+        if self.source.data_type == ExternalDataSource.DataSourceType.GROUP:
+            fields.extend(("id", "title", "public_url", "social_url"))
+        if self.source.data_type == ExternalDataSource.DataSourceType.EVENT:
+            fields.extend((
+              "id",
+              "start_time__ispast",
+              "start_time__isfuture",
+            ))
         if self.permissions.get("can_display_details", False):
-            default += ("json",)
-        return default
+            fields.append("json",)
+        final = tuple(set(fields))
+        return final
 
 
 class ExternalDataSourceTileView(MVTView, DetailView):
@@ -84,8 +87,8 @@ class ExternalDataSourceTileView(MVTView, DetailView):
         return {
             "external_data_source_id": external_data_source_id,
             "permissions": dict(permissions),
-            **(
-                self.get_site_layer_kwargs(hostname, external_data_source_id)
+            "layer_options": (
+                dict(self.get_site_layer_kwargs(hostname, external_data_source_id))
                 if hostname
                 else {}
             ),
@@ -97,8 +100,6 @@ class ExternalDataSourceTileView(MVTView, DetailView):
         """
         site = Site.objects.filter(hostname=hostname).first()
         logger.debug(f"Querying filter for {hostname}: {external_data_source_id}")
-        filter = {}
-        type = "events"
         if site is not None:
             hub = site.root_page.specific
             logger.debug(f"Hub: {hub}")
@@ -108,9 +109,8 @@ class ExternalDataSourceTileView(MVTView, DetailView):
                 if isinstance(layers, list):
                     for layer in layers:
                         if layer.get("source") == external_data_source_id:
-                            filter = layer.get("filter", {})
-                            type = layer.get("type", "events")
-        return {"filter": filter, "type": type}
+                            return layer
+        return {}
 
 
 class ExternalDataSourcePointTileJSONView(TileJSONView, DetailView):

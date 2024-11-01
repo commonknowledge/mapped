@@ -16,6 +16,7 @@ export const GET_HUB_MAP_DATA = gql`
         visible
         iconImage
         popup
+        cluster
         source {
           id
           dataType

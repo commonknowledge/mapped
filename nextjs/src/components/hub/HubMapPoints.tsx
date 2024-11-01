@@ -74,7 +74,7 @@ export function HubPointMarkers({
 
   return (
     <>
-      {layer.type === "members" ? (
+      {layer.cluster ? (
         <Source
           id={layer.source.id}
           type="geojson"
