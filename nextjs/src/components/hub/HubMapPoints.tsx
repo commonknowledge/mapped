@@ -158,16 +158,18 @@ export function HubPointMarkers({
             type={layer.mapboxType as any || "symbol"}
             filter={["all", ["!", ["has", "sum"]], ["==", ["get", "count"], 1]]}
             layout={{
-              "icon-image": layer.iconImage
-                ? layer.iconImage
-                : `tcc-event-marker`,
-              "icon-allow-overlap": true,
-              "icon-ignore-placement": true,
-              "icon-size": 0.75,
-              "icon-anchor": "bottom",
-              "symbol-z-order": "auto",
-              'symbol-placement': 'point',
-              'symbol-z-elevate': true,
+              ...(layer.mapboxType === "symbol" ? {
+                "icon-image": layer.iconImage
+                  ? layer.iconImage
+                  : `tcc-event-marker`,
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true,
+                "icon-size": 0.75,
+                "icon-anchor": "bottom",
+                "symbol-z-order": "auto",
+                'symbol-placement': 'point',
+                'symbol-z-elevate': true,
+              } : {}),
               ...(layer.mapboxLayout || {}),
             }}
             paint={layer.mapboxPaint || {}}
@@ -187,15 +189,20 @@ export function HubPointMarkers({
             id={`${layer.source.id}-marker`}
             source={layer.source.id}
             source-layer={"generic_data"}
-            type="symbol"
+            type={layer.mapboxType as any || "symbol"}
             layout={{
-              "icon-image": layer.iconImage
-                ? layer.iconImage
-                : `tcc-event-marker`,
-              "icon-allow-overlap": true,
-              "icon-ignore-placement": true,
-              "icon-size": 0.75,
-              "icon-anchor": "bottom",
+              ...(layer.mapboxType === "symbol" ? {
+                "icon-image": layer.iconImage
+                  ? layer.iconImage
+                  : `tcc-event-marker`,
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true,
+                "icon-size": 0.75,
+                "icon-anchor": "bottom",
+                "symbol-z-order": "auto",
+                'symbol-placement': 'point',
+                'symbol-z-elevate': true,
+              } : {}),
               ...(layer.mapboxLayout || {}),
             }}
             paint={layer.mapboxPaint || {}}
