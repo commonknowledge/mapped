@@ -50,6 +50,8 @@ class GenericDataVectorLayer(VectorLayer):
             fields.append("id")
         if self.layer_options.get("cluster"):
             fields.append("cluster")
+        if self.layer_options.get("fields"):
+            fields.extend(self.layer_options.get("fields"))
         if self.source.data_type == ExternalDataSource.DataSourceType.GROUP:
             fields.extend(("id", "title", "public_url", "social_url"))
         if self.source.data_type == ExternalDataSource.DataSourceType.EVENT:

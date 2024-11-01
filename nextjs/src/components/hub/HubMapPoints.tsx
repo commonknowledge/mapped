@@ -215,10 +215,16 @@ export function HubPointMarkers({
               offset={[0, -15] as [number, number]}
               onClose={() => setSelectedSourceMarker(null)}
             >
-              {JSON.stringify(selectedSourceMarker, null, 2)}
-              <h2 className="text-lg">
-                {selectedSourceMarker.properties?.title}
-              </h2>
+              {selectedSourceMarker.properties?.title && (
+                <h2 className="text-lg">
+                  {selectedSourceMarker.properties?.title}
+                </h2>
+              )}
+              {selectedSourceMarker.properties?.address && (
+                <p>
+                  {selectedSourceMarker.properties?.address}
+                </p>
+              )}
               {selectedSourceMarker.properties?.public_url ? (
                 <p>
                   <a
