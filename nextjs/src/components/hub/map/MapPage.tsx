@@ -19,7 +19,7 @@ import { HubRenderContextProvider, useHubRenderContext } from '@/components/hub/
 import { twMerge } from 'tailwind-merge';
 import { PuckData } from '@/app/hub/render/[hostname]/RenderPuck';
 import { GET_PAGE } from '@/app/hub/render/[hostname]/query';
-import { DropZone, DropZoneProvider } from '@measured/puck';
+import { DropZone, DropZoneProvider, usePuck } from '@measured/puck';
 import { mapPageConf } from '@/data/puck/config';
 
 export default function MapPage(props: {
@@ -39,7 +39,7 @@ export default function MapPage(props: {
   const view = (
     <JotaiProvider>
       <HubRenderContextProvider hostname={props.hostname} path={props.path} page={props.page}>
-        <Root renderCSS={true} fullScreen={true} navLinks={hub.data?.hubByHostname?.navLinks || []}>
+        <Root renderCSS={!props.isPuckEditing} customHeight={props.isPuckEditing ? "min-h-[auto] self-stretch h-auto" : undefined} fullScreen={!props.isPuckEditing} navLinks={hub.data?.hubByHostname?.navLinks || []}>
           <MapProvider>
             <PageContent {...props} isDesktop={isDesktop} hub={hub.data} postcode={postcode} setPostcode={setPostcode} />
           </MapProvider>
@@ -48,6 +48,7 @@ export default function MapPage(props: {
     </JotaiProvider>
   );
 
+  // Render
   if (!props.isPuckEditing) {
     return (
       <DropZoneProvider value={{
@@ -60,10 +61,10 @@ export default function MapPage(props: {
     )
   }
 
-  return view;
+  return view
 }
 
-function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, page }: { hostname: string, path: string, isDesktop: boolean, hub?: GetHubMapDataQuery, postcode: string, setPostcode: React.Dispatch<React.SetStateAction<string>>, page: PuckData }) {
+function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, page, isPuckEditing }: { hostname: string, path: string, isDesktop: boolean, hub?: GetHubMapDataQuery, postcode: string, setPostcode: React.Dispatch<React.SetStateAction<string>>, page: PuckData, isPuckEditing?: boolean }) {
   const hubContext = useHubRenderContext();
 
   const localData = useQuery<GetLocalDataQuery, GetLocalDataQueryVariables>(GET_LOCAL_DATA, {
@@ -155,7 +156,11 @@ function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, p
                     {pageProps?.introTitle}
                   </h1>
                   {!collapsed && (
-                    <DropZone zone="introPanel" />
+                    <DropZone
+                      zone="introPanel"
+                      // @ts-ignore
+                      allow={mapPageConf.categories.intro}
+                    />
                   )}
                 </div>
               )}

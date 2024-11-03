@@ -18,11 +18,13 @@ export type RootProps = {
   fullScreen?: boolean;
   navLinks?: HubNavLink[];
   renderCSS?: boolean;
+  customHeight?: string;
 } & DefaultRootProps;
 
 export default function Root({
   children,
   editMode,
+  customHeight,
   navLinks = [],
   fullScreen = false,
   renderCSS = true,
@@ -51,9 +53,7 @@ export default function Root({
         <main
           className={twMerge(
             "font-publicSans text-hub-primary-800 min-w-screen h-full w-full mx-auto relative overflow-clip",
-            fullScreen
-              ? "h-dvh flex flex-col px-2 md:px-4"
-              : "max-w-screen-xl min-h-[dv100] px-2 md:px-4 lg:px-6 xl:px-8",
+            customHeight ? customHeight : fullScreen ? "h-dvh flex flex-col px-2 md:px-4": "max-w-screen-xl min-h-[100dvh] px-2 md:px-4 lg:px-6 xl:px-8",
           )}
         >
           <header className="sticky top-0 z-50 ">
@@ -62,7 +62,7 @@ export default function Root({
           <div
             className={twMerge(
               "rounded-t-2xl md:rounded-2xl",
-              fullScreen && "h-full flex-grow mb-2 md:mb-4 overflow-hidden",
+              customHeight ? "h-full" : fullScreen && "h-full flex-grow mb-2 md:mb-4 overflow-hidden",
             )}
           >
             {children}
@@ -84,14 +84,12 @@ export default function Root({
         <main
           className={twMerge(
             "min-w-screen h-full w-full mx-auto relative overflow-clip",
-            fullScreen
-              ? "h-dvh flex flex-col"
-              : "min-h-[dv100]",
+            customHeight ? customHeight : fullScreen ? "h-dvh flex flex-col" : "min-h-[100dvh]",
           )}
         >
           <div
             className={twMerge(
-              fullScreen && "h-full flex-grow overflow-hidden",
+              customHeight ? "h-full" : fullScreen && "h-full flex-grow overflow-hidden",
             )}
           >
             {children}
