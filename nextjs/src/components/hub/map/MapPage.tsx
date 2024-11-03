@@ -159,7 +159,7 @@ function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, p
                     <DropZone
                       zone="introPanel"
                       // @ts-ignore
-                      allow={mapPageConf.categories.intro}
+                      // allow={mapPageConf.categories.intro}
                     />
                   )}
                 </div>

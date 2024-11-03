@@ -8,6 +8,8 @@ import { Layer, Point, Popup, Source } from "react-map-gl";
 import { BACKEND_URL } from "@/env";
 import { useHubRenderContext } from "./HubRenderContext";
 import { DataSourceType, GetHubMapDataQuery } from "@/__generated__/graphql";
+import { DropZone } from "@measured/puck";
+import { mapPageConf } from "@/data/puck/config";
 
 export function HubPointMarkers({
   layer,
@@ -207,7 +209,7 @@ export function HubPointMarkers({
             }}
             paint={layer.mapboxPaint || {}}
           />
-          {!!selectedSourceMarker ? (
+          {layer.popup && !!selectedSourceMarker ? (
             <Popup
               key={selectedSourceMarker.properties?.id}
               longitude={coordinates[0]}
@@ -215,7 +217,12 @@ export function HubPointMarkers({
               offset={[0, -15] as [number, number]}
               onClose={() => setSelectedSourceMarker(null)}
             >
-              {selectedSourceMarker.properties?.title && (
+              <DropZone
+                zone={`${layer.id}-popup`}
+                // @ts-ignore
+                // allow={mapPageConf.categories.popup}
+              />
+              {/* {selectedSourceMarker.properties?.title && (
                 <h2 className="text-lg">
                   {selectedSourceMarker.properties?.title}
                 </h2>
@@ -244,7 +251,7 @@ export function HubPointMarkers({
                     Get in touch
                   </a>
                 </p>
-              ) : null}
+              ) : null} */}
             </Popup>
           ) : null}
         </Source>

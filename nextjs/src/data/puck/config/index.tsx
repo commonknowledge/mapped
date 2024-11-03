@@ -25,6 +25,7 @@ import { Iframe, IframeProps } from "./blocks/Iframe";
 import { MemberForm, MemberFormProps } from "./blocks/MemberForm";
 import { MapMockupRoot } from "./map/root";
 import { Markdown } from "./blocks/Markdown";
+import { PopupMarkdown } from "./blocks/PopupMarkdown";
 
 export type Props = {
   EventList: EventListProps;
@@ -185,8 +186,22 @@ export const mapPageConf: UserConfig = {
   },
   components: {
     Markdown,
-    // MapSearch,
-    // MapForm,
-    // MapButton
-  }
+    PopupMarkdown
+  },
+  // categories: {
+  //   // @ts-ignore
+  //   popup: {
+  //     title: "Popup elements",
+  //     components: [
+  //       "PopupMarkdown"
+  //     ],
+  //   },
+  //   // @ts-ignore
+  //   intro: {
+  //     title: "Intro elements",
+  //     components: [
+  //       "Markdown"
+  //     ]
+  //   }
+  // }
 };
