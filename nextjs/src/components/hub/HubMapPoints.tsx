@@ -28,7 +28,7 @@ export function HubPointMarkers({
     function selectMarker() {
       mapbox.loadedMap?.on(
         "mouseover",
-        `${layer.source.id}-marker`,
+        `${layer.id}-marker`,
         (event) => {
           const canvas = mapbox.loadedMap?.getCanvas();
           if (!canvas) return;
@@ -37,7 +37,7 @@ export function HubPointMarkers({
       );
       mapbox.loadedMap?.on(
         "mouseleave",
-        `${layer.source.id}-marker`,
+        `${layer.id}-marker`,
         (event) => {
           const canvas = mapbox.loadedMap?.getCanvas();
           if (!canvas) return;
@@ -47,7 +47,7 @@ export function HubPointMarkers({
 
       // Popups for events, groups, locations
       if (layer.popup) {
-        mapbox.loadedMap?.on("click", `${layer.source.id}-marker`, (event) => {
+        mapbox.loadedMap?.on("click", `${layer.id}-marker`, (event) => {
           console.log(event)
           const feature = event.features?.[0];
           if (feature?.properties?.id) {
@@ -66,7 +66,7 @@ export function HubPointMarkers({
         });
       }
     },
-    [mapbox.loadedMap, layer.source.id]
+    [mapbox.loadedMap, layer]
   );
 
   // @ts-ignore
@@ -76,7 +76,7 @@ export function HubPointMarkers({
     <>
       {layer.cluster ? (
         <Source
-          id={layer.source.id}
+          id={layer.id}
           type="geojson"
           data={new URL(
             `/tiles/external-data-source/${layer.source.id}/geojson`,
@@ -90,10 +90,10 @@ export function HubPointMarkers({
           }}
         >
           <Layer
-            id={`${layer.source.id}-cluster`}
+            id={`${layer.id}-cluster`}
             beforeId={beforeId}
             type="circle"
-            source={layer.source.id}
+            source={layer.id}
             filter={["has", "sum"]}
             paint={{
               "circle-color": "rgba(24, 164, 127, 0.80)",
@@ -109,10 +109,10 @@ export function HubPointMarkers({
             }}
           />
           <Layer
-            id={`${layer.source.id}-cluster-count`}
+            id={`${layer.id}-cluster-count`}
             beforeId={beforeId}
             type="symbol"
-            source={layer.source.id}
+            source={layer.id}
             filter={["has", "sum"]}
             layout={{
               "text-field": ["get", "sum"],
@@ -121,10 +121,10 @@ export function HubPointMarkers({
             }}
           />
           <Layer
-            id={`${layer.source.id}-circle`}
+            id={`${layer.id}-circle`}
             beforeId={beforeId}
             type="circle"
-            source={layer.source.id}
+            source={layer.id}
             filter={["all", ["!", ["has", "sum"]], [">", ["get", "count"], 1]]}
             paint={{
               "circle-color": "rgba(24, 164, 127, 0.80)",
@@ -140,10 +140,10 @@ export function HubPointMarkers({
             }}
           />
           <Layer
-            id={`${layer.source.id}-circle-count`}
+            id={`${layer.id}-circle-count`}
             beforeId={beforeId}
             type="symbol"
-            source={layer.source.id}
+            source={layer.id}
             filter={["all", ["!", ["has", "sum"]], [">", ["get", "count"], 1]]}
             layout={{
               "text-field": ["get", "count"],
@@ -153,12 +153,12 @@ export function HubPointMarkers({
           />
           <Layer
             beforeId={beforeId}
-            id={`${layer.source.id}-marker`}
-            source={layer.source.id}
+            id={`${layer.id}-marker`}
+            source={layer.id}
             type={layer.mapboxType as any || "symbol"}
             filter={["all", ["!", ["has", "sum"]], ["==", ["get", "count"], 1]]}
             layout={{
-              ...(layer.mapboxType === "symbol" ? {
+              ...(context.isPeopleClimateNature && layer.mapboxType === "symbol" ? {
                 "icon-image": layer.iconImage
                   ? layer.iconImage
                   : `tcc-event-marker`,
@@ -177,7 +177,7 @@ export function HubPointMarkers({
         </Source>
       ) : (
         <Source
-          id={layer.source.id}
+          id={layer.id}
           type="vector"
           url={new URL(
             `/tiles/external-data-source/${context.hostname}/${layer.source.id}/tiles.json`,
@@ -186,12 +186,12 @@ export function HubPointMarkers({
         >
           <Layer
             beforeId={beforeId}
-            id={`${layer.source.id}-marker`}
-            source={layer.source.id}
+            id={`${layer.id}-marker`}
+            source={layer.id}
             source-layer={"generic_data"}
             type={layer.mapboxType as any || "symbol"}
             layout={{
-              ...(layer.mapboxType === "symbol" ? {
+              ...(context.isPeopleClimateNature && layer.mapboxType === "symbol" ? {
                 "icon-image": layer.iconImage
                   ? layer.iconImage
                   : `tcc-event-marker`,
