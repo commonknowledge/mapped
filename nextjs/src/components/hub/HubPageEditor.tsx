@@ -46,6 +46,7 @@ export default function HubPageEditor({ hubId, pageId }: { hubId: string, pageId
   const isMap = (pageData.data?.hubPage.puckJsonContent as PuckData).root.props?.isMap
 
   const [tab, setTab] = useAtom(hubPageEditorTabAtom)
+  const toggleTab = () => setTab(tab === "map" ? "intro" : "map")
 
   const config = useMemo(() => {
     if (hubData.data?.hubHomepage.hostname) {
@@ -113,16 +114,29 @@ export default function HubPageEditor({ hubId, pageId }: { hubId: string, pageId
           <header className="col-span-12">
             <EditorHeader onPublish={publish} />
           </header>
-          <div className='col-span-3 overflow-auto pl-4 pr-4 py-4'>
-            <Puck.Components />
-            <Puck.Outline />
-          </div>
-          <div className='col-span-6 [&_#preview-frame]:flex'>
-            <Puck.Preview />
-          </div>
-          <div className='col-span-3 overflow-auto py-2'>
-            <Puck.Fields />
-          </div>
+          {!isMap || tab === "intro" ? (
+            <>
+              <div className='col-span-3 overflow-auto pl-4 pr-4 py-4'>
+                <Puck.Components />
+                <Puck.Outline />
+              </div>
+              <div className='col-span-6 [&_#preview-frame]:flex'>
+                <Puck.Preview />
+              </div>
+              <div className='col-span-3 overflow-auto py-2'>
+                <Puck.Fields />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className='col-span-4'>
+                <MapLayerEditor />
+              </div>
+              <div className='col-span-8 [&_#preview-frame]:flex'>
+                <Puck.Preview />
+              </div>
+            </>
+          )}
         </div>
       </Puck>
     </HubRenderContextProvider>
@@ -216,6 +230,9 @@ export default function HubPageEditor({ hubId, pageId }: { hubId: string, pageId
           <div className='flex flex-row gap-4 items-center justify-center'>
             {!!pageData.data?.hubPage.liveUrl && (
               <>
+                <PuckButton variant="secondary" onClick={toggleTab}>
+                  {tab === "map" ? "Page editor" : "Layer editor"}
+                </PuckButton>
                 <Link target="_blank" href={pageData.data?.hubPage.liveUrl}>
                   <PuckButton variant="secondary">
                     Visit page

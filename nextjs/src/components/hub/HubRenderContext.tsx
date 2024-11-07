@@ -94,6 +94,23 @@ const GET_HUB_CONTEXT = gql`
       customCss
       primaryColour
       secondaryColour
+      layers {
+        id
+        name
+        source {
+          id
+          dataType
+          predefinedColumnNames
+          introspectFields
+          # TODO: fieldDefinitions
+        }
+        popup
+        cluster
+        fields
+        mapboxType
+        mapboxPaint
+        mapboxLayout
+      }
     }
   }
 `
