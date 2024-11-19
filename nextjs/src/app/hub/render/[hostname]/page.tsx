@@ -17,7 +17,7 @@ export default async function Page({ params: { hostname, slug } }: { params: Par
     }
   })
 
-  const puckJsonContent = page.data?.hubPageByPath?.puckJsonContent
+  // const puckJsonContent = page.data?.hubPageByPath?.puckJsonContent
 
   // // TODO: display 404 in this case
   // if (!puckJsonContent) {
@@ -25,6 +25,6 @@ export default async function Page({ params: { hostname, slug } }: { params: Par
   // }
 
   return (
-    <RenderPuck hostname={hostname} page={page.data.hubPageByPath?.puckJsonContent} />
+    <RenderPuck hostname={hostname} path={slug} page={page.data.hubPageByPath?.puckJsonContent} />
   )
 }

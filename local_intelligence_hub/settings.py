@@ -119,9 +119,17 @@ FRONTEND_BASE_URL = (
 BACKEND_URL = env("BASE_URL") if environment != "production" else env("PROD_BASE_URL")
 BASE_URL = BACKEND_URL
 # Network security
-ALLOWED_HOSTS = (
+
+### ALLOWED_HOSTS
+# disable allowed host by adding a * to ALLOWED_HOST in settings
+# this is so django-dynamic-host middleware can take responsibility for allowed_host
+ALLOWED_HOSTS=["*"]
+DYNAMIC_HOSTS_DEFAULT_HOSTS=(
     env("ALLOWED_HOSTS") if environment != "production" else env("PROD_ALLOWED_HOSTS")
 )
+print("DYNAMIC_HOSTS_DEFAULT_HOSTS", DYNAMIC_HOSTS_DEFAULT_HOSTS)
+DYNAMIC_HOST_RESOLVER_FUNC="hub.handlers.dynamic_host_handler"
+
 CORS_ALLOWED_ORIGINS = (
     env("CORS_ALLOWED_ORIGINS")
     if environment != "production"
@@ -224,6 +232,7 @@ INSTALLED_APPS = [
     "gqlauth",
     "hub",
     "corsheaders",
+    "dynamic_host",
     "procrastinate.contrib.django",
     "strawberry_django",
     "django_cryptography",
@@ -246,6 +255,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "dynamic_host.middleware.AllowedHostMiddleWare",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",

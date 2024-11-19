@@ -15,11 +15,15 @@ export const GET_HUB_MAP_DATA = gql`
         type
         visible
         iconImage
+        popup
+        cluster
         source {
           id
+          dataType
         }
         mapboxPaint
         mapboxLayout
+        mapboxType
       }
       navLinks {
         label

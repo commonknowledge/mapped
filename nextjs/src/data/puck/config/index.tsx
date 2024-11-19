@@ -1,4 +1,4 @@
-import { Config } from "@measured/puck";
+import { AutoField, Config, FieldLabel } from "@measured/puck";
 import Root, { RootProps } from "./root";
 import { ButtonGroup, ButtonGroupProps } from "./blocks/ButtonGroup";
 import { Card, CardProps } from "./blocks/Card";
@@ -23,6 +23,9 @@ import { HTMLEmbed, HTMLEmbedProps } from "./blocks/HTMLEmbed";
 import { RichText, RichTextProps } from "./blocks/RichText";
 import { Iframe, IframeProps } from "./blocks/Iframe";
 import { MemberForm, MemberFormProps } from "./blocks/MemberForm";
+import { MapMockupRoot } from "./map/root";
+import { Markdown } from "./blocks/Markdown";
+import { PopupMarkdown } from "./blocks/PopupMarkdown";
 
 export type Props = {
   EventList: EventListProps;
@@ -129,4 +132,76 @@ export const conf: UserConfig = {
     Iframe,
     MemberForm
   },
+};
+
+export const mapPageConf: UserConfig = {
+  root: {
+    render: (props) => <MapMockupRoot />,
+    defaultProps: {
+      cta: false,
+      mapStyle: "mapbox://styles/commonknowledge/clwqeu7rb012301nyh52n3kss/draft"
+    },
+    // @ts-ignore
+    fields: {
+      title: {
+        type: "text",
+      },
+      slug: {
+        type: "text",
+      },
+      seoDescription: {
+        type: "text",
+      },
+      introTitle: {
+        type: "text",
+      },
+      cta: {
+        type: "radio",
+        options: [
+          { label: "Search", value: "search" },
+          { label: "Default", value: "default" },
+        ]
+      },
+      mapStyle: {
+        type: "text",
+      },
+      mapBounds: {
+        type: "object",
+        objectFields: {
+          minLat: {
+            type: "number",
+          },
+          minLng: {
+            type: "number",
+          },
+          maxLat: {
+            type: "number",
+          },
+          maxLng: {
+            type: "number",
+          },
+        }
+      }
+    }
+  },
+  components: {
+    Markdown,
+    PopupMarkdown
+  },
+  // categories: {
+  //   // @ts-ignore
+  //   popup: {
+  //     title: "Popup elements",
+  //     components: [
+  //       "PopupMarkdown"
+  //     ],
+  //   },
+  //   // @ts-ignore
+  //   intro: {
+  //     title: "Intro elements",
+  //     components: [
+  //       "Markdown"
+  //     ]
+  //   }
+  // }
 };

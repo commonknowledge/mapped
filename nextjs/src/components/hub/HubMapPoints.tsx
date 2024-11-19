@@ -7,7 +7,9 @@ import { useEffect } from "react";
 import { Layer, Point, Popup, Source } from "react-map-gl";
 import { BACKEND_URL } from "@/env";
 import { useHubRenderContext } from "./HubRenderContext";
-import { GetHubMapDataQuery } from "@/__generated__/graphql";
+import { DataSourceType, GetHubMapDataQuery } from "@/__generated__/graphql";
+import { DropZone } from "@measured/puck";
+import { mapPageConf } from "@/data/puck/config";
 
 export function HubPointMarkers({
   layer,
@@ -28,7 +30,7 @@ export function HubPointMarkers({
     function selectMarker() {
       mapbox.loadedMap?.on(
         "mouseover",
-        `${layer.source.id}-marker`,
+        `${layer.id}-marker`,
         (event) => {
           const canvas = mapbox.loadedMap?.getCanvas();
           if (!canvas) return;
@@ -37,27 +39,36 @@ export function HubPointMarkers({
       );
       mapbox.loadedMap?.on(
         "mouseleave",
-        `${layer.source.id}-marker`,
+        `${layer.id}-marker`,
         (event) => {
           const canvas = mapbox.loadedMap?.getCanvas();
           if (!canvas) return;
           canvas.style.cursor = "";
         }
       );
-      if (layer.type === "events" || layer.type === "groups") {
-        mapbox.loadedMap?.on("click", `${layer.source.id}-marker`, (event) => {
+
+      // Popups for events, groups, locations
+      if (layer.popup) {
+        mapbox.loadedMap?.on("click", `${layer.id}-marker`, (event) => {
+          console.log(event)
           const feature = event.features?.[0];
           if (feature?.properties?.id) {
-            if (layer.type === "events") {
-              context.goToEventId(feature.properties.id);
+            if (selectedSourceMarker?.properties?.id === feature.properties.id) {
+              // Toggle off
+              // setSelectedSourceMarker(null);
             } else {
-              setSelectedSourceMarker(feature);
+              // Toggle on
+              if (layer.source.dataType === DataSourceType.Event) {
+                context.goToEventId(feature.properties.id);
+              } else {
+                setSelectedSourceMarker(feature);
+              }
             }
           }
         });
       }
     },
-    [mapbox.loadedMap, layer.source.id]
+    [mapbox.loadedMap, layer]
   );
 
   // @ts-ignore
@@ -65,9 +76,9 @@ export function HubPointMarkers({
 
   return (
     <>
-      {layer.type === "members" ? (
+      {layer.cluster ? (
         <Source
-          id={layer.source.id}
+          id={layer.id}
           type="geojson"
           data={new URL(
             `/tiles/external-data-source/${layer.source.id}/geojson`,
@@ -81,10 +92,10 @@ export function HubPointMarkers({
           }}
         >
           <Layer
-            id={`${layer.source.id}-cluster`}
+            id={`${layer.id}-cluster`}
             beforeId={beforeId}
             type="circle"
-            source={layer.source.id}
+            source={layer.id}
             filter={["has", "sum"]}
             paint={{
               "circle-color": "rgba(24, 164, 127, 0.80)",
@@ -100,10 +111,10 @@ export function HubPointMarkers({
             }}
           />
           <Layer
-            id={`${layer.source.id}-cluster-count`}
+            id={`${layer.id}-cluster-count`}
             beforeId={beforeId}
             type="symbol"
-            source={layer.source.id}
+            source={layer.id}
             filter={["has", "sum"]}
             layout={{
               "text-field": ["get", "sum"],
@@ -112,10 +123,10 @@ export function HubPointMarkers({
             }}
           />
           <Layer
-            id={`${layer.source.id}-circle`}
+            id={`${layer.id}-circle`}
             beforeId={beforeId}
             type="circle"
-            source={layer.source.id}
+            source={layer.id}
             filter={["all", ["!", ["has", "sum"]], [">", ["get", "count"], 1]]}
             paint={{
               "circle-color": "rgba(24, 164, 127, 0.80)",
@@ -131,10 +142,10 @@ export function HubPointMarkers({
             }}
           />
           <Layer
-            id={`${layer.source.id}-circle-count`}
+            id={`${layer.id}-circle-count`}
             beforeId={beforeId}
             type="symbol"
-            source={layer.source.id}
+            source={layer.id}
             filter={["all", ["!", ["has", "sum"]], [">", ["get", "count"], 1]]}
             layout={{
               "text-field": ["get", "count"],
@@ -144,18 +155,23 @@ export function HubPointMarkers({
           />
           <Layer
             beforeId={beforeId}
-            id={`${layer.source.id}-marker`}
-            source={layer.source.id}
-            type="symbol"
+            id={`${layer.id}-marker`}
+            source={layer.id}
+            type={layer.mapboxType as any || "symbol"}
             filter={["all", ["!", ["has", "sum"]], ["==", ["get", "count"], 1]]}
             layout={{
-              "icon-image": layer.iconImage
-                ? layer.iconImage
-                : `tcc-event-marker`,
-              "icon-allow-overlap": true,
-              "icon-ignore-placement": true,
-              "icon-size": 0.75,
-              "icon-anchor": "bottom",
+              ...(context.isPeopleClimateNature && layer.mapboxType === "symbol" ? {
+                "icon-image": layer.iconImage
+                  ? layer.iconImage
+                  : `tcc-event-marker`,
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true,
+                "icon-size": 0.75,
+                "icon-anchor": "bottom",
+                "symbol-z-order": "auto",
+                'symbol-placement': 'point',
+                'symbol-z-elevate': true,
+              } : {}),
               ...(layer.mapboxLayout || {}),
             }}
             paint={layer.mapboxPaint || {}}
@@ -163,7 +179,7 @@ export function HubPointMarkers({
         </Source>
       ) : (
         <Source
-          id={layer.source.id}
+          id={layer.id}
           type="vector"
           url={new URL(
             `/tiles/external-data-source/${context.hostname}/${layer.source.id}/tiles.json`,
@@ -172,23 +188,28 @@ export function HubPointMarkers({
         >
           <Layer
             beforeId={beforeId}
-            id={`${layer.source.id}-marker`}
-            source={layer.source.id}
+            id={`${layer.id}-marker`}
+            source={layer.id}
             source-layer={"generic_data"}
-            type="symbol"
+            type={layer.mapboxType as any || "symbol"}
             layout={{
-              "icon-image": layer.iconImage
-                ? layer.iconImage
-                : `tcc-event-marker`,
-              "icon-allow-overlap": true,
-              "icon-ignore-placement": true,
-              "icon-size": 0.75,
-              "icon-anchor": "bottom",
+              ...(context.isPeopleClimateNature && layer.mapboxType === "symbol" ? {
+                "icon-image": layer.iconImage
+                  ? layer.iconImage
+                  : `tcc-event-marker`,
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true,
+                "icon-size": 0.75,
+                "icon-anchor": "bottom",
+                "symbol-z-order": "auto",
+                'symbol-placement': 'point',
+                'symbol-z-elevate': true,
+              } : {}),
               ...(layer.mapboxLayout || {}),
             }}
             paint={layer.mapboxPaint || {}}
           />
-          {selectedSourceMarker ? (
+          {layer.popup && !!selectedSourceMarker ? (
             <Popup
               key={selectedSourceMarker.properties?.id}
               longitude={coordinates[0]}
@@ -196,9 +217,21 @@ export function HubPointMarkers({
               offset={[0, -15] as [number, number]}
               onClose={() => setSelectedSourceMarker(null)}
             >
-              <h2 className="text-lg">
-                {selectedSourceMarker.properties?.title}
-              </h2>
+              <DropZone
+                zone={`${layer.id}-popup`}
+                // @ts-ignore
+                // allow={mapPageConf.categories.popup}
+              />
+              {/* {selectedSourceMarker.properties?.title && (
+                <h2 className="text-lg">
+                  {selectedSourceMarker.properties?.title}
+                </h2>
+              )}
+              {selectedSourceMarker.properties?.address && (
+                <p>
+                  {selectedSourceMarker.properties?.address}
+                </p>
+              )}
               {selectedSourceMarker.properties?.public_url ? (
                 <p>
                   <a
@@ -218,7 +251,7 @@ export function HubPointMarkers({
                     Get in touch
                   </a>
                 </p>
-              ) : null}
+              ) : null} */}
             </Popup>
           ) : null}
         </Source>

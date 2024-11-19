@@ -12,7 +12,7 @@ export default async function Layout({
   return (
     <div className='h-dvh flex flex-col'>
       <Navbar isLoggedIn={true} />
-      <main className="h-full relative overflow-x-hidden overflow-y-hidden flex-grow text-black" id='puck-editor-root'>
+      <main className="h-full relative overflow-x-hidden overflow-y-hidden flex-grow text-black bg-[var(--puck-color-white)]" id='puck-editor-root'>
         {children}
       </main>
       <Toaster />

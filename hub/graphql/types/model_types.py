@@ -631,6 +631,7 @@ class GenericData(CommonData):
     public_url: auto
     description: auto
     image: auto
+    geocode_data: JSON
 
     postcode: auto
     remote_url: str = fn_field()
@@ -1106,10 +1107,14 @@ class MapLayer:
     id: str = dict_key_field()
     name: str = dict_key_field()
     type: str = dict_key_field("events")
+    fields: Optional[list[str]] = dict_key_field()
+    popup: Optional[bool] = dict_key_field()
+    cluster: Optional[bool] = dict_key_field()
     visible: Optional[bool] = dict_key_field()
     custom_marker_text: Optional[str] = dict_key_field()
     icon_image: Optional[str] = dict_key_field()
     mapbox_paint: Optional[JSON] = dict_key_field()
+    mapbox_type: Optional[str] = dict_key_field()
     mapbox_layout: Optional[JSON] = dict_key_field()
 
     @strawberry_django.field
@@ -1258,6 +1263,7 @@ class HubPage:
     title: str
     slug: str
     path: str
+    last_published_at: auto
     full_url: Optional[str] = attr_field()
 
     search_description: Optional[str]
