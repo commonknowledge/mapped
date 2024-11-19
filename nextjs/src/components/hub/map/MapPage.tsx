@@ -113,7 +113,7 @@ function PageContent ({ hostname, path, isDesktop, hub, postcode, setPostcode, p
               [pageProps.mapBounds?.minLng, pageProps.mapBounds?.minLat],
               [pageProps.mapBounds?.maxLng, pageProps.mapBounds?.maxLat]
             ] : undefined}
-            mapStyle={pageProps?.mapStyle}
+            mapStyle={pageProps?.mapStyle || "mapbox://styles/commonknowledge/cm2xf8ju900r301pm89skcpg4"}
           />
         </div>
         {!localData.loading && (
