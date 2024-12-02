@@ -7,7 +7,7 @@ import strawberry
 import strawberry_django
 from gqlauth.core.middlewares import JwtSchema
 from gqlauth.core.types_ import GQLAuthError
-from gqlauth.user import arg_mutations as auth_mutations
+from gqlauth.user import arg_mutations as gqlauth_mutations
 from gqlauth.user.queries import UserQueries
 from graphql import GraphQLError
 from strawberry.extensions import QueryDepthLimiter
@@ -17,6 +17,7 @@ from strawberry_django.optimizer import DjangoOptimizerExtension
 from strawberry_django.permissions import IsAuthenticated
 
 from hub import models
+from hub.graphql import auth_mutations
 from hub.graphql import mutations as mutation_types
 from hub.graphql.extensions.analytics import APIAnalyticsExtension
 from hub.graphql.extensions.api_blacklist import APIBlacklistGuard
@@ -147,10 +148,10 @@ class Query(UserQueries):
 
 @strawberry.type
 class Mutation:
-    token_auth = auth_mutations.ObtainJSONWebToken.field
+    token_auth = gqlauth_mutations.ObtainJSONWebToken.field
     # register = auth_mutations.Register.field
-    verify_account = auth_mutations.VerifyAccount.field
-    resend_activation_email = auth_mutations.ResendActivationEmail.field
+    verify_account = gqlauth_mutations.VerifyAccount.field
+    resend_activation_email = gqlauth_mutations.ResendActivationEmail.field
     request_password_reset = auth_mutations.SendPasswordResetEmail.field
     perform_password_reset = auth_mutations.PasswordReset.field
 
