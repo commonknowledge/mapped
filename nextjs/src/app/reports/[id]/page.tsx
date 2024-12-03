@@ -274,9 +274,9 @@ function ReportPage() {
           <ReportMap />
         </div>
         {/* Layer card */}
-        <aside className="absolute top-0 left-0 p-5 w-[200px] h-full pointer-events-auto">
+        <aside className="absolute top-0 left-0 p-5 w-60 h-full pointer-events-auto">
           <div className="flex flex-col items-start gap-4 max-h-full">
-            <Card className="w-[200px] p-3 bg-white border-1 border-meepGray-700 text-meepGray-800">
+            <Card className="min-w-60 p-3 bg-white border-1 border-meepGray-700 text-meepGray-800">
               <CardHeader className="flex flex-row items-start">
                 {report?.loading && !report?.data?.mapReport ? (
                   <CardTitle className="text-hMd grow font-IBMPlexSansMedium">
@@ -286,7 +286,7 @@ function ReportPage() {
                   <>
                     <CardTitle
                       id="nickname"
-                      className="text-hMd grow font-IBMPlexSansMedium"
+                      className="text-hMd grow font-IBMPlexSansMedium leading-tight"
                       {...contentEditableMutation(
                         updateReport,
                         'name',
