@@ -105,13 +105,6 @@ export function ReportCard({
         <CardHeader className=" p-4">
           <CardContent className="">
             <Map className="w-4 text-brandBlue" />
-            {/* <Image
-              src="/reports_page_card_image.png"
-              alt="Description of the image"
-              width={300}
-              height={300}
-              className="w-auto"
-            /> */}
           </CardContent>
           <CardTitle className="mb-1 ">{report.name}</CardTitle>
         </CardHeader>
