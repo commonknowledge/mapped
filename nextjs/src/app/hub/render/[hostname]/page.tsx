@@ -1,8 +1,9 @@
 import { GetPageQuery, GetPageQueryVariables } from '@/__generated__/graphql'
-import { Params } from '@/app/hub/render/[hostname]/params'
-import { GET_PAGE } from '@/app/hub/render/[hostname]/query'
-import { getClient } from '@/services/apollo-client'
+import { getClient } from '@/lib/services/apollo-client'
+
 import RenderPuck from './RenderPuck'
+import { Params } from './params'
+import { GET_PAGE } from './query'
 
 export default async function Page({
   params: { hostname, slug },

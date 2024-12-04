@@ -1,12 +1,14 @@
+import { Layers, Repeat } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+
 import {
   Card,
   CardContent,
   CardDescription,
   CardTitle,
 } from '@/components/ui/card'
-import { Layers, Repeat } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
+
 import Pin from '../Pin'
 
 export default function ProductFeaturesList() {

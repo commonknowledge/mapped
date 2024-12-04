@@ -1,7 +1,3 @@
-import {
-  GetHubContextQuery,
-  GetHubContextQueryVariables,
-} from '@/__generated__/graphql'
 import { gql, useQuery } from '@apollo/client'
 import { usePathname } from 'next/navigation'
 import {
@@ -12,6 +8,11 @@ import {
 } from 'nuqs'
 import { createContext, useContext, useMemo } from 'react'
 import { getColors } from 'theme-colors'
+
+import {
+  GetHubContextQuery,
+  GetHubContextQueryVariables,
+} from '@/__generated__/graphql'
 
 export const HubRenderContext = createContext<{
   hostname: string

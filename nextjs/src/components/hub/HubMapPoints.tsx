@@ -1,12 +1,14 @@
 'use client'
 
+import { useAtom } from 'jotai'
+import { useEffect } from 'react'
+import { Layer, Popup, Source } from 'react-map-gl'
+
 import { GetHubMapDataQuery } from '@/__generated__/graphql'
 import { selectedHubSourceMarkerAtom } from '@/components/hub/data'
 import { BACKEND_URL } from '@/env'
 import { useLoadedMap } from '@/lib/map'
-import { useAtom } from 'jotai'
-import { useEffect } from 'react'
-import { Layer, Popup, Source } from 'react-map-gl'
+
 import { useHubRenderContext } from './HubRenderContext'
 
 export function HubPointMarkers({

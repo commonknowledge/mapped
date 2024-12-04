@@ -1,8 +1,9 @@
 'use client'
 
-import { clearJwt } from '@/actions/auth'
 import { gql, useMutation } from '@apollo/client'
 import { useEffect } from 'react'
+
+import { clearJwt } from '@/lib/actions/auth'
 
 const VERIFY_ACCOUNT = gql`
   mutation Verify($token: String!) {

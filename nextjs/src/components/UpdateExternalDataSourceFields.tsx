@@ -1,3 +1,6 @@
+import { useMemo } from 'react'
+import { FieldPath, FormProvider, useForm } from 'react-hook-form'
+
 import {
   CrmType,
   DataSourceType,
@@ -21,9 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { locationTypeOptions } from '@/data/location'
-import { useMemo } from 'react'
-import { FieldPath, FormProvider, useForm } from 'react-hook-form'
+import { locationTypeOptions } from '@/lib/location'
+
 import { DataSourceFieldLabel } from './DataSourceIcon'
 import { PreopulatedSelectField } from './ExternalDataSourceFields'
 import { Button } from './ui/button'

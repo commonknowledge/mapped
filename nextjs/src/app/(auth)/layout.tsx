@@ -1,7 +1,8 @@
+import { Toaster } from 'sonner'
+
 import { AreaPattern } from '@/components/areaPattern'
 import Navbar from '@/components/navbar'
 import { loadUser } from '@/lib/server-auth'
-import { Toaster } from 'sonner'
 
 export default async function Layout({
   children,

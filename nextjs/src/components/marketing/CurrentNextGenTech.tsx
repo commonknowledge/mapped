@@ -1,8 +1,9 @@
 'use client'
 
-import { Switch } from '@/components/ui/switch'
 import Image from 'next/image'
 import { useState } from 'react'
+
+import { Switch } from '@/components/ui/switch'
 
 interface CurrentNextGenTechProps {}
 

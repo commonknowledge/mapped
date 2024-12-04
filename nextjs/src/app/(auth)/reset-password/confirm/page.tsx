@@ -1,6 +1,8 @@
-import { requireNoAuth } from '@/lib/server-auth'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
+
+import { requireNoAuth } from '@/lib/server-auth'
+
 import NewPasswordForm from './new-password-form'
 
 export default async function Reset() {

@@ -1,3 +1,6 @@
+import Image from 'next/image'
+import { ReactNode } from 'react'
+
 import GetStarted from '@/components/marketing/GetStarted'
 import MarketingPageHeader from '@/components/marketing/MarkertingPageHeader'
 import TemplateTextBlock from '@/components/marketing/TemplateTextBlock'
@@ -7,8 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import Image from 'next/image'
-import { ReactNode } from 'react'
 
 interface FeaturesOptionProps {
   labelHeading?: string

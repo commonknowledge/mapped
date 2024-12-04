@@ -1,12 +1,11 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
 import { gql, useMutation } from '@apollo/client'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { login } from '../../../actions/auth'
 
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -16,6 +15,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { login } from '@/lib/actions/auth'
 
 const LOGIN_MUTATION = gql`
   mutation Login($username: String!, $password: String!) {

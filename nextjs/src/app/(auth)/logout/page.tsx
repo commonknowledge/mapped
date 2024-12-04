@@ -1,5 +1,7 @@
-import { requireAuth } from '@/lib/server-auth'
 import { Metadata } from 'next'
+
+import { requireAuth } from '@/lib/server-auth'
+
 import LogoutForm from './logout-form'
 
 // This has been split into a two components to separate the client-side (LogoutForm)

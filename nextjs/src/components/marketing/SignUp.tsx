@@ -1,10 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Input } from '../ui/input'
 
 import FeatureTextSection from '@/components/marketing/TemplateTextBlock'
 import { Card, CardContent } from '@/components/ui/card'
+
 import { buttonVariants } from '../ui/button'
+import { Input } from '../ui/input'
 
 interface SignUpProps {}
 

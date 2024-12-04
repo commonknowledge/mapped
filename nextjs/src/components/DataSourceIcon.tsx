@@ -1,7 +1,8 @@
-import { CrmType, FieldDefinition } from '@/__generated__/graphql'
-import { externalDataSourceOptions } from '@/lib/data'
 import { File } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
+
+import { CrmType, FieldDefinition } from '@/__generated__/graphql'
+import { externalDataSourceOptions } from '@/lib/data'
 
 export function DataSourceFieldLabel({
   label,

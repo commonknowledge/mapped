@@ -1,9 +1,8 @@
-import {
-  CiviPowerFundLogo,
-  CommonKnowledgeLogo,
-  JRRTLogo,
-} from '@/components/logos'
 import Link from 'next/link'
+
+import { CiviPowerFundLogo } from './logos/CiviPowerFundLogo'
+import { CommonKnowledgeLogo } from './logos/CommonKnowledgeLogo'
+import { JRRTLogo } from './logos/JRRTLogo'
 
 export default function Footer() {
   return (

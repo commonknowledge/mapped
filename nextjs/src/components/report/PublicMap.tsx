@@ -1,10 +1,11 @@
 'use client'
 
-import { BACKEND_URL } from '@/env'
-import { authenticationHeaders } from '@/lib/auth'
 import { atom, useAtom } from 'jotai'
 import Map, { ViewState } from 'react-map-gl'
 import { ImmutableLike } from 'react-map-gl/dist/esm/types'
+
+import { BACKEND_URL } from '@/env'
+import { authenticationHeaders } from '@/lib/auth'
 
 const viewStateAtom = atom<Partial<ViewState>>({
   longitude: -2.296605,

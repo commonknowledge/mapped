@@ -1,16 +1,21 @@
-import { ApolloWrapper } from '@/components/apollo-wrapper'
-import { FRONTEND_URL } from '@/env'
 import { Metadata } from 'next'
 import dynamic from 'next/dynamic'
 import NextTopLoader from 'nextjs-toploader'
 import { Suspense } from 'react'
-import './globals.css'
-import { PHProvider } from './providers'
-import { openGraphImage } from './shared-metadata'
 
-const PostHogPageView = dynamic(() => import('./PostHogPageView'), {
-  ssr: false,
-})
+import { ApolloWrapper } from '@/components/ApolloWrapper'
+import PHProvider from '@/components/analytics/PHProvider'
+import { FRONTEND_URL } from '@/env'
+import { openGraphImage } from '@/lib/shared-metadata'
+
+import './globals.css'
+
+const PostHogPageView = dynamic(
+  () => import('@/components/analytics/PostHogPageView'),
+  {
+    ssr: false,
+  }
+)
 
 export default async function RootLayout({
   children,

@@ -10,6 +10,9 @@
     8000,
     5432
   ],
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached"
+  ],
   "postCreateCommand": "./bin/ck_setup.sh",
   "postAttachCommand": "./bin/ensure_ck_setup.sh",
   "customizations": {

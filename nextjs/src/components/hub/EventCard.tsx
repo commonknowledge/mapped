@@ -1,7 +1,9 @@
-import { GetLocalDataQuery } from '@/__generated__/graphql'
 import { formatDate, formatRelative, isAfter } from 'date-fns'
 import { Ticket } from 'lucide-react'
 import { useMemo } from 'react'
+
+import { GetLocalDataQuery } from '@/__generated__/graphql'
+
 import { useHubRenderContext } from './HubRenderContext'
 
 export function EventCard({

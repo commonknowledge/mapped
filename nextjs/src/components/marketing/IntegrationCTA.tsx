@@ -1,8 +1,9 @@
+import Link from 'next/link'
+import React from 'react'
+
 import TemplateTextBlock from '@/components/marketing/TemplateTextBlock'
 import { Card, CardContent } from '@/components/ui/card'
 import { externalDataSourceOptions } from '@/lib/data'
-import Link from 'next/link'
-import React from 'react'
 
 interface IntegrateProps {}
 

@@ -1,3 +1,7 @@
+import { ExternalLink } from 'lucide-react'
+import Link from 'next/link'
+import { ReactNode } from 'react'
+
 import {
   Card,
   CardDescription,
@@ -5,9 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { ExternalLink } from 'lucide-react'
-import Link from 'next/link'
-import { ReactNode } from 'react'
 
 // Define the props interface with both props
 interface TemplateCardProps {

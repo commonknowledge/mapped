@@ -1,7 +1,9 @@
-import { Button } from '@/components/ui/button'
-import { requireNoAuth } from '@/lib/server-auth'
 import { Metadata } from 'next'
 import Link from 'next/link'
+
+import { Button } from '@/components/ui/button'
+import { requireNoAuth } from '@/lib/server-auth'
+
 import LoginForm from './login-form'
 
 // This has been split into a two components to separate the client-side (LoginForm)

@@ -1,10 +1,9 @@
 'use client'
 
 import { useEffect } from 'react'
-
-import 'vanilla-cookieconsent/dist/cookieconsent.css'
 // @ts-ignore
 import * as CookieConsent from 'vanilla-cookieconsent'
+import 'vanilla-cookieconsent/dist/cookieconsent.css'
 
 declare const window: Window & { dataLayer: Record<string, unknown>[] }
 

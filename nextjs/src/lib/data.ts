@@ -1,16 +1,14 @@
-import { CrmType } from '@/__generated__/graphql'
-import {
-  ActionNetworkIcon,
-  ActionNetworkLogo,
-  AirtableIcon,
-  AirtableLogo,
-  GoogleSheetsIcon,
-  GoogleSheetsLogo,
-  MailchimpIcon,
-  MailchimpLogo,
-  TicketTailorIcon,
-  TicketTailorLogo,
-} from '@/components/logos'
+import { CrmType, GetMemberListQuery } from '@/__generated__/graphql'
+import { ActionNetworkIcon } from '@/components/logos/ActionNetworkIcon'
+import { ActionNetworkLogo } from '@/components/logos/ActionNetworkLogo'
+import { AirtableIcon } from '@/components/logos/AirtableIcon'
+import { AirtableLogo } from '@/components/logos/AirtableLogo'
+import { GoogleSheetsIcon } from '@/components/logos/GoogleSheetsIcon'
+import { GoogleSheetsLogo } from '@/components/logos/GoogleSheetsLogo'
+import { MailchimpIcon } from '@/components/logos/MailchimpIcon'
+import { MailchimpLogo } from '@/components/logos/MailchimpLogo'
+import { TicketTailorIcon } from '@/components/logos/TicketTailorIcon'
+import { TicketTailorLogo } from '@/components/logos/TicketTailorLogo'
 
 export const externalDataSourceOptions: Record<
   CrmType,
@@ -105,3 +103,6 @@ export type SourcePath =
       description?: string | null
     }
   | string
+export type SourceOption =
+  | GetMemberListQuery['myOrganisations'][0]['sharingPermissionsFromOtherOrgs'][0]['externalDataSource']
+  | GetMemberListQuery['myOrganisations'][0]['externalDataSources'][0]

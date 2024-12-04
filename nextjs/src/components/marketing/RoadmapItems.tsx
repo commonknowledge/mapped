@@ -1,6 +1,8 @@
 'use client'
+
 import { Octokit } from 'octokit'
 import { useEffect, useState } from 'react'
+
 import TemplateCard from './TemplateCard'
 
 const octokit = new Octokit({

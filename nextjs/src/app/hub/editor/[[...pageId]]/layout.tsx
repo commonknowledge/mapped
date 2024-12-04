@@ -1,6 +1,7 @@
+import { Toaster } from 'sonner'
+
 import Navbar from '@/components/navbar'
 import { requireAuth } from '@/lib/server-auth'
-import { Toaster } from 'sonner'
 
 export default async function Layout({
   children,

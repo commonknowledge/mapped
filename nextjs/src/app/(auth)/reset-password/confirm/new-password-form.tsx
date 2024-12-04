@@ -1,5 +1,12 @@
 'use client'
 
+import { OperationVariables, gql, useMutation } from '@apollo/client'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useSearchParams } from 'next/navigation'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -10,12 +17,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { OperationVariables, gql, useMutation } from '@apollo/client'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useSearchParams } from 'next/navigation'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 
 const PERFORM_PASSWORD_RESET_MUTATION = gql`
   mutation PerformPasswordReset(

@@ -1,5 +1,6 @@
 {
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.terminal.activateEnvironment": false, // the Docker container already activates the environment
     "editor.formatOnSave": false,
     "[python]": {
         "editor.formatOnSave": true,
@@ -9,7 +10,7 @@
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
     "python.analysis.extraPaths": [
-        ".venv/lib/python3.11/site-packages"
+        ".venv/lib/python3.12/site-packages"
     ],
     "files.exclude": {
         "**/.git": true,
@@ -64,5 +65,6 @@
     "[markdown]": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode"
-    }
+    }, 
+    "typescript.enablePromptUseWorkspaceTsdk": true
 }

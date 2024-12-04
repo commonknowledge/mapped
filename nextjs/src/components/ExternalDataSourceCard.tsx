@@ -1,4 +1,15 @@
 import {
+  ApolloClient,
+  FetchResult,
+  gql,
+  useApolloClient,
+  useMutation,
+} from '@apollo/client'
+import { formatRelative } from 'date-fns'
+import Link from 'next/link'
+import { toast } from 'sonner'
+
+import {
   CrmType,
   DataSourceCardFragment,
   DataSourceType,
@@ -24,16 +35,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Switch } from '@/components/ui/switch'
-import {
-  ApolloClient,
-  FetchResult,
-  gql,
-  useApolloClient,
-  useMutation,
-} from '@apollo/client'
-import { formatRelative } from 'date-fns'
-import Link from 'next/link'
-import { toast } from 'sonner'
+
 import { DataSourceIcon } from './DataSourceIcon'
 import { Button, ButtonProps, buttonVariants } from './ui/button'
 

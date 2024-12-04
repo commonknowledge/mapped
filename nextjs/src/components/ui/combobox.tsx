@@ -25,22 +25,21 @@ export function Combobox({
   setValue,
 }: {
   options: Array<{ value: string; label: string }>
-  label: string
+  label?: string
   value: string
   setValue: (value: string) => void
 }) {
   const [open, setOpen] = React.useState(false)
 
-
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setOpen((open) => !open)
       }
     }
-    document.addEventListener("keydown", down)
-    return () => document.removeEventListener("keydown", down)
+    document.addEventListener('keydown', down)
+    return () => document.removeEventListener('keydown', down)
   }, [])
 
   return (
@@ -52,11 +51,9 @@ export function Combobox({
           aria-expanded={open}
           className="w-full justify-between bg-meepGray-700"
         >
-          {
-            value
-              ? options.find((option) => option.value === value)?.label
-              : `Select ${label}...`
-          }
+          {value
+            ? options.find((option) => option.value === value)?.label
+            : `Select ${label}...`}
           {/* {value.label} */}
 
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -67,13 +64,17 @@ export function Combobox({
           <CommandInput
             placeholder={`Search ${label}...`}
             onValueChange={(search) => {
-              console.log('Search term:', search);
-              console.log('Available options:', options.map(o => ({
-                value: o.value.toLowerCase(),
-                label: o.label.toLowerCase(),
-                matches: o.value.toLowerCase().includes(search.toLowerCase()) ||
-                  o.label.toLowerCase().includes(search.toLowerCase())
-              })));
+              console.log('Search term:', search)
+              console.log(
+                'Available options:',
+                options.map((o) => ({
+                  value: o.value.toLowerCase(),
+                  label: o.label.toLowerCase(),
+                  matches:
+                    o.value.toLowerCase().includes(search.toLowerCase()) ||
+                    o.label.toLowerCase().includes(search.toLowerCase()),
+                }))
+              )
             }}
           />
           <CommandEmpty>No {label} found.</CommandEmpty>

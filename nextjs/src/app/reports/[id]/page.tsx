@@ -1,5 +1,14 @@
-// page.js
 'use client'
+
+import { FetchResult, useApolloClient, useQuery } from '@apollo/client'
+import { Provider as JotaiProvider, useAtomValue } from 'jotai'
+import { merge } from 'lodash'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { MapProvider } from 'react-map-gl'
+import { toast } from 'sonner'
+import spaceCase from 'to-space-case'
 
 import {
   DeleteMapReportMutation,
@@ -10,64 +19,20 @@ import {
   UpdateMapReportMutation,
   UpdateMapReportMutationVariables,
 } from '@/__generated__/graphql'
-import DataConfigPanel from '@/components/dataConfig'
-import { ReportMap } from '@/components/report/ReportMap'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { buttonVariants } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { currentOrganisationIdAtom } from '@/data/organisation'
-import { contentEditableMutation } from '@/lib/html'
-import {
-  MAP_REPORT_FRAGMENT,
-  isConstituencyPanelOpenAtom,
-  isDataConfigOpenAtom,
-  selectedConstituencyAtom,
-} from '@/lib/map'
+import { currentOrganisationIdAtom } from '@/lib/organisation'
 import { toastPromise } from '@/lib/toast'
-import { FetchResult, gql, useApolloClient, useQuery } from '@apollo/client'
-import { Provider as JotaiProvider, useAtom, useAtomValue } from 'jotai'
-import { merge } from 'lodash'
-import {
-  BarChart3,
-  Layers,
-  MoreVertical,
-  RefreshCcw,
-  Trash,
-} from 'lucide-react'
-import 'mapbox-gl/dist/mapbox-gl.css'
-import { useRouter } from 'next/navigation'
-import { useContext, useEffect, useState } from 'react'
-import { MapProvider } from 'react-map-gl'
-import { toast } from 'sonner'
-import { twMerge } from 'tailwind-merge'
-import spaceCase from 'to-space-case'
-import { ConstituenciesPanel } from './ConstituenciesPanel'
+
+import ReportPage from './(components)/ReportPage'
 import {
   DisplayOptionsType,
-  ReportContext,
   defaultDisplayOptions,
+  reportContext,
 } from './context'
+import {
+  DELETE_MAP_REPORT,
+  GET_MAP_REPORT,
+  UPDATE_MAP_REPORT,
+} from './gql_queries'
 
 type Params = {
   id: string
@@ -83,7 +48,6 @@ export default function Page({ params: { id } }: { params: Params }) {
       variables: { id },
     }
   )
-
   const orgId = useAtomValue(currentOrganisationIdAtom)
 
   useEffect(() => {
@@ -109,7 +73,7 @@ export default function Page({ params: { id } }: { params: Params }) {
   return (
     <JotaiProvider key={id}>
       <MapProvider>
-        <ReportContext.Provider
+        <reportContext.Provider
           value={{
             id,
             report,
@@ -121,7 +85,7 @@ export default function Page({ params: { id } }: { params: Params }) {
           }}
         >
           <ReportPage />
-        </ReportContext.Provider>
+        </reportContext.Provider>
       </MapProvider>
     </JotaiProvider>
   )
@@ -202,242 +166,3 @@ export default function Page({ params: { id } }: { params: Params }) {
     })
   }
 }
-
-function ReportPage() {
-  const { report, updateReport, deleteReport, refreshReportDataQueries } =
-    useContext(ReportContext)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [isDataConfigOpen, setDataConfigOpen] = useAtom(isDataConfigOpenAtom)
-  const toggleDataConfig = () => setDataConfigOpen((b) => !b)
-  const [isConstituencyPanelOpen, setConstituencyPanelOpen] = useAtom(
-    isConstituencyPanelOpenAtom
-  )
-  const [selectedConstituency, setSelectedConstituency] = useAtom(
-    selectedConstituencyAtom
-  )
-  const toggleConsData = () => {
-    setConstituencyPanelOpen((b) => {
-      if (b) {
-        setSelectedConstituency(null)
-      }
-      return !b
-    })
-  }
-
-  useEffect(() => {
-    // @ts-ignore
-    if (!report?.data?.mapReport?.layers?.length) {
-      return setConstituencyPanelOpen(false)
-    }
-  }, [selectedConstituency, report])
-
-  if (!report?.loading && report?.called && !report?.data?.mapReport) {
-    return (
-      <div className="absolute w-full h-full">
-        <div className="flex flex-col items-center justify-center w-full h-full">
-          <Card className="p-4 bg-white border-1 border-meepGray-700 text-meepGray-800">
-            <CardHeader>
-              <CardTitle className="text-hMd grow font-IBMPlexSansMedium">
-                Report not found
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                The report you are looking for does not exist.
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-
-  const toggles = [
-    {
-      icon: Layers,
-      label: 'Map layers',
-      enabled: isDataConfigOpen,
-      toggle: toggleDataConfig,
-    },
-    {
-      icon: BarChart3,
-      label: 'Constituency data',
-      enabled: isConstituencyPanelOpen,
-      toggle: toggleConsData,
-    },
-  ]
-
-  return (
-    <>
-      <div className="absolute w-full h-full flex flex-row pointer-events-none">
-        <div className="w-full h-full pointer-events-auto">
-          <ReportMap />
-        </div>
-        {/* Layer card */}
-        <aside className="absolute top-0 left-0 p-5 w-60  h-full pointer-events-auto">
-          <div className="flex flex-col items-start gap-4 max-h-full">
-            <Card className=" p-3 bg-white border-1 border-meepGray-700 text-meepGray-800 w-60">
-              <CardHeader className="flex flex-row items-start">
-                {report?.loading && !report?.data?.mapReport ? (
-                  <CardTitle className="text-hMd grow font-IBMPlexSansMedium">
-                    Loading...
-                  </CardTitle>
-                ) : (
-                  <>
-                    <CardTitle
-                      id="nickname"
-                      className="text-hMd grow font-IBMPlexSansMedium leading-tight w-full line-clamp-2"
-                      {...contentEditableMutation(
-                        updateReport,
-                        'name',
-                        'Untitled Report'
-                      )}
-                    >
-                      {report?.data?.mapReport.name}
-                    </CardTitle>
-
-                    {renderDropdownMenu(
-                      report?.data?.mapReport,
-                      refreshReportDataQueries,
-                      setDeleteOpen
-                    )}
-                  </>
-                )}
-              </CardHeader>
-              {report?.data?.mapReport && (
-                <CardContent className="mt-4 grid grid-cols-1 gap-2 pt-3 border-t border-meepGray-200">
-                  {toggles.map(({ icon: Icon, label, enabled, toggle }) => (
-                    <div
-                      key={label}
-                      className={twMerge(
-                        'hover:bg-meepGray-100 rounded px-0 flex flex-row gap-2 items-center p-2 cursor-pointer',
-                        enabled && 'bg-meepGray-200 '
-                      )}
-                      onClick={toggle}
-                    >
-
-                      <Icon
-                        className=
-                        'w-4 '
-
-                      />
-                      {label}
-                    </div>
-                  ))}
-                </CardContent>
-              )}
-            </Card>
-            {/* Data config card */}
-            {report?.data?.mapReport && isDataConfigOpen && <DataConfigPanel />}
-          </div>
-        </aside>
-        {report?.data?.mapReport && isConstituencyPanelOpen && (
-          <aside className="absolute top-0 right-0 p-5 w-[400px] h-full">
-            <ConstituenciesPanel />
-          </aside>
-        )}
-      </div>
-      <AlertDialog open={deleteOpen} onOpenChange={() => setDeleteOpen(false)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription className="text-base">
-              This action cannot be undone. This will permanently delete this
-              report.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              className={buttonVariants({ variant: 'outline' })}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                deleteReport()
-              }}
-              className={buttonVariants({ variant: 'destructive' })}
-            >
-              Confirm delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  )
-}
-
-function renderDropdownMenu(
-  report: GetMapReportQuery['mapReport'] | undefined,
-  refreshReportDataQueries: () => void,
-  setDeleteOpen: (open: boolean) => void
-) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger>
-        <MoreVertical className="w-3" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="right" align="start">
-        {report && (
-          <DropdownMenuItem onClick={refreshReportDataQueries}>
-            <RefreshCcw className="w-4 mr-2" />
-            Refresh
-          </DropdownMenuItem>
-        )}
-        <DropdownMenuItem
-          onClick={() => setDeleteOpen(true)}
-          className="text-red-400"
-        >
-          <Trash className="w-4 mr-2" />
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-const GET_MAP_REPORT = gql`
-  query GetMapReport($id: ID!) {
-    mapReport(pk: $id) {
-      id
-      name
-      slug
-      displayOptions
-      organisation {
-        id
-        slug
-        name
-      }
-      ...MapReportPage
-    }
-  }
-  ${MAP_REPORT_FRAGMENT}
-`
-
-// Keep this fragment trim
-// so that updates return fast
-const UPDATE_MAP_REPORT = gql`
-  mutation UpdateMapReport($input: MapReportInput!) {
-    updateMapReport(data: $input) {
-      id
-      name
-      displayOptions
-      layers {
-        id
-        name
-        source {
-          id
-          name
-        }
-      }
-    }
-  }
-`
-
-const DELETE_MAP_REPORT = gql`
-  mutation DeleteMapReport($id: IDObject!) {
-    deleteMapReport(data: $id) {
-      id
-    }
-  }
-`

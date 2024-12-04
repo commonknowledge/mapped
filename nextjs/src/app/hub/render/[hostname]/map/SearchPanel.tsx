@@ -1,8 +1,9 @@
-import { useHubRenderContext } from '@/components/hub/HubRenderContext'
-import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { FormEvent } from 'react'
+
+import { useHubRenderContext } from '@/components/hub/HubRenderContext'
+import { Button } from '@/components/ui/button'
 
 export function SearchPanel({
   onSearch,

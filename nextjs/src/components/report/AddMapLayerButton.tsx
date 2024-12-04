@@ -1,10 +1,16 @@
 'use client'
 
+import { gql, useFragment, useQuery } from '@apollo/client'
+import { Check, ChevronsUpDown, Plus, RefreshCcw } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useContext, useMemo, useState } from 'react'
+import { useForm } from 'react-hook-form'
+
 import {
   GetMemberListQuery,
   MapReportLayersSummaryFragment,
 } from '@/__generated__/graphql'
-import { ReportContext } from '@/app/reports/[id]/context'
+import { reportContext } from '@/app/reports/[id]/context'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -27,13 +33,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { SourceOption } from '@/lib/data'
 import { MAP_REPORT_LAYERS_SUMMARY } from '@/lib/map'
 import { cn } from '@/lib/utils'
-import { gql, useFragment, useQuery } from '@apollo/client'
-import { Check, ChevronsUpDown, Plus, RefreshCcw } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useContext, useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+
 import { CRMSelection } from '../CRMButtonItem'
 import { FormField } from '../ui/form'
 import { LoadingIcon } from '../ui/loadingIcon'
@@ -43,10 +46,6 @@ type Source = {
   id: string
 }
 
-export type SourceOption =
-  | GetMemberListQuery['myOrganisations'][0]['sharingPermissionsFromOtherOrgs'][0]['externalDataSource']
-  | GetMemberListQuery['myOrganisations'][0]['externalDataSources'][0]
-
 export function AddMapLayerButton({
   addLayer,
   filter,
@@ -54,7 +53,7 @@ export function AddMapLayerButton({
   addLayer(layer: Source): void
   filter?: (s: SourceOption) => boolean
 }) {
-  const { id } = useContext(ReportContext)
+  const { id } = useContext(reportContext)
   const form = useForm<{ source?: Source }>()
   const [open, setOpen] = useState(false)
 
@@ -112,7 +111,7 @@ export function MapLayerSelector({
   filter?: (s: SourceOption) => boolean
 }) {
   const [open, setOpen] = useState(false)
-  const { id, report } = useContext(ReportContext)
+  const { id, report } = useContext(reportContext)
   const dataSources = useQuery<GetMemberListQuery>(MEMBER_LISTS, {
     variables: {
       currentOrganisationId: report?.data?.mapReport.organisation.id,

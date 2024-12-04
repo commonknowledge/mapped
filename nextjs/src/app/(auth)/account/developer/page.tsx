@@ -1,5 +1,11 @@
 'use client'
 
+import { gql } from '@apollo/client'
+import { useQuery } from '@apollo/experimental-nextjs-app-support/ssr'
+import { ClipboardCopy, Trash } from 'lucide-react'
+import Link from 'next/link'
+import { toast } from 'sonner'
+
 import {
   CreateTokenMutation,
   CreateTokenMutationVariables,
@@ -29,11 +35,6 @@ import {
 } from '@/components/ui/table'
 import { GRAPHQL_URL } from '@/env'
 import { toastPromise } from '@/lib/toast'
-import { gql } from '@apollo/client'
-import { useQuery } from '@apollo/experimental-nextjs-app-support/ssr'
-import { ClipboardCopy, Trash } from 'lucide-react'
-import Link from 'next/link'
-import { toast } from 'sonner'
 
 const YOUR_API_TOKENS = gql`
   query DeveloperAPIContext {

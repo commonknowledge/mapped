@@ -1,6 +1,8 @@
-import { CrmType, FieldDefinition } from '@/__generated__/graphql'
 import { Control, FieldPath } from 'react-hook-form'
 import toSpaceCase from 'to-space-case'
+
+import { CrmType, FieldDefinition } from '@/__generated__/graphql'
+
 import { DataSourceFieldLabel } from './DataSourceIcon'
 import {
   FormControl,

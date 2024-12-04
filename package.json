@@ -1,6 +1,7 @@
 {
   "name": "lih",
   "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "esbuild": "0.19.11"
   },
   "dependencies": {

@@ -1,5 +1,7 @@
-import { requireNoAuth } from '@/lib/server-auth'
 import { Metadata } from 'next'
+
+import { requireNoAuth } from '@/lib/server-auth'
+
 import ResetForm from './reset-password-form'
 
 export default async function Reset() {

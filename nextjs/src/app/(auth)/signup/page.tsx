@@ -1,6 +1,8 @@
+import { Metadata } from 'next'
+
 import WaitlistForm from '@/components/WaitListSignUp'
 import { requireNoAuth } from '@/lib/server-auth'
-import { Metadata } from 'next'
+
 import RegisterForm from './register-form'
 
 // This has been split into a two components to separate the client-side (RegisterForm)

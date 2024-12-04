@@ -1,17 +1,19 @@
+import { gql } from '@apollo/client'
+import { Metadata, ResolvingMetadata } from 'next'
+
 import {
   GetPageQuery,
   GetPageQueryVariables,
   HostAnalyticsQuery,
   HostAnalyticsQueryVariables,
 } from '@/__generated__/graphql'
-import { GET_PAGE } from '@/app/hub/render/[hostname]/query'
-import ConsentRespectingGoogleAnalytics from '@/components/hub/ConsentRespectingGoogleAnalytics'
-import { ConsentRespectingPosthogAnalytics } from '@/components/hub/ConsentRespectingPosthogAnalytics'
+import ConsentRespectingGoogleAnalytics from '@/components/analytics/ConsentRespectingGoogleAnalytics'
+import { ConsentRespectingPosthogAnalytics } from '@/components/analytics/ConsentRespectingPosthogAnalytics'
 import { CookieConsentComponent } from '@/components/hub/CookieConsent'
-import { RootCSS } from '@/data/puck/config/root'
-import { getClient } from '@/services/apollo-client'
-import { gql } from '@apollo/client'
-import { Metadata, ResolvingMetadata } from 'next'
+import { RootCSS } from '@/components/puck/config/root'
+import { getClient } from '@/lib/services/apollo-client'
+
+import { GET_PAGE } from './query'
 
 type Params = {
   hostname: string

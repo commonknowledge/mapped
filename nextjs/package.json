@@ -26,6 +26,7 @@
   "dependencies": {
     "@apollo/client": "^3.9.5",
     "@apollo/experimental-nextjs-app-support": "^0.8.0",
+    "@aws-sdk/client-s3": "^3.703.0",
     "@hookform/resolvers": "^3.3.4",
     "@kodingdotninja/use-tailwind-breakpoint": "^1.0.0",
     "@measured/puck": "^0.15.0",
@@ -129,12 +130,11 @@
     "eslint": "^8",
     "eslint-config-next": "14.1.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-unused-imports": "2.0.0",
     "graphql-codegen-typescript-common": "0.18.2",
     "postcss": "^8",
-    "prettier": "^3.2.5",
+    "prettier": "^3.4.1",
     "prettier-plugin-organize-imports": "^4.1.0",
     "tailwindcss": "^3.3.0",
-    "typescript": "^5.4.2"
+    "typescript": "5.4.5"
   }
 }

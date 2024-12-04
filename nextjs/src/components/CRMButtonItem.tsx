@@ -1,8 +1,10 @@
-import { DataSourceType } from '@/__generated__/graphql'
 import { format } from 'd3-format'
 import pluralize from 'pluralize'
+
+import { DataSourceType } from '@/__generated__/graphql'
+import { SourceOption } from '@/lib/data'
+
 import { DataSourceIcon } from './DataSourceIcon'
-import { SourceOption } from './report/AddMapLayerButton'
 
 function dataTypeRecordLabel(dataType: DataSourceType) {
   switch (dataType) {

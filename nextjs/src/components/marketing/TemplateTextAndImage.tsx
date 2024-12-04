@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { ReactNode } from 'react'
+
 import TemplateTextBlock from './TemplateTextBlock'
 
 interface TemplateTextAndImage {

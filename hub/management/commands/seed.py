@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from asgiref.sync import async_to_sync
+from wagtail.models import Site
 
 from hub.models import (
     AirtableSource,
@@ -175,14 +176,11 @@ class Command(BaseCommand):
         logger.info(f"Created a Map Report: {map_report}")
 
         # Create a hub for the org
-        hub = HubHomepage.objects.filter(
-            title="hub.localhost", organisation=org
-        ).first()
+        hostname = "hub.localhost"
+        hub = HubHomepage.objects.filter(title=hostname, organisation=org).first()
         if not hub:
             logger.info("Creating a hub...")
-            hub = HubHomepage.create_for_user(
-                user=user, hostname="hub.localhost", org=org
-            )
+            hub = HubHomepage.create_for_user(user=user, hostname=hostname, org=org)
 
         hub.puck_json_content = {
             "root": {
@@ -239,6 +237,9 @@ class Command(BaseCommand):
             ),
         ]
         hub.save()
+        site = Site.objects.get(hostname=hostname)
+        site.port = 3000
+        site.save()
 
         pledge_page = HubContentPage.objects.filter(slug="pledge").first()
 
@@ -294,4 +295,4 @@ class Command(BaseCommand):
         }
         pledge_page.save()
 
-        logger.info("Created a hub at http://hub.localhost:3000")
+        logger.info(f"Created a hub at {hostname}:3000")

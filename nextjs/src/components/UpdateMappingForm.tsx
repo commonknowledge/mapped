@@ -1,5 +1,11 @@
 'use client'
 
+import { gql, useQuery } from '@apollo/client'
+import { useAtomValue } from 'jotai'
+import { ArrowRight, Plus, RefreshCcw, X } from 'lucide-react'
+import { FormProvider, useFieldArray, useForm } from 'react-hook-form'
+import { twMerge } from 'tailwind-merge'
+
 import {
   CrmType,
   EnrichmentLayersQuery,
@@ -25,13 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { locationTypeOptions } from '@/data/location'
-import { currentOrganisationIdAtom } from '@/data/organisation'
-import { gql, useQuery } from '@apollo/client'
-import { useAtomValue } from 'jotai'
-import { ArrowRight, Plus, RefreshCcw, X } from 'lucide-react'
-import { FormProvider, useFieldArray, useForm } from 'react-hook-form'
-import { twMerge } from 'tailwind-merge'
+import { locationTypeOptions } from '@/lib/location'
+import { currentOrganisationIdAtom } from '@/lib/organisation'
+
 import { DataSourceFieldLabel } from './DataSourceIcon'
 
 const ENRICHMENT_LAYERS = gql`

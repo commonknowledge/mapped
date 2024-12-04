@@ -1,3 +1,8 @@
+import { useAtomValue } from 'jotai'
+import { ExternalLink } from 'lucide-react'
+import * as React from 'react'
+import { twMerge } from 'tailwind-merge'
+
 import {
   AutoUpdateConfig,
   EnrichmentLayersQuery,
@@ -9,13 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { currentOrganisationIdAtom } from '@/data/organisation'
-import useFuse from '@/hooks/filter'
 import { SourcePath } from '@/lib/data'
-import { useAtomValue } from 'jotai'
-import { ExternalLink } from 'lucide-react'
-import * as React from 'react'
-import { twMerge } from 'tailwind-merge'
+import useFuse from '@/lib/hooks/filter'
+import { currentOrganisationIdAtom } from '@/lib/organisation'
+
 import { CRMSelection } from './CRMButtonItem'
 import { DataSourceFieldLabel, DataSourceIcon } from './DataSourceIcon'
 import { Input } from './ui/input'

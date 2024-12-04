@@ -1,12 +1,14 @@
+import { ErrorBoundary } from '@sentry/nextjs'
+import { format } from 'd3-format'
+import { formatRelative } from 'date-fns'
+import { MessageCircleHeart, MessageCircleWarning } from 'lucide-react'
+
 import {
   BatchJobProgress,
   ProcrastinateJobStatus,
 } from '@/__generated__/graphql'
 import { Progress } from '@/components/ui/progress'
-import { ErrorBoundary } from '@sentry/nextjs'
-import { format } from 'd3-format'
-import { formatRelative } from 'date-fns'
-import { MessageCircleHeart, MessageCircleWarning } from 'lucide-react'
+
 import { LoadingIcon } from './ui/loadingIcon'
 
 export function BatchJobProgressReport({

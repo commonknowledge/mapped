@@ -1,7 +1,8 @@
-import { PublicUserQuery } from '@/__generated__/graphql'
-import { getClient } from '@/services/apollo-client'
 import { gql } from '@apollo/client'
 import { redirect } from 'next/navigation'
+
+import { PublicUserQuery } from '@/__generated__/graphql'
+import { getClient } from '@/lib/services/apollo-client'
 
 const USER_QUERY = gql`
   query PublicUser {

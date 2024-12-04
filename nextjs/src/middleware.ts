@@ -1,5 +1,6 @@
 import type { NextMiddleware } from 'next/server'
 import { NextResponse } from 'next/server'
+
 import { FRONTEND_HOSTNAME } from './env'
 
 export const config = {
