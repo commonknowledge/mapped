@@ -45,7 +45,7 @@ export default function ReportPage() {
         <div className="w-full h-full pointer-events-auto">
           <ReportMap />
         </div>
-        <aside className="absolute top-0 left-0 p-5 w-[200px] h-full pointer-events-auto">
+        <aside className="absolute top-0 left-0 p-5 w-60 h-full pointer-events-auto">
           <LayersCard />
         </aside>
         {report?.data?.mapReport && isConstituencyPanelOpen && (

@@ -52,12 +52,12 @@ const LayersCard: React.FC = () => {
 
   return (
     <div className="flex flex-col items-start gap-4 max-h-full">
-      <Card className="w-[200px] p-3 bg-white border-1 border-meepGray-700 text-meepGray-800">
+      <Card className="p-3 bg-white border-1 border-meepGray-700 text-meepGray-800 w-60">
         <CardHeader className="flex flex-row items-start">
           <>
             <CardTitle
               id="nickname"
-              className="text-hMd grow font-IBMPlexSansMedium"
+              className="text-hMd grow font-IBMPlexSansMedium leading-tight w-full line-clamp-2"
               {...contentEditableMutation(
                 updateReport,
                 'name',
@@ -70,26 +70,17 @@ const LayersCard: React.FC = () => {
           </>
         </CardHeader>
         {report?.data?.mapReport && (
-          <CardContent className="mt-4 grid grid-cols-1 gap-2">
+          <CardContent className="mt-4 grid grid-cols-1 gap-2 pt-3 border-t border-meepGray-200">
             {toggles.map(({ icon: Icon, label, enabled, toggle }) => (
               <div
                 key={label}
-                className="hover:bg-meepGray-100 px-0 flex flex-row gap-2 items-center overflow-hidden text-nowrap text-ellipsis cursor-pointer"
+                className={twMerge(
+                  'hover:bg-meepGray-100 rounded px-0 flex flex-row gap-2 items-center p-2 cursor-pointer',
+                  enabled && 'bg-meepGray-200'
+                )}
                 onClick={toggle}
               >
-                <div
-                  className={twMerge(
-                    'relative rounded inline-block h-9 w-9',
-                    enabled ? 'bg-meepGray-800' : 'bg-meepGray-100'
-                  )}
-                >
-                  <Icon
-                    className={twMerge(
-                      'w-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-                      enabled && 'text-white'
-                    )}
-                  />
-                </div>
+                <Icon className="w-4" />
                 {label}
               </div>
             ))}

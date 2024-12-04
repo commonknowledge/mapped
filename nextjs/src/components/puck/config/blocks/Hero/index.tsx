@@ -106,11 +106,6 @@ function HeroRenderer({ prompt, description }: HeroProps) {
                 <PuckText text={prompt} />
               </div>
             </div>
-            {/* <div className="grid grid-flow-row sm:grid-flow-col gap-4 justify-stretch">
-              <Link href="/map" className='bg-hub-primary-600 text-white text-lg rounded-md p-2 no-underline text-center hover:bg-hub-primary-700 focus:bg-hub-primary-700'>
-                Pledge to take part
-              </Link>
-            </div> */}
           </div>
         </div>
       </div>

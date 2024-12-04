@@ -35,7 +35,7 @@ import MarkerPopup from './MarkerPopup'
 
 export const MAX_REGION_ZOOM = 8
 export const MAX_CONSTITUENCY_ZOOM = 10
-export const MIN_MEMBERS_ZOOM = 12
+export const MIN_MEMBERS_ZOOM = 7
 
 const viewStateAtom = atom<Partial<ViewState>>({
   longitude: -2.296605,
