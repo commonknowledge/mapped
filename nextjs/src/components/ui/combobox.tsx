@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils'
 
 export function Combobox({
   options,
-  label = 'option',
+  label = 'constituency',
   value,
   setValue,
 }: {
@@ -31,32 +31,59 @@ export function Combobox({
 }) {
   const [open, setOpen] = React.useState(false)
 
+
+  React.useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setOpen((open) => !open)
+      }
+    }
+    document.addEventListener("keydown", down)
+    return () => document.removeEventListener("keydown", down)
+  }, [])
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant="default"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between"
+          className="w-full justify-between bg-meepGray-700"
         >
-          {value
-            ? options.find((option) => option.value === value)?.label
-            : `Select ${label}...`}
+          {
+            value
+              ? options.find((option) => option.value === value)?.label
+              : `Select ${label}...`
+          }
+          {/* {value.label} */}
+
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
+      <PopoverContent className="w-[300px] p-0" align="start">
         <Command>
-          <CommandInput placeholder={`Search ${label}...`} />
+          <CommandInput
+            placeholder={`Search ${label}...`}
+            onValueChange={(search) => {
+              console.log('Search term:', search);
+              console.log('Available options:', options.map(o => ({
+                value: o.value.toLowerCase(),
+                label: o.label.toLowerCase(),
+                matches: o.value.toLowerCase().includes(search.toLowerCase()) ||
+                  o.label.toLowerCase().includes(search.toLowerCase())
+              })));
+            }}
+          />
           <CommandEmpty>No {label} found.</CommandEmpty>
           <CommandGroup>
             {options.map((option) => (
               <CommandItem
                 key={option.value}
-                value={option.value}
-                onSelect={(currentValue: string) => {
-                  setValue(currentValue === value ? '' : currentValue)
+                value={`${option.label.toLowerCase()} ${option.value.toLowerCase()}`}
+                onSelect={(currentValue) => {
+                  setValue(value === option.value ? '' : option.value)
                   setOpen(false)
                 }}
               >

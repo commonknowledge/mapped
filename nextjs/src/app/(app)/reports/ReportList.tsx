@@ -20,6 +20,7 @@ import { currentOrganisationIdAtom } from '@/data/organisation'
 import { FetchResult, gql, useApolloClient, useQuery } from '@apollo/client'
 import { formatRelative } from 'date-fns'
 import { useAtomValue } from 'jotai'
+import { Map } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -73,7 +74,7 @@ export default function ReportList() {
               (a, b) =>
                 b.lastUpdate && a.lastUpdate
                   ? new Date(b.lastUpdate).getTime() -
-                    new Date(a.lastUpdate).getTime()
+                  new Date(a.lastUpdate).getTime()
                   : 0
             )
             .map((report) => <ReportCard key={report.id} report={report} />)}
@@ -100,25 +101,26 @@ export function ReportCard({
 }) {
   return (
     <Link href={`/reports/${report.id}`}>
-      <Card>
-        <CardHeader>
-          <CardContent>
-            <Image
+      <Card className="hover:bg-meepGray-700 transition-colors duration-200">
+        <CardHeader className=" p-4">
+          <CardContent className="">
+            <Map className="w-4 text-brandBlue" />
+            {/* <Image
               src="/reports_page_card_image.png"
               alt="Description of the image"
               width={300}
               height={300}
               className="w-auto"
-            />
+            /> */}
           </CardContent>
-          <CardTitle className="mb-1 px-5 pt-4">{report.name}</CardTitle>
-          <CardDescription className="text-sm text-meepGray-400 px-5 pb-5">
-            Last edited{' '}
-            <span className="text-meepGray-300">
-              {formatRelative(report.lastUpdate, new Date())}
-            </span>
-          </CardDescription>
+          <CardTitle className="mb-1 ">{report.name}</CardTitle>
         </CardHeader>
+        <CardDescription className="text-sm text-meepGray-400 px-5 pb-5">
+          Last edited{' '}
+          <span className="text-meepGray-300">
+            {formatRelative(report.lastUpdate, new Date())}
+          </span>
+        </CardDescription>
       </Card>
     </Link>
   )

@@ -26,8 +26,13 @@ export function ConstituenciesPanel() {
   }, [selectedConstituencyId, setTab])
 
   return (
-    <Card className="pt-4 bg-meepGray-800 border-1 text-meepGray-200 border border-meepGray-700 max-h-full flex flex-col pointer-events-auto">
-      <Tabs
+    <Card className=" bg-meepGray-800 border-1 text-meepGray-200 border border-meepGray-700 max-h-full flex flex-col pointer-events-auto">
+      <div className="p-4">
+
+        <TopConstituencies />
+      </div>
+
+      {/* <Tabs
         value={tab}
         onValueChange={setTab}
         className="flex flex-col max-h-full overflow-hidden items-start justify-start"
@@ -38,7 +43,6 @@ export function ConstituenciesPanel() {
             <TabsTrigger value="selected">Selected</TabsTrigger>
           )}
         </TabsList>
-        {/* Don't stretch, grow at most to height of window, scroll internally */}
         <div className="overflow-y-auto max-h-full px-4 w-full">
           <TabsContent value="list" className="pb-4">
             <TopConstituencies />
@@ -52,7 +56,7 @@ export function ConstituenciesPanel() {
             </TabsContent>
           )}
         </div>
-      </Tabs>
+      </Tabs> */}
     </Card>
   )
 }

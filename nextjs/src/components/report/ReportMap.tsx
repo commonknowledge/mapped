@@ -38,7 +38,7 @@ import Map, { Layer, LayerProps, Popup, Source, ViewState } from 'react-map-gl'
 
 const MAX_REGION_ZOOM = 8
 export const MAX_CONSTITUENCY_ZOOM = 10
-const MIN_MEMBERS_ZOOM = 12
+const MIN_MEMBERS_ZOOM = 7
 
 const viewStateAtom = atom<Partial<ViewState>>({
   longitude: -2.296605,
@@ -191,7 +191,7 @@ export function ReportMap() {
   // Unless someone explicitly sets 2019 constituency, default to 2024 when zooming in
   const constituencyTileset =
     displayOptions.analyticalAreaType ===
-    AnalyticalAreaType.ParliamentaryConstituency
+      AnalyticalAreaType.ParliamentaryConstituency
       ? TILESETS.constituencies
       : TILESETS.constituencies2024
 
@@ -624,28 +624,28 @@ export function ReportMap() {
                       <div className="font-IBMPlexMono p-2 space-y-1 bg-white">
                         {!!selectedPointData?.importedDataGeojsonPoint
                           ?.properties?.name && (
-                          <div className="-space-y-1">
-                            <div className="text-meepGray-400">NAME</div>
-                            <div>
-                              {
-                                selectedPointData?.importedDataGeojsonPoint
-                                  .properties.name
-                              }
+                            <div className="-space-y-1">
+                              <div className="text-meepGray-400">NAME</div>
+                              <div>
+                                {
+                                  selectedPointData?.importedDataGeojsonPoint
+                                    .properties.name
+                                }
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                         {!!selectedPointData?.importedDataGeojsonPoint
                           ?.properties?.postcodeData?.postcode && (
-                          <div className="-space-y-1">
-                            <div className="text-meepGray-400">POSTCODE</div>
-                            <pre>
-                              {
-                                selectedPointData?.importedDataGeojsonPoint
-                                  .properties.postcodeData.postcode
-                              }
-                            </pre>
-                          </div>
-                        )}
+                            <div className="-space-y-1">
+                              <div className="text-meepGray-400">POSTCODE</div>
+                              <pre>
+                                {
+                                  selectedPointData?.importedDataGeojsonPoint
+                                    .properties.postcodeData.postcode
+                                }
+                              </pre>
+                            </div>
+                          )}
                       </div>
                       {(analytics.data?.mapReport.layers.length || 0) > 1 && (
                         <footer className="pb-2 px-2 text-meepGray-400 font-IBMPlexMono text-xs">
@@ -660,40 +660,40 @@ export function ReportMap() {
                       <footer className="flex-divide-x bg-meepGray-200 text-meepGray-500 flex flex-row justify-around w-full py-1 px-2 text-center">
                         {!!selectedPointData?.importedDataGeojsonPoint
                           ?.properties?.phone && (
-                          <a
-                            href={`tel:${selectedPointData?.importedDataGeojsonPoint?.properties?.phone}`}
-                            target="_blank"
-                          >
-                            Call
-                          </a>
-                        )}
+                            <a
+                              href={`tel:${selectedPointData?.importedDataGeojsonPoint?.properties?.phone}`}
+                              target="_blank"
+                            >
+                              Call
+                            </a>
+                          )}
                         {!!selectedPointData?.importedDataGeojsonPoint
                           ?.properties?.phone && (
-                          <a
-                            href={`sms:${selectedPointData?.importedDataGeojsonPoint?.properties?.phone}`}
-                            target="_blank"
-                          >
-                            SMS
-                          </a>
-                        )}
+                            <a
+                              href={`sms:${selectedPointData?.importedDataGeojsonPoint?.properties?.phone}`}
+                              target="_blank"
+                            >
+                              SMS
+                            </a>
+                          )}
                         {!!selectedPointData?.importedDataGeojsonPoint
                           ?.properties?.email && (
-                          <a
-                            href={`mailto:${selectedPointData?.importedDataGeojsonPoint?.properties.email}`}
-                            target="_blank"
-                          >
-                            Email
-                          </a>
-                        )}
+                            <a
+                              href={`mailto:${selectedPointData?.importedDataGeojsonPoint?.properties.email}`}
+                              target="_blank"
+                            >
+                              Email
+                            </a>
+                          )}
                         {!!selectedPointData?.importedDataGeojsonPoint
                           ?.properties?.remoteUrl && (
-                          <a
-                            href={`${selectedPointData?.importedDataGeojsonPoint?.properties?.remoteUrl}`}
-                            target="_blank"
-                          >
-                            Link
-                          </a>
-                        )}
+                            <a
+                              href={`${selectedPointData?.importedDataGeojsonPoint?.properties?.remoteUrl}`}
+                              target="_blank"
+                            >
+                              Link
+                            </a>
+                          )}
                       </footer>
                     </>
                   )}
@@ -781,12 +781,12 @@ function ExternalDataSourcePointMarkers({
             minzoom={MIN_MEMBERS_ZOOM}
             {...(selectedSourceMarker?.properties?.id
               ? {
-                  filter: [
-                    '!=',
-                    selectedSourceMarker?.properties?.id,
-                    ['get', 'id'],
-                  ],
-                }
+                filter: [
+                  '!=',
+                  selectedSourceMarker?.properties?.id,
+                  ['get', 'id'],
+                ],
+              }
               : {})}
           />
         ) : (
@@ -803,12 +803,12 @@ function ExternalDataSourcePointMarkers({
             minzoom={MIN_MEMBERS_ZOOM}
             {...(selectedSourceMarker?.properties?.id
               ? {
-                  filter: [
-                    '!=',
-                    selectedSourceMarker?.properties?.id,
-                    ['get', 'id'],
-                  ],
-                }
+                filter: [
+                  '!=',
+                  selectedSourceMarker?.properties?.id,
+                  ['get', 'id'],
+                ],
+              }
               : {})}
           />
         )}

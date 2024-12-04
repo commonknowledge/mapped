@@ -274,9 +274,9 @@ function ReportPage() {
           <ReportMap />
         </div>
         {/* Layer card */}
-        <aside className="absolute top-0 left-0 p-5 w-60 h-full pointer-events-auto">
+        <aside className="absolute top-0 left-0 p-5 w-60  h-full pointer-events-auto">
           <div className="flex flex-col items-start gap-4 max-h-full">
-            <Card className="min-w-60 p-3 bg-white border-1 border-meepGray-700 text-meepGray-800">
+            <Card className=" p-3 bg-white border-1 border-meepGray-700 text-meepGray-800 w-60">
               <CardHeader className="flex flex-row items-start">
                 {report?.loading && !report?.data?.mapReport ? (
                   <CardTitle className="text-hMd grow font-IBMPlexSansMedium">
@@ -286,7 +286,7 @@ function ReportPage() {
                   <>
                     <CardTitle
                       id="nickname"
-                      className="text-hMd grow font-IBMPlexSansMedium leading-tight"
+                      className="text-hMd grow font-IBMPlexSansMedium leading-tight w-full line-clamp-2"
                       {...contentEditableMutation(
                         updateReport,
                         'name',
@@ -295,50 +295,32 @@ function ReportPage() {
                     >
                       {report?.data?.mapReport.name}
                     </CardTitle>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <MoreVertical className="w-3" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent side="right" align="start">
-                        {report?.data?.mapReport && (
-                          <DropdownMenuItem onClick={refreshReportDataQueries}>
-                            <RefreshCcw className="w-4 mr-2" />
-                            Refresh
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                          onClick={() => setDeleteOpen(true)}
-                          className="text-red-400"
-                        >
-                          <Trash className="w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+
+                    {renderDropdownMenu(
+                      report?.data?.mapReport,
+                      refreshReportDataQueries,
+                      setDeleteOpen
+                    )}
                   </>
                 )}
               </CardHeader>
               {report?.data?.mapReport && (
-                <CardContent className="mt-4 grid grid-cols-1 gap-2">
+                <CardContent className="mt-4 grid grid-cols-1 gap-2 pt-3 border-t border-meepGray-200">
                   {toggles.map(({ icon: Icon, label, enabled, toggle }) => (
                     <div
                       key={label}
-                      className="hover:bg-meepGray-100 px-0 flex flex-row gap-2 items-center overflow-hidden text-nowrap text-ellipsis cursor-pointer"
+                      className={twMerge(
+                        'hover:bg-meepGray-100 rounded px-0 flex flex-row gap-2 items-center p-2 cursor-pointer',
+                        enabled && 'bg-meepGray-200 '
+                      )}
                       onClick={toggle}
                     >
-                      <div
-                        className={twMerge(
-                          'relative rounded inline-block h-9 w-9',
-                          enabled ? 'bg-meepGray-800' : 'bg-meepGray-100'
-                        )}
-                      >
-                        <Icon
-                          className={twMerge(
-                            'w-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-                            enabled && 'text-white'
-                          )}
-                        />
-                      </div>
+
+                      <Icon
+                        className=
+                        'w-4 '
+
+                      />
                       {label}
                     </div>
                   ))}
@@ -382,6 +364,35 @@ function ReportPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  )
+}
+
+function renderDropdownMenu(
+  report: GetMapReportQuery['mapReport'] | undefined,
+  refreshReportDataQueries: () => void,
+  setDeleteOpen: (open: boolean) => void
+) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <MoreVertical className="w-3" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="right" align="start">
+        {report && (
+          <DropdownMenuItem onClick={refreshReportDataQueries}>
+            <RefreshCcw className="w-4 mr-2" />
+            Refresh
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          onClick={() => setDeleteOpen(true)}
+          className="text-red-400"
+        >
+          <Trash className="w-4 mr-2" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
