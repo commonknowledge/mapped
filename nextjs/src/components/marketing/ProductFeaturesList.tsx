@@ -1,4 +1,4 @@
-import { Layers, Repeat } from 'lucide-react'
+import { MapIcon, Repeat, Database, Layers } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -10,24 +10,25 @@ import {
 } from '@/components/ui/card'
 
 import Pin from '../Pin'
+import TemplateCard from './TemplateCard'
 
 export default function ProductFeaturesList() {
   const productFeatures = {
     mapping: {
       key: 'mapping',
       name: 'Mapping',
-      icon: Layers,
+      icon: MapIcon,
       screenshot: '/airtable-screenshot.png',
       link: '/features/member-maps',
-      description: 'test',
+      description: 'See where your members are and reach them easily using our mapping tool. Configure your map to show the constituencies, wards, or other areas that are important to your campaign.',
     },
     dataEnrichment: {
       key: 'dataEnrichment',
       name: 'Data Enrichment',
-      icon: Layers,
+      icon: Database,
       screenshot: '/airtable-screenshot.png',
       link: '/features/data-enrichment',
-      description: 'test',
+      description: 'Unlock new insights for your campaign through exploring data using our data enrichment tool. We use a range of open data sources to enrich your data and provide you with a range of insights.',
     },
     dataSync: {
       key: 'dataSync',
@@ -35,82 +36,26 @@ export default function ProductFeaturesList() {
       icon: Repeat,
       screenshot: '/airtable-screenshot.png',
       link: '/features/crm-sync',
-      description: 'test',
+      description: 'Upgrade your workflow by seamlessly integrating mapped your chosen CRM. No need to manually copy data between systems. Use Mapped to power your organising.',
     },
   }
 
   return (
-    <div className="grid md:grid-cols-3 grid-cols-1 gap-4 ">
-      <Link href="/features/member-maps">
-        <Card className="bg-meepGray-800 border-meepGray-700 hover:bg-meepGray-700 transition h-full ">
-          <div className="block p-4">
-            <CardTitle className="mb-3 inline-flex gap-2 px-3 py-2 bg-meepGray-600 rounded-lg items-center">
-              <Pin />
-
-              <p className="">Mapping</p>
-            </CardTitle>
-            <CardDescription className="text-sm text-meepGray-400">
-              Visualise your members geographically to help plan your campaigns.
-            </CardDescription>
-          </div>
-          <CardContent>
-            <Image
-              src="/feature-mapping-thumbnail.png"
-              alt="test"
-              width="0"
-              height="0"
-              sizes="100vw"
-              className="w-full h-auto rounded-lg"
-            />
-          </CardContent>
-        </Card>
-      </Link>
-      <Link href="/features/data-enrichment">
-        <Card className="bg-meepGray-800 border-meepGray-700 hover:bg-meepGray-700 transition h-full ">
-          <div className="block p-4">
-            <CardTitle className="mb-3 inline-flex gap-2 px-3 py-2 bg-meepGray-600 rounded-lg items-center">
-              <Layers color="#678DE3" className="w-4" />
-              <p>Data Enrichment</p>
-            </CardTitle>
-            <CardDescription className="text-sm text-meepGray-400">
-              Overlay your membership list with useful contextual data.
-            </CardDescription>
-          </div>
-          <CardContent>
-            <Image
-              src="/feature-data-enrichment-thumbnail.png"
-              alt="test"
-              width="0"
-              height="0"
-              sizes="100vw"
-              className="w-full h-auto rounded-lg"
-            />
-          </CardContent>
-        </Card>
-      </Link>
-      <Link href="/features/crm-sync">
-        <Card className="bg-meepGray-800 border-meepGray-700 hover:bg-meepGray-700 transition h-full ">
-          <div className="block p-4">
-            <CardTitle className="mb-3 inline-flex gap-2 px-3 py-2 bg-meepGray-600 rounded-lg items-center">
-              <Repeat className="w-4" color="#678DE3" />
-              <p className="">CRM Sync</p>
-            </CardTitle>
-            <CardDescription className="text-sm text-meepGray-400">
-              Instantly sync data between Mapped and your CRM.
-            </CardDescription>
-          </div>
-          <CardContent>
-            <Image
-              src="/feature-crm-sync-thumbnail.png"
-              alt="test"
-              width="0"
-              height="0"
-              sizes="100vw"
-              className="w-full h-auto rounded-lg"
-            />
-          </CardContent>
-        </Card>
-      </Link>
-    </div>
+    <section className="flex flex-col gap-4">
+      <h2 className="col-span-3 text-lg uppercase font-light font-IBMPlexMono text-meepGray-400 mx-auto mb-4">
+        Features
+      </h2>
+      <div className="grid md:grid-cols-3 grid-cols-1 gap-4">
+        {Object.values(productFeatures).map((feature) => (
+          <TemplateCard
+            highlighted={true}
+            heading={feature.name}
+            description={feature.description}
+            link={feature.link}
+            icon={<feature.icon />}
+          />
+        ))}
+      </div>
+    </section>
   )
 }

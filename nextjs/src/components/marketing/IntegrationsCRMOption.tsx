@@ -12,6 +12,7 @@ import {
 import { externalDataSourceOptions } from '@/lib/data'
 
 import { MappedLogo } from '../logos/MappedLogo'
+import GetStartedNew from './GetStartedNew'
 
 interface IntegrationsCRMOptionProps {
   crmPlatform: string
@@ -39,7 +40,7 @@ const IntegrationsCRMOption: React.FC<IntegrationsCRMOptionProps> = ({
   // Access the CRM platform details based on the provided crmPlatform string
   const thisCRMPlatform =
     externalDataSourceOptions[
-      crmPlatform as keyof typeof externalDataSourceOptions
+    crmPlatform as keyof typeof externalDataSourceOptions
     ]
 
   if (!thisCRMPlatform) {
@@ -171,7 +172,7 @@ const IntegrationsCRMOption: React.FC<IntegrationsCRMOptionProps> = ({
           </div>
         </div>
       </div>
-      <GetStarted />
+      <GetStartedNew />
     </>
   )
 }

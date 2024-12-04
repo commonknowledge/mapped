@@ -4,44 +4,51 @@ import React from 'react'
 import TemplateTextBlock from '@/components/marketing/TemplateTextBlock'
 import { Card, CardContent } from '@/components/ui/card'
 import { externalDataSourceOptions } from '@/lib/data'
+import TemplateCard from './TemplateCard'
+import { PlusIcon } from 'lucide-react'
 
-interface IntegrateProps {}
+interface IntegrateProps { }
 
-const crmSync: { title: string; href: string; description: string }[] = [
+const crmSync: { title: string; href: string; description: string, icon: React.ReactNode, supported: boolean }[] = [
   ...Object.values(externalDataSourceOptions).map((d) => ({
     title: d.name,
     href: `/integrations/${d.key}`,
     description: d.name,
+    icon: d.icon ? <d.icon /> : null,
+    supported: d.supported,
   })),
   {
     title: "Don't see your CRM?",
     href: 'mailto:hello@commonknowledge.coop',
     description: 'Make a request',
+    icon: <PlusIcon />,
+    supported: false,
   },
 ]
 
 const Integrate: React.FC<IntegrateProps> = () => {
   return (
-    <Card className="w-full grid lg:grid-cols-2 grid-cols-1 drop-shadow">
-      <div className="flex items-center lg:order-1">
+    <>
+      <section className="flex flex-col gap-4">
         <TemplateTextBlock
-          labelHeading="Integrate"
+          labelHeading="Integrate your data"
+          center={true}
           heading="Augment your CRM"
           description="Mapped liberates your membership data from static, siloed and opaque CRMs by augmenting them with contextual information, geographic data and historical electoral data. Now you can look for insights and develop your strategy with confidence."
         />
-      </div>
-      <CardContent className="p-8 flex place-content-center">
-        <div className="grid md:grid-cols-3 grid-cols-2 gap-3 md:p-6">
+        <div className="grid md:grid-cols-3 grid-cols-1 gap-4">
           {crmSync.map((component) => (
-            <Link href={component.href} key={component.href}>
-              <Card className="p-6 h-full place-content-center text-center bg-meepGray-700 hover:bg-meepGray-600">
-                {component.title}
-              </Card>
-            </Link>
+            <TemplateCard
+              highlighted={true}
+              heading={component.title}
+              description={component.supported ? 'Supported' : 'Make a request'}
+              link={component.href}
+              icon={component.icon}
+            />
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </section>
+    </>
   )
 }
 

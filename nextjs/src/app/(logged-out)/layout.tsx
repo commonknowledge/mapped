@@ -17,7 +17,7 @@ export default async function Layout({
   const isLoggedIn = Boolean(user)
 
   return (
-    <div className="flex flex-col min-h-dvh">
+    <div className="flex flex-col min-h-dvh max-w-screen-2xl mx-auto">
       <AreaPattern />
       <FeedbackBanner />
       <Navbar isLoggedIn={isLoggedIn} />

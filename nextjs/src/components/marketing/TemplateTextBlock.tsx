@@ -23,7 +23,7 @@ const TemplateTextBlock: React.FC<TemplateTextBlock> = ({
   return center ? (
     <div className="flex flex-col gap-2 shrink items-center p-10 pr-14 text-center">
       {labelHeading ? (
-        <p className="text-meepGray-200 text-labelXlg">{labelHeading}</p>
+        <p className="col-span-3 text-lg uppercase font-light font-IBMPlexMono text-meepGray-400 mx-auto">{labelHeading}</p>
       ) : null}
       <h1 className="text-hLg font-IBMPlexSansCondensed mb-10 text-white">
         {heading}

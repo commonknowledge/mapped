@@ -19,6 +19,8 @@ interface TemplateCardProps {
   labels?: ReactNode
   highlighted: boolean // Add highlighted prop
   isExternalLink?: boolean
+  icon?: ReactNode
+  className?: string
 }
 
 const TemplateCard: React.FC<TemplateCardProps> = ({
@@ -29,19 +31,22 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
   tag,
   highlighted,
   labels,
+  icon,
+  className,
 }) => {
   return (
     <>
       <Link href={link}>
         <Card
-          className={`${highlighted ? 'bg-meepGray-700 border-meepGray-600 hover:bg-meepGray-600 transition' : 'hover:bg-meepGray-700 transition'} p-6 h-full`}
+          className={`${highlighted ? 'bg-meepGray-700 border-meepGray-600 hover:bg-meepGray-600 transition' : 'hover:bg-meepGray-700 transition'} p-6 h-full ${className}`}
         >
           <CardHeader>
-            <CardTitle className="mb-3 flex gap-2 items-start">
+            <CardTitle className="mb-3 flex gap-2 items-center">
+              {icon ? <div className="text-meepGray-400 w-6 h-6">{icon}</div> : null}
               <p className="flex-grow">{heading}</p>
               {isExternalLink ? <ExternalLink className="w-4 h-4" /> : null}
             </CardTitle>
-            <CardDescription className="text-sm text-meepGray-400 line-clamp-4">
+            <CardDescription className="text-md text-meepGray-400 line-clamp-4">
               {description}
             </CardDescription>
             <div className="pt-4">{labels}</div>
