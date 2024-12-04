@@ -14,7 +14,7 @@ import {
   Person,
 } from '@/components/reportsConstituencyItem'
 import { Button } from '@/components/ui/button'
-import { Combobox } from '@/components/ui/combobox'
+import { Combobox } from '@/components/ui/ConsComboBox'
 import { LoadingIcon } from '@/components/ui/loadingIcon'
 import {
   Select,

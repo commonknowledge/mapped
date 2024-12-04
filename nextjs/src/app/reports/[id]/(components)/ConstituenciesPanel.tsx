@@ -30,7 +30,7 @@ export function ConstituenciesPanel() {
 
   return (
     <Card className=" bg-meepGray-800 border-1 text-meepGray-200 border border-meepGray-700 max-h-full flex flex-col pointer-events-auto">
-      <div className="p-4">
+      <div>
         <TopConstituencies />
       </div>
     </Card>
