@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowLeftIcon, Check, ChevronsUpDown, Layers, X } from 'lucide-react'
+import { ArrowLeftIcon, Layers, X } from 'lucide-react'
 
 import {
   constituencyPanelTabAtom,
@@ -98,15 +98,16 @@ export function TopConstituencies() {
   }
 
   return (
-
     <div className="flex flex-col">
-      <div className='p-4 flex flex-col gap-2 pb-2 border-b border-meepGray-600 bg-meepGray-600'>
+      <div className="p-4 flex flex-col gap-2 pb-2 border-b border-meepGray-600 bg-meepGray-600">
         <div className="flex flex-row gap-4">
           <Combobox
-            options={constituencies?.map(c => ({
-              label: c.label!,
-              value: c.gss!
-            })) || []}
+            options={
+              constituencies?.map((c) => ({
+                label: c.label!,
+                value: c.gss!,
+              })) || []
+            }
             setValue={(value) => {
               setSelectedConstituency(value)
               comboboxMapFitBounds(value)
@@ -138,29 +139,18 @@ export function TopConstituencies() {
                 ))}
               </SelectContent>
             </Select>
-<<<<<<< HEAD:nextjs/src/app/reports/[id]/(components)/TopConstituencies.tsx
-          </>
-        )}
-        {selectedConstituency && (
-          <Button
-            variant="link"
-            className="h-7 text-xs gap-1 px-0 "
-            onClick={() => setSelectedConstituency('')}
-          >
-            <X className="w-4 h-4" />
-            Show all
-          </Button>
-        )}
-=======
           )}
           {selectedConstituency && (
-            <Button variant="link" className="h-7 text-xs gap-1 px-0 " onClick={() => setSelectedConstituency('')}>
+            <Button
+              variant="link"
+              className="h-7 text-xs gap-1 px-0 "
+              onClick={() => setSelectedConstituency('')}
+            >
               <X className="w-4 h-4" />
               Show all
             </Button>
           )}
         </div>
->>>>>>> origin/ui-clean-up/sidebar:nextjs/src/components/TopConstituencies.tsx
       </div>
       {constituencies?.length === 0 ? (
         <div className="text-left p-4 text-meepGray-300 flex items-center gap-2 bg-meepGray-700 rounded-lg">
