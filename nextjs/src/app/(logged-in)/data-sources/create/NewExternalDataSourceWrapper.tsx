@@ -54,7 +54,7 @@ export default function NewExternalDataSourceWrapper({
                 step > 3 ? 'completed' : step === 3 ? 'active' : 'disabled'
               }
             >
-              Select data layers
+              Select data sources
             </Step>
             <Step number={4} state={step === 4 ? 'active' : 'disabled'}>
               Activate sync

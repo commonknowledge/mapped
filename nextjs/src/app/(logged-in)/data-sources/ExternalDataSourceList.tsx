@@ -96,7 +96,7 @@ export default function ExternalDataSourceList() {
       <PageHeader />
       <div className="border-b border-meepGray-700 pt-10" />
       <header className="flex flex-row justify-end">
-        <h2 className="text-hMd mr-auto">Membership data sources</h2>
+        <h2 className="text-hMd mr-auto">Membership lists</h2>
       </header>
       <p className="text-meepGray-400">
         Add your membership lists here. You will then be able to:

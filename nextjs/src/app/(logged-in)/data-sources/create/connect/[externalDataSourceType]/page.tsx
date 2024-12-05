@@ -47,6 +47,7 @@ import {
 import { locationTypeOptions } from '@/lib/location'
 import { currentOrganisationIdAtom } from '@/lib/organisation'
 import { toastPromise } from '@/lib/toast'
+import { formatCrmNames } from '@/lib/utils'
 
 import { CreateAutoUpdateFormContext } from '../../NewExternalDataSourceWrapper'
 
@@ -734,8 +735,9 @@ export default function Page({
       <div className="space-y-6">
         <h1 className="text-hLg">Testing connection...</h1>
         <p className="text-meepGray-400 max-w-lg">
-          Please wait whilst we try to connect to your CRM using the information
-          you provided
+          Please wait whilst we try to connect to your{' '}
+          {formatCrmNames(externalDataSourceType || 'CRM')} using the
+          information you provided
         </p>
         <LoadingIcon />
       </div>
@@ -982,8 +984,13 @@ export default function Page({
       </div>
     )
   }
-
   if (externalDataSourceType === 'actionnetwork') {
+    const groupSlug = form.watch('actionnetwork.groupSlug')
+    const actionNetworkApiUrl = groupSlug
+      ? `https://actionnetwork.org/groups/${groupSlug}/apis`
+      : ''
+    const showApiKeyField = !!groupSlug
+
     return (
       <div className="space-y-7">
         <header>
@@ -992,7 +999,7 @@ export default function Page({
           </h1>
           <p className="mt-6 text-meepGray-400 max-w-lg">
             In order to send data across to your Action Network instance, we
-            {"'"}ll need a few details that gives us permission to make updates
+            {"'"}ll need a few details that give us permission to make updates
             to your members.
           </p>
         </header>
@@ -1024,33 +1031,35 @@ export default function Page({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="actionnetwork.apiKey"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Action Network API key</FormLabel>
-                  <FormControl>
-                    {/* @ts-ignore */}
-                    <Input placeholder="52b...bce" {...field} required />
-                  </FormControl>
-                  <FormDescription>
-                    Your API keys and sync features can be managed from the{' '}
-                    {'"'}API & Sync{'"'} link available in the {'"'}Start
-                    Organizing{'"'} menu.
-                    <a
-                      className="underline"
-                      target="_blank"
-                      href="https://actionnetwork.org/docs/"
-                    >
-                      Read more.
-                    </a>
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+            {groupSlug && (
+              <p className="text-meepGray-400">
+                Use the following link to access your API key settings:
+                <a
+                  href={actionNetworkApiUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline ml-2"
+                >
+                  {actionNetworkApiUrl}
+                </a>
+              </p>
+            )}
+            {showApiKeyField && (
+              <FormField
+                control={form.control}
+                name="actionnetwork.apiKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Action Network API key</FormLabel>
+                    <FormControl>
+                      {/* @ts-ignore */}
+                      <Input placeholder="52b...bce" {...field} required />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <div className="flex flex-row gap-x-4">
               <Button
                 variant="outline"
@@ -1074,7 +1083,6 @@ export default function Page({
       </div>
     )
   }
-
   if (externalDataSourceType === 'editablegooglesheets') {
     const redirectSuccessUrl = form.watch(
       'editablegooglesheets.redirectSuccessUrl'
