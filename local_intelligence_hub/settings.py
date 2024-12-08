@@ -104,7 +104,7 @@ env = environ.Env(
 
 environ.Env.read_env(BASE_DIR / ".env")
 
-environment = env("ENVIRONMENT")
+ENVIRONMENT = env("ENVIRONMENT")
 
 # Should be alphanumeric
 CRYPTOGRAPHY_KEY = env("CRYPTOGRAPHY_KEY")
@@ -125,18 +125,18 @@ ELECTORAL_COMMISSION_API_KEY = env("ELECTORAL_COMMISSION_API_KEY")
 # Urls
 FRONTEND_BASE_URL = (
     env("FRONTEND_BASE_URL")
-    if environment != "production"
+    if ENVIRONMENT != "production"
     else env("PROD_FRONTEND_BASE_URL")
 )
-BACKEND_URL = env("BASE_URL") if environment != "production" else env("PROD_BASE_URL")
+BACKEND_URL = env("BASE_URL") if ENVIRONMENT != "production" else env("PROD_BASE_URL")
 BASE_URL = BACKEND_URL
 # Network security
 ALLOWED_HOSTS = (
-    env("ALLOWED_HOSTS") if environment != "production" else env("PROD_ALLOWED_HOSTS")
+    env("ALLOWED_HOSTS") if ENVIRONMENT != "production" else env("PROD_ALLOWED_HOSTS")
 )
 CORS_ALLOWED_ORIGINS = (
     env("CORS_ALLOWED_ORIGINS")
-    if environment != "production"
+    if ENVIRONMENT != "production"
     else env("PROD_CORS_ALLOWED_ORIGINS")
 )
 if FRONTEND_BASE_URL and FRONTEND_BASE_URL not in CORS_ALLOWED_ORIGINS:
@@ -524,7 +524,7 @@ if env("POSTHOG_HOST") is not False:
     posthog.host = env("POSTHOG_HOST")
 
 # Configure Sentry and HSTS headers only if in production
-if environment == "production":
+if ENVIRONMENT == "production":
     SECURE_HSTS_SECONDS = 600
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
@@ -535,7 +535,7 @@ if environment == "production":
 
         sentry_sdk.init(
             dsn=env("SENTRY_DSN"),
-            environment=environment,
+            environment=ENVIRONMENT,
             integrations=[
                 DjangoIntegration(),
                 StrawberryIntegration(async_execution=True),

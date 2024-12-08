@@ -22,7 +22,7 @@ import {
 } from '@/components/hub/HubRenderContext'
 import { SIDEBAR_WIDTH } from '@/components/hub/data'
 import Root from '@/components/puck/config/root'
-import { useBreakpoint } from '@/lib/hooks/css'
+import { useBreakpoint } from '@/hooks/css'
 
 import { SearchPanel } from './SearchPanel'
 import { GET_EVENT_DATA, GET_HUB_MAP_DATA, GET_LOCAL_DATA } from './queries'

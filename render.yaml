@@ -5,7 +5,7 @@ databases:
 - name: meep-database
   databaseName: meep_database
   user: meep_database_user
-  previewPlan: starter
+  previewPlan: Basic-256mb
   region: frankfurt
   postgresMajorVersion: "16"
 services:
@@ -51,11 +51,13 @@ services:
   buildCommand: poetry install
   startCommand: python manage.py collectstatic --noinput && python manage.py compress
     --force && gunicorn local_intelligence_hub.asgi:application -k uvicorn.workers.UvicornWorker
-  preDeployCommand: python manage.py migrate
-  # Requires the following to be privately added to the MEEP production environment:
+  # Seed requires the following to be privately added to the MEEP production environment:
   # DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_PASSWORD, DJANGO_SUPERUSER_EMAIL
-  # SEED_AIRTABLE_MEMBERLIST_BASE_ID, SEED_AIRTABLE_MEMBERLIST_TABLE_NAME, SEED_AIRTABLE_MEMBERLIST_API_KEY
-  initialDeployHook: python manage.py seed
+  # SEED_AIRTABLE_MEMBERLIST_API_KEY, SEED_AIRTABLE_MEMBERLIST_BASE_ID, SEED_AIRTABLE_MEMBERLIST_TABLE_NAME
+  # SEED_AIRTABLE_PLEDGELIST_API_KEY, SEED_AIRTABLE_PLEDGELIST_BASE_ID, SEED_AIRTABLE_PLEDGELIST_TABLE_NAME
+  # SEED_AIRTABLE_DATASOURCE_API_KEY, SEED_AIRTABLE_DATASOURCE_BASE_ID, SEED_AIRTABLE_DATASOURCE_TABLE_NAME
+  # SEED_AIRTABLE_EVENTS_API_KEY, SEED_AIRTABLE_EVENTS_BASE_ID, SEED_AIRTABLE_EVENTS_TABLE_NAME
+  preDeployCommand: python manage.py migrate && python manage.py createcachetable && python manage.py seed
   healthCheckPath: /
   buildFilter:
     ignoredPaths:

@@ -3,14 +3,13 @@
 import { gql, useFragment, useQuery } from '@apollo/client'
 import { Check, ChevronsUpDown, Plus, RefreshCcw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useContext, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 import {
   GetMemberListQuery,
   MapReportLayersSummaryFragment,
 } from '@/__generated__/graphql'
-import { reportContext } from '@/app/reports/[id]/context'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -37,6 +36,7 @@ import { SourceOption } from '@/lib/data'
 import { MAP_REPORT_LAYERS_SUMMARY } from '@/lib/map'
 import { cn } from '@/lib/utils'
 
+import { useReport } from '@/app/reports/[id]/(components)/ReportProvider'
 import { CRMSelection } from '../CRMButtonItem'
 import { FormField } from '../ui/form'
 import { LoadingIcon } from '../ui/loadingIcon'
@@ -53,14 +53,19 @@ export function AddMapLayerButton({
   addLayer(layer: Source): void
   filter?: (s: SourceOption) => boolean
 }) {
-  const { id } = useContext(reportContext)
   const form = useForm<{ source?: Source }>()
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    return () => {
+      form.reset()
+    }
+  }, [])
 
   return (
     <Dialog open={open} onOpenChange={(o) => setOpen(o)}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="ghost" size="sm" className="text-meepGray-400">
           <Plus className="w-4" /> add data source
         </Button>
       </DialogTrigger>
@@ -70,6 +75,7 @@ export function AddMapLayerButton({
             setOpen(false)
             if (!d.source) return
             addLayer(d.source)
+            form.reset()
           })}
         >
           <DialogHeader>
@@ -111,10 +117,10 @@ export function MapLayerSelector({
   filter?: (s: SourceOption) => boolean
 }) {
   const [open, setOpen] = useState(false)
-  const { id, report } = useContext(reportContext)
+  const { report } = useReport()
   const dataSources = useQuery<GetMemberListQuery>(MEMBER_LISTS, {
     variables: {
-      currentOrganisationId: report?.data?.mapReport.organisation.id,
+      currentOrganisationId: report.organisation.id,
     },
   })
   const router = useRouter()
@@ -123,7 +129,7 @@ export function MapLayerSelector({
     fragmentName: 'MapReportLayersSummary',
     from: {
       __typename: 'MapReport',
-      id,
+      id: report.id,
     },
   })
 

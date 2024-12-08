@@ -1,15 +1,15 @@
 'use client'
 
+import { BACKEND_URL } from '@/env'
+import { layerColour, selectedSourceMarkerAtom, useLoadedMap } from '@/lib/map'
 import { useAtom } from 'jotai'
 import { useEffect } from 'react'
 import { Layer, Source } from 'react-map-gl'
+import MarkerPopup from './MarkerPopup'
 
-import { BACKEND_URL } from '@/env'
-import { layerColour, selectedSourceMarkerAtom, useLoadedMap } from '@/lib/map'
+const MIN_MEMBERS_ZOOM = 10
 
-import { MIN_MEMBERS_ZOOM } from './ReportMap'
-
-export function ExternalDataSourcePointMarkers({
+export function MembersListPointMarkers({
   externalDataSourceId,
   index,
 }: {
@@ -68,7 +68,6 @@ export function ExternalDataSourcePointMarkers({
       >
         {index <= 1 ? (
           <Layer
-            beforeId={'PLACEHOLDER_MARKERS'}
             id={`${externalDataSourceId}-marker`}
             source={externalDataSourceId}
             source-layer={'generic_data'}
@@ -93,7 +92,6 @@ export function ExternalDataSourcePointMarkers({
           />
         ) : (
           <Layer
-            beforeId={'PLACEHOLDER_MARKERS'}
             id={`${externalDataSourceId}-marker`}
             source={externalDataSourceId}
             source-layer={'generic_data'}
@@ -114,9 +112,9 @@ export function ExternalDataSourcePointMarkers({
               : {})}
           />
         )}
+
         {!!selectedSourceMarker?.properties?.id && (
           <Layer
-            beforeId={'PLACEHOLDER_MARKERS'}
             id={`${externalDataSourceId}-marker-selected`}
             source={externalDataSourceId}
             source-layer={'generic_data'}
@@ -133,6 +131,7 @@ export function ExternalDataSourcePointMarkers({
           />
         )}
       </Source>
+      <MarkerPopup />
     </>
   )
 }

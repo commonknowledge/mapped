@@ -6,7 +6,6 @@ import {
   GetMapReportNameQuery,
   GetMapReportNameQueryVariables,
 } from '@/__generated__/graphql'
-import Navbar from '@/components/navbar'
 import { loadUser } from '@/lib/server-auth'
 import { getClient } from '@/lib/services/apollo-client'
 
@@ -24,8 +23,7 @@ export default async function Layout({
 
   return (
     <div className="h-dvh flex flex-col">
-      <Navbar isLoggedIn={isLoggedIn} />
-      <main className="h-full relative overflow-x-hidden overflow-y-hidden flex-grow">
+      <main className="h-full relative overflow-x-hidden overflow-y-hidden flex-grow pt-[48px]">
         {children}
       </main>
       <Toaster />

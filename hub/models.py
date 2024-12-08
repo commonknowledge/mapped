@@ -1017,6 +1017,10 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         related_name="sources_from_other_orgs",
     )
 
+    # TODO: Revisit the rationale behind these data source types, then
+    # document what they are in the repo wiki
+    # Specifically in terms of geocoding: what is the difference between
+    # each type in terms of how they are geocoded.
     class DataSourceType(models.TextChoices):
         MEMBER = "MEMBER", "Members or supporters"
         GROUP = "GROUP", "Group or organisation"

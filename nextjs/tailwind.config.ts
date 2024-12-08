@@ -32,162 +32,60 @@ const config = {
       fontSize: {
         hub6xl: [
           '3.625rem',
-          {
-            lineHeight: '110%',
-            letterSpacing: '-0.145rem',
-          },
+          { lineHeight: '110%', letterSpacing: '-0.145rem' },
         ],
-        hub5xl: [
-          '2.86rem',
-          {
-            lineHeight: '110%',
-            letterSpacing: '-0.11rem',
-          },
-        ],
-        hub4xl: [
-          '2.44rem',
-          {
-            lineHeight: '110%',
-            letterSpacing: '-0.1rem',
-          },
-        ],
-        hub3xl: [
-          '1.75rem',
-          {
-            lineHeight: '110%',
-            letterSpacing: '-0.04rem',
-          },
-        ],
-        hub2xl: [
-          '1.5rem',
-          {
-            lineHeight: '110%',
-            letterSpacing: '-0.015rem',
-          },
-        ],
-        hubxl: [
-          '1.25rem',
-          {
-            lineHeight: '110%',
-            letterSpacing: '0rem',
-          },
-        ],
-
-        hXlg: [
-          '4.5rem',
-          {
-            lineHeight: '107%',
-            letterSpacing: '-0.2rem',
-          },
-        ],
-        hXlgPP: [
-          '4.7rem',
-          {
-            lineHeight: '107%',
-            letterSpacing: '0rem',
-          },
-        ],
+        hub5xl: ['2.86rem', { lineHeight: '110%', letterSpacing: '-0.11rem' }],
+        hub4xl: ['2.44rem', { lineHeight: '110%', letterSpacing: '-0.1rem' }],
+        hub3xl: ['1.75rem', { lineHeight: '110%', letterSpacing: '-0.04rem' }],
+        hub2xl: ['1.5rem', { lineHeight: '110%', letterSpacing: '-0.015rem' }],
+        hubxl: ['1.25rem', { lineHeight: '110%', letterSpacing: '0rem' }],
+        hXlg: ['4.5rem', { lineHeight: '107%', letterSpacing: '-0.2rem' }],
+        hXlgPP: ['4.7rem', { lineHeight: '107%', letterSpacing: '0rem' }],
         hLgPP: [
           '36px',
-          {
-            lineHeight: '100%',
-            fontWeight: '700',
-            letterSpacing: '0.05rem',
-          },
+          { lineHeight: '100%', fontWeight: '700', letterSpacing: '0.05rem' },
         ],
-        hLg: [
-          '36px',
-          {
-            lineHeight: '120%',
-            fontWeight: '700',
-          },
-        ],
+        hLg: ['36px', { lineHeight: '120%', fontWeight: '700' }],
         hMd: [
           '21px',
-          {
-            lineHeight: 'normal',
-            letterSpacing: '0em',
-            fontWeight: '500',
-          },
+          { lineHeight: 'normal', letterSpacing: '0em', fontWeight: '500' },
         ],
         hSm: [
           '16px',
-          {
-            lineHeight: 'normal',
-            letterSpacing: '0em',
-            fontWeight: '500',
-          },
+          { lineHeight: 'normal', letterSpacing: '0em', fontWeight: '500' },
         ],
         base: [
           '16px',
-          {
-            lineHeight: 'normal',
-            letterSpacing: '0em',
-            fontWeight: '400',
-          },
+          { lineHeight: 'normal', letterSpacing: '0em', fontWeight: '400' },
         ],
-        lg: [
-          '20px',
-          {
-            lineHeight: '160%',
-            letterSpacing: '0em',
-          },
-        ],
+        lg: ['20px', { lineHeight: '160%', letterSpacing: '0em' }],
         sm: [
           '14px',
-          {
-            lineHeight: 'normal',
-            letterSpacing: '0em',
-            fontWeight: '400',
-          },
+          { lineHeight: 'normal', letterSpacing: '0em', fontWeight: '400' },
         ],
         tiny: [
           '12px',
-          {
-            lineHeight: 'normal',
-            letterSpacing: '0em',
-            fontWeight: '400',
-          },
+          { lineHeight: 'normal', letterSpacing: '0em', fontWeight: '400' },
         ],
         labelMain: [
           '12px',
-          {
-            lineHeight: 'normal',
-            letterSpacing: '0em',
-            fontWeight: '500',
-          },
+          { lineHeight: 'normal', letterSpacing: '0em', fontWeight: '500' },
         ],
         labelLg: [
           '14px',
-          {
-            lineHeight: 'normal',
-            letterSpacing: '0em',
-            fontWeight: '500',
-          },
+          { lineHeight: 'normal', letterSpacing: '0em', fontWeight: '500' },
         ],
         labelXlg: [
           '16px',
-          {
-            lineHeight: 'normal',
-            letterSpacing: '0em',
-            fontWeight: '500',
-          },
+          { lineHeight: 'normal', letterSpacing: '0em', fontWeight: '500' },
         ],
         dataName: [
           '13px',
-          {
-            lineHeight: '100%',
-            letterSpacing: '0.65px',
-            fontWeight: '500',
-          },
+          { lineHeight: '100%', letterSpacing: '0.65px', fontWeight: '500' },
         ],
         dataResult: [
           '16px',
-          {
-            lineHeight: '100%',
-            letterSpacing: '-0.32px',
-            fontWeight: '400',
-          },
+          { lineHeight: '100%', letterSpacing: '-0.32px', fontWeight: '400' },
         ],
       },
       fontWeight: {
@@ -201,14 +99,14 @@ const config = {
         white: 'hsl(var(--white))',
         muted: 'hsl(var(--meep-gray-600))',
         meepGray: {
-          100: 'hsl(var(--meep-gray-100))',
-          200: 'hsl(var(--meep-gray-200))',
-          300: 'hsl(var(--meep-gray-300))',
-          400: 'hsl(var(--meep-gray-400))',
-          500: 'hsl(var(--meep-gray-500))',
-          600: 'hsl(var(--meep-gray-600))',
-          700: 'hsl(var(--meep-gray-700))',
-          800: 'hsl(var(--meep-gray-800))',
+          '100': 'hsl(var(--meep-gray-100))',
+          '200': 'hsl(var(--meep-gray-200))',
+          '300': 'hsl(var(--meep-gray-300))',
+          '400': 'hsl(var(--meep-gray-400))',
+          '500': 'hsl(var(--meep-gray-500))',
+          '600': 'hsl(var(--meep-gray-600))',
+          '700': 'hsl(var(--meep-gray-700))',
+          '800': 'hsl(var(--meep-gray-800))',
         },
         buttonText: 'hsl(var(--button-text))',
         labour: 'hsl(var(--labour))',
@@ -270,9 +168,6 @@ const config = {
           background: 'var(--background)',
           foreground: '#0b493d',
           primary: {
-            DEFAULT: 'var(--primary)',
-            foreground: 'var(--primary-foreground)',
-            // Generated in JS and then embeded into DOM for later reference
             '50': 'var(--primary-50)',
             '100': 'var(--primary-100)',
             '200': 'var(--primary-200)',
@@ -284,11 +179,10 @@ const config = {
             '800': 'var(--primary-800)',
             '900': 'var(--primary-900)',
             '950': 'var(--primary-950)',
+            DEFAULT: 'var(--primary)',
+            foreground: 'var(--primary-foreground)',
           },
           secondary: {
-            DEFAULT: 'var(--secondary)',
-            foreground: 'var(--secondary-foreground)',
-            // Generated in JS and then embeded into DOM for later reference
             '50': 'var(--secondary-50)',
             '100': 'var(--secondary-100)',
             '200': 'var(--secondary-200)',
@@ -300,6 +194,8 @@ const config = {
             '800': 'var(--secondary-800)',
             '900': 'var(--secondary-900)',
             '950': 'var(--secondary-950)',
+            DEFAULT: 'var(--secondary)',
+            foreground: 'var(--secondary-foreground)',
           },
           text: {
             DEFAULT: 'var(--text)',
@@ -326,6 +222,16 @@ const config = {
             foreground: 'var(--card-foreground)',
           },
         },
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar-background))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          primary: 'hsl(var(--sidebar-primary))',
+          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+          accent: 'hsl(var(--sidebar-accent))',
+          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+          border: 'hsl(var(--sidebar-border))',
+          ring: 'hsl(var(--sidebar-ring))',
+        },
       },
       boxShadow: {
         hover: '0px 0px 30px 0px var(--hub-primary-300, #76DFBB)',
@@ -342,15 +248,22 @@ const config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
-
       keyframes: {
         'accordion-down': {
-          from: { height: '0' },
-          to: { height: 'var(--radix-accordion-content-height)' },
+          from: {
+            height: '0',
+          },
+          to: {
+            height: 'var(--radix-accordion-content-height)',
+          },
         },
         'accordion-up': {
-          from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: '0' },
+          from: {
+            height: 'var(--radix-accordion-content-height)',
+          },
+          to: {
+            height: '0',
+          },
         },
       },
       animation: {

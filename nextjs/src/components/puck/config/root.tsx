@@ -11,7 +11,7 @@ import {
   GetPageQueryVariables,
   HubNavLink,
 } from '@/__generated__/graphql'
-import { GET_PAGE } from '@/app/hub/render/[hostname]/query'
+import { GET_PAGE } from '@/app/(logged-out)/hub/render/[hostname]/query'
 import { useHubRenderContext } from '@/components/hub/HubRenderContext'
 
 import HubFooter from './template/HubFooter'

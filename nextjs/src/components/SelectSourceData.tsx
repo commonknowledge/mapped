@@ -14,8 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import useFuse from '@/hooks/filter'
 import { SourcePath } from '@/lib/data'
-import useFuse from '@/lib/hooks/filter'
 import { currentOrganisationIdAtom } from '@/lib/organisation'
 
 import { CRMSelection } from './CRMButtonItem'

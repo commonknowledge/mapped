@@ -7,15 +7,19 @@ if TYPE_CHECKING:
     from hub.models import GenericData
 
 
+# TODO: Remove the "imported_data_" prefix from all methods
+# It doesn't add any value and is redundant.
 class Analytics:
     def get_analytics_queryset(self) -> BaseManager["GenericData"]:
         raise NotImplementedError("Subclasses must implement this method")
 
+    # TODO: Rename this because it's a big clash with "region" in the specific geographic sense (EERs)
     class RegionCount(TypedDict):
         label: str
         gss: Optional[str]
         count: int
 
+    # TODO: Rename to ...by_eer
     def imported_data_count_by_region(self) -> List[RegionCount]:
         return (
             self.get_analytics_queryset()
@@ -28,6 +32,7 @@ class Analytics:
             .order_by("-count")
         )
 
+    # TODO: Rename to e.g. row_count_by_political_boundary
     def imported_data_count_by_area(
         self,
         postcode_io_key: str = None,

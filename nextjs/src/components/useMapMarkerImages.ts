@@ -1,6 +1,6 @@
 import { useLoadedMap, useMapIcons } from '@/lib/map'
 
-const useMarkers = () => {
+const useMapMarkerImages = () => {
   const mapbox = useLoadedMap()
   const requiredImages = [
     {
@@ -25,4 +25,4 @@ const useMarkers = () => {
   return null
 }
 
-export default useMarkers
+export default useMapMarkerImages

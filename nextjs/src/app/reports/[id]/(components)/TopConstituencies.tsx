@@ -1,18 +1,17 @@
 import { gql, useQuery } from '@apollo/client'
 import { getYear } from 'date-fns'
 import { useAtom } from 'jotai'
-import { useContext, useState } from 'react'
+import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 import {
   ConstituencyStatsOverviewQuery,
   ConstituencyStatsOverviewQueryVariables,
 } from '@/__generated__/graphql'
-import { reportContext, useReportContext } from '@/app/reports/[id]/context'
 import {
   MemberElectoralInsights,
   Person,
-} from '@/components/reportsConstituencyItem'
+} from '@/app/reports/[id]/(components)/reportsConstituencyItem'
 import { LoadingIcon } from '@/components/ui/loadingIcon'
 import {
   Select,
@@ -27,7 +26,7 @@ import {
 } from '@/lib/map/state'
 import { useLoadedMap } from '@/lib/map/useLoadedMap'
 
-import { MAX_CONSTITUENCY_ZOOM } from './ReportMap'
+import { useReport } from './ReportProvider'
 
 export function TopConstituencies() {
   const sortOptions = {
@@ -36,18 +35,20 @@ export function TopConstituencies() {
     populationDensity: 'Population Density',
   }
   const [sortBy, setSortBy] = useState<keyof typeof sortOptions>('totalCount')
-  const {
-    displayOptions: { analyticalAreaType },
-  } = useReportContext()
 
-  const { id } = useContext(reportContext)
+  const {
+    report: {
+      id,
+      displayOptions: { dataVisualisation },
+    },
+  } = useReport()
   const constituencyAnalytics = useQuery<
     ConstituencyStatsOverviewQuery,
     ConstituencyStatsOverviewQueryVariables
   >(CONSTITUENCY_STATS_OVERVIEW, {
     variables: {
       reportID: id,
-      analyticalAreaType,
+      analyticalAreaType: dataVisualisation?.boundaryType!,
     },
   })
   const [selectedConstituency, setSelectedConstituency] = useAtom(
@@ -117,9 +118,7 @@ export function TopConstituencies() {
           onClick={() => {
             setSelectedConstituency(constituency.gss!)
             setTab('selected')
-            map.loadedMap?.fitBounds(constituency.gssArea?.fitBounds, {
-              maxZoom: MAX_CONSTITUENCY_ZOOM - 0.1,
-            })
+            map.loadedMap?.fitBounds(constituency.gssArea?.fitBounds)
           }}
           className="cursor-pointer bg-meepGray-700 group hover:bg-meepGray-600 rounded-lg"
         >
@@ -142,14 +141,18 @@ export function ConstituencySummaryCard({
   >
   count: number
 }) {
-  const { displayOptions } = useReportContext()
+  const {
+    report: {
+      displayOptions: { display },
+    },
+  } = useReport()
 
   return (
     <div className="p-3 ">
       <h2 className="font-PPRightGrotesk text-hLgPP mb-3">
         {constituency.name}
       </h2>
-      {!!constituency.mp?.name && displayOptions.showMPs && (
+      {!!constituency.mp?.name && display?.showMPs && (
         <div className="mb-5 mt-4">
           <Person
             name={constituency.mp?.name}
@@ -158,53 +161,52 @@ export function ConstituencySummaryCard({
           />
         </div>
       )}
-      {!!constituency.lastElection?.stats &&
-        displayOptions.showLastElectionData && (
-          <div className="flex justify-between mb-6">
-            <div className="flex flex-col gap-1">
-              <p className="text-dataName font-IBMPlexSansCondensed uppercase text-meepGray-300">
-                1st in {getYear(constituency.lastElection.stats.date)}
+      {!!constituency.lastElection?.stats && display?.showLastElectionData && (
+        <div className="flex justify-between mb-6">
+          <div className="flex flex-col gap-1">
+            <p className="text-dataName font-IBMPlexSansCondensed uppercase text-meepGray-300">
+              1st in {getYear(constituency.lastElection.stats.date)}
+            </p>
+            <div className="flex items-center gap-1">
+              <div
+                className={`w-3 h-3 rounded-full`}
+                style={{
+                  backgroundColor:
+                    constituency.lastElection.stats.firstPartyResult.shade ||
+                    'gray',
+                }}
+              ></div>
+              <p className="text-dataResult font-IBMPlexMono">
+                {constituency.lastElection.stats.firstPartyResult.party.replace(
+                  ' Party',
+                  ''
+                )}
               </p>
-              <div className="flex items-center gap-1">
-                <div
-                  className={`w-3 h-3 rounded-full`}
-                  style={{
-                    backgroundColor:
-                      constituency.lastElection.stats.firstPartyResult.shade ||
-                      'gray',
-                  }}
-                ></div>
-                <p className="text-dataResult font-IBMPlexMono">
-                  {constituency.lastElection.stats.firstPartyResult.party.replace(
-                    ' Party',
-                    ''
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-dataName font-IBMPlexSansCondensed uppercase text-meepGray-300">
-                2nd in {getYear(constituency.lastElection.stats.date)}
-              </p>
-              <div className="flex items-center gap-1">
-                <div
-                  className={`w-3 h-3 rounded-full`}
-                  style={{
-                    backgroundColor:
-                      constituency.lastElection.stats.secondPartyResult.shade ||
-                      'gray',
-                  }}
-                ></div>
-                <p className="text-dataResult font-IBMPlexMono">
-                  {constituency.lastElection.stats.secondPartyResult.party.replace(
-                    ' Party',
-                    ''
-                  )}
-                </p>
-              </div>
             </div>
           </div>
-        )}
+          <div className="flex flex-col gap-1">
+            <p className="text-dataName font-IBMPlexSansCondensed uppercase text-meepGray-300">
+              2nd in {getYear(constituency.lastElection.stats.date)}
+            </p>
+            <div className="flex items-center gap-1">
+              <div
+                className={`w-3 h-3 rounded-full`}
+                style={{
+                  backgroundColor:
+                    constituency.lastElection.stats.secondPartyResult.shade ||
+                    'gray',
+                }}
+              ></div>
+              <p className="text-dataResult font-IBMPlexMono">
+                {constituency.lastElection.stats.secondPartyResult.party.replace(
+                  ' Party',
+                  ''
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div>
         <MemberElectoralInsights
           totalCount={count}

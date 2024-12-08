@@ -2,7 +2,7 @@ import { useQuery } from '@apollo/client'
 import { Point } from 'geojson'
 import { useAtom } from 'jotai'
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary'
-import React, { useContext } from 'react'
+import React from 'react'
 import { Popup } from 'react-map-gl'
 
 import {
@@ -11,18 +11,12 @@ import {
 } from '@/__generated__/graphql'
 import { selectedSourceMarkerAtom } from '@/lib/map'
 
-import { reportContext } from '../context'
 import { MAP_REPORT_LAYER_POINT } from '../gql_queries'
-import useAnalytics from '../useAnalytics'
+import useMarkerAnalytics from '../useMarkerAnalytics'
 
 const MarkerPopup: React.FC = () => {
-  /* Get the report context */
-  const { id, displayOptions } = useContext(reportContext)
-
-  /* Add c 
-  
-    /* Get the analytics data for the report */
-  const { analytics } = useAnalytics(id, displayOptions.analyticalAreaType)
+  /* Get the analytics data for the report */
+  const analytics = useMarkerAnalytics()
 
   const [selectedSourceMarker, setSelectedSourceMarker] = useAtom(
     selectedSourceMarkerAtom
@@ -49,8 +43,9 @@ const MarkerPopup: React.FC = () => {
         latitude={(selectedSourceMarker.geometry as Point)?.coordinates[1] || 0}
         closeOnClick={false}
         className="text-black [&>.mapboxgl-popup-content]:p-0 [&>.mapboxgl-popup-content]:overflow-auto w-[150px] [&>.mapboxgl-popup-tip]:!border-t-meepGray-200"
-        closeButton={false}
-        closeOnMove={false}
+        closeButton={true}
+        closeOnMove={true}
+        onClose={() => setSelectedSourceMarker(null)}
         anchor="bottom"
         offset={[0, -35] as any}
       >

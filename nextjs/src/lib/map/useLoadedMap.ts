@@ -7,6 +7,8 @@ import { useMap } from 'react-map-gl'
 import { MapLoader } from '.'
 import { mapHasLoaded } from './state'
 
+export const MAPBOX_LOAD_INTERVAL = 100
+
 export function useLoadedMap(): MapLoader {
   const [loaded, setLoaded] = useAtom(mapHasLoaded)
   const map = useMap()
@@ -45,7 +47,7 @@ export function useLoadedMap(): MapLoader {
           setLoaded(true)
           clearInterval(intervalId)
         }
-      }, 100)
+      }, MAPBOX_LOAD_INTERVAL)
     }
 
     map.default.on('load', onLoad)

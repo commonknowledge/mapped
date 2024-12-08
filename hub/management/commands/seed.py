@@ -21,6 +21,10 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
+        if settings.ENVIRONMENT == "production":
+            logger.info("Refusing to run the seed command in production")
+            return
+
         # Create an org for the first user
         user = User.objects.filter(username=settings.DJANGO_SUPERUSER_USERNAME).first()
         if not user:
@@ -99,7 +103,7 @@ class Command(BaseCommand):
 
         # Import pledge list
         pledges_source: AirtableSource
-        pledges_source, _ = AirtableSource.objects.update_or_create(
+        pledges_source, _ = AirtableSource.objects.get_or_create(
             base_id=settings.SEED_AIRTABLE_PLEDGELIST_BASE_ID,
             table_id=settings.SEED_AIRTABLE_PLEDGELIST_TABLE_NAME,
             defaults={

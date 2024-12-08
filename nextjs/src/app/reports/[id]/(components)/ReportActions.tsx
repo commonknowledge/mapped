@@ -1,7 +1,7 @@
 'use client'
 
-import { MoreVertical, RefreshCcw, Trash } from 'lucide-react'
-import { useContext, useState } from 'react'
+import { MoreHorizontal, RefreshCcw, Trash } from 'lucide-react'
+import { useState } from 'react'
 
 import {
   AlertDialog,
@@ -21,22 +21,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-import { reportContext } from '../context'
+import { useReport } from './ReportProvider'
 
 const ReportActions: React.FC = () => {
-  const { report, deleteReport, refreshReportDataQueries } =
-    useContext(reportContext)
+  const { report, deleteReport, refreshReportData } = useReport()
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger>
-          <MoreVertical className="w-3" />
+          <MoreHorizontal className="w-5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start">
-          {report?.data?.mapReport && (
-            <DropdownMenuItem onClick={refreshReportDataQueries}>
+          {report && (
+            <DropdownMenuItem onClick={refreshReportData}>
               <RefreshCcw className="w-4 mr-2" />
               Refresh
             </DropdownMenuItem>
