@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { LoadingIcon } from '@/components/ui/loadingIcon'
 import { UPDATE_EXTERNAL_DATA_SOURCE } from '@/lib/graphql/mutations'
 import { triggerAnalyticsEvent } from '@/lib/posthogutils'
+import { formatCrmNames } from '@/lib/utils'
 
 import { CreateAutoUpdateFormContext } from '../../NewExternalDataSourceWrapper'
 
@@ -135,10 +136,13 @@ export default function Page({
           Now configure how you{"'"}d like data to be updated
         </h1>
         <p className="mt-6 text-meepGray-400 max-w-sm">
-          Choose from the following data sources to enhance your CRM with data
-          that empower you organisation. For geographic data, we need to know
-          which field has the postcode so we can make sure you are getting
-          accurate data.
+          Choose from the following data sources to enhance your{' '}
+          {formatCrmNames(
+            externalDataSource.data?.externalDataSource.crmType || 'database'
+          )}{' '}
+          with data that empowers your organisation. For geographic data, we
+          need to know which field has the postcode so we can make sure you are
+          getting accurate data.
         </p>
       </header>
       {externalDataSource.data ? (

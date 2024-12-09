@@ -49,6 +49,7 @@ import { externalDataSourceOptions } from '@/lib/data'
 import { UPDATE_EXTERNAL_DATA_SOURCE } from '@/lib/graphql/mutations'
 import { contentEditableMutation } from '@/lib/html'
 import { currentOrganisationIdAtom } from '@/lib/organisation'
+import { formatCrmNames } from '@/lib/utils'
 
 import { ManageSourceSharing } from './ManageSourceSharing'
 import importData from './importData'
@@ -255,9 +256,10 @@ export default function InspectExternalDataSource({
                 {format(',')(source.importedDataCount || 0)}
               </div>
               <p className="text-meepGray-400">
-                Import data from this source into Mapped for use in reports
+                Import data from this {formatCrmNames(source.crmType)} into
+                Mapped for use in reports
                 {dataType !== DataSourceType.Member
-                  ? ', and to enrich membership lists'
+                  ? ' and to enrich membership lists'
                   : ''}
                 .
               </p>
@@ -292,7 +294,7 @@ export default function InspectExternalDataSource({
                   <p className="text-sm text-meepGray-400">
                     Auto-imports are{' '}
                     {source.autoImportEnabled ? 'enabled' : 'disabled'} for this
-                    data source.
+                    {source.crmType}.
                   </p>
                   {source.connectionDetails.__typename ===
                     'ActionNetworkSource' && (
@@ -334,7 +336,8 @@ export default function InspectExternalDataSource({
                       </code>
                       <p>
                         Turn this switch on once you have added the above
-                        Webhook URL to your CRM:
+                        Webhook URL to your{' '}
+                        {formatCrmNames(source.crmType || 'database')}
                       </p>
                       <EnableWebhooksSwitch
                         externalDataSource={source}
@@ -422,8 +425,8 @@ export default function InspectExternalDataSource({
                     <h2 className="text-hMd mb-5">Enrich your original data</h2>
                     <p className="text-meepGray-400">
                       <span className="align-middle">
-                        Pull Mapped data into your original{' '}
-                        {crmInfo?.name || 'data source'}, based on the record
+                        Pull Mapped data into your {crmInfo?.name || 'database'}{' '}
+                        based on each record
                         {"'"}s
                       </span>
                       <DataSourceFieldLabel
@@ -434,7 +437,10 @@ export default function InspectExternalDataSource({
                     </p>
                     <div className="space-y-4">
                       {!source.isUpdateScheduled ? (
-                        <TriggerUpdateButton id={source.id} />
+                        <TriggerUpdateButton
+                          id={source.id}
+                          crmType={source.crmType}
+                        />
                       ) : (
                         <>
                           <Button disabled>
@@ -465,17 +471,18 @@ export default function InspectExternalDataSource({
                       <p className="text-sm text-meepGray-400">
                         Auto-updates are{' '}
                         {source.autoUpdateEnabled ? 'enabled' : 'disabled'} for
-                        this data source. Mapped can automatically update this
-                        data source based on the mapping you{"'"}ve defined in
-                        the Data Mapping section.
+                        this {formatCrmNames(source.crmType)}. Select this to
+                        allow Mapped to automatically update this{' '}
+                        {formatCrmNames(source.crmType)} based on the fields you
+                        selected in Data Enrichment Settings.
                       </p>
                       {source.connectionDetails.__typename ===
                         'ActionNetworkSource' && (
                         <p className="text-sm text-meepGray-400 text-red-400">
                           Warning: Action Network auto-updates only work for new
                           members, not changes to existing members{"'"} details.
-                          If existing members change, you must trigger a full
-                          update using the button on the left.
+                          If you are changing existing members you must trigger
+                          a full update using the button on the left.
                         </p>
                       )}
                       {source.automatedWebhooks ? (
@@ -509,7 +516,7 @@ export default function InspectExternalDataSource({
                           </code>
                           <p>
                             Turn this switch on once you have added the above
-                            Webhook URL to your CRM:
+                            Webhook URL to your database:
                           </p>
                           <EnableWebhooksSwitch
                             externalDataSource={source}
@@ -531,11 +538,11 @@ export default function InspectExternalDataSource({
                   )}
                 </header>
                 <h2 className="text-hSm !mt-8 my-5">
-                  Configure data enrichment
+                  Data Enrichment Settings
                 </h2>
                 <p className="mt-1 text-meepGray-400 text-sm">
                   Use the 'Enrich' button above to re-run the enrichment process
-                  after changing this configuration.
+                  after changing these settings.
                 </p>
                 <UpdateMappingForm
                   allowMapping={allowMapping}

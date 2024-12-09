@@ -16,6 +16,7 @@ import {
 } from '@/components/ExternalDataSourceCard'
 import { Button } from '@/components/ui/button'
 import { LoadingIcon } from '@/components/ui/loadingIcon'
+import { formatCrmNames } from '@/lib/utils'
 
 import { CreateAutoUpdateFormContext } from '../../NewExternalDataSourceWrapper'
 
@@ -106,9 +107,14 @@ export default function Page({
                   <code className="bg-black p-2 rounded">
                     {pageQuery.data.externalDataSource.webhookUrl}
                   </code>
+
                   <p>
                     Turn the below switches on once you have added the above
-                    Webhook URL to your CRM and enabled it.
+                    Webhook URL to your{' '}
+                    {formatCrmNames(
+                      pageQuery.data?.externalDataSource.crmType || 'database'
+                    )}{' '}
+                    and enabled it.
                   </p>
                 </div>
               </li>

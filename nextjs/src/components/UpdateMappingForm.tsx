@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/select'
 import { locationTypeOptions } from '@/lib/location'
 import { currentOrganisationIdAtom } from '@/lib/organisation'
+import { formatCrmNames } from '@/lib/utils'
 
 import { DataSourceFieldLabel } from './DataSourceIcon'
 
@@ -227,6 +228,7 @@ export function UpdateMappingForm({
                             <X className="w-3 h-3" />
                           </Button>
                           <SourcePathSelector
+                            crmType={crmType}
                             focusOnMount={
                               form.watch(`updateMapping.${index}.source`) ===
                               '?'
@@ -329,8 +331,8 @@ export function UpdateMappingForm({
                   size="sm"
                   className="my-2"
                 >
-                  <Plus className="w-4 h-4" /> Add data to another field in your
-                  CRM
+                  <Plus className="w-4 h-4" /> Add data to another field in your{' '}
+                  {formatCrmNames(crmType || 'database')}{' '}
                 </Button>
               </>
             )}

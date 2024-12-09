@@ -17,6 +17,7 @@ import {
 import useFuse from '@/hooks/filter'
 import { SourcePath } from '@/lib/data'
 import { currentOrganisationIdAtom } from '@/lib/organisation'
+import { formatCrmNames } from '@/lib/utils'
 
 import { CRMSelection } from './CRMButtonItem'
 import { DataSourceFieldLabel, DataSourceIcon } from './DataSourceIcon'
@@ -30,6 +31,7 @@ export function SourcePathSelector({
   loading,
   value,
   setValue,
+  crmType,
   focusOnMount = false,
 }: {
   sources: Array<Source>
@@ -39,6 +41,7 @@ export function SourcePathSelector({
     source: AutoUpdateConfig['source'],
     sourcePath: AutoUpdateConfig['sourcePath']
   ) => void
+  crmType?: string
   focusOnMount?: boolean
 }) {
   const [open, setOpen] = React.useState(focusOnMount)
@@ -101,7 +104,8 @@ export function SourcePathSelector({
           <DialogHeader className="col-span-4">
             <DialogTitle>Data sources</DialogTitle>
             <DialogDescription>
-              Pick a data source and a field to import to your membership list.
+              Pick a data source and a field to import to your{' '}
+              {formatCrmNames(crmType || 'database')}
             </DialogDescription>
           </DialogHeader>
           {loading ? (
