@@ -19,6 +19,7 @@ import useBoundaryAnalytics from '../../useBoundaryAnalytics'
 import useSelectBoundary, {
   selectedBoundaryAtom,
 } from '../../useSelectBoundary'
+import { PLACEHOLDER_LAYER_ID_CHOROPLETH } from '../ReportPage'
 
 interface PoliticalChoroplethsProps {
   tileset: Tileset
@@ -78,6 +79,7 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
         />
         {/* Border of the boundary */}
         <Layer
+          beforeId={PLACEHOLDER_LAYER_ID_CHOROPLETH}
           id={`${tileset.mapboxSourceId}-line`}
           source={tileset.mapboxSourceId}
           source-layer={tileset.sourceLayerId}
@@ -87,6 +89,7 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
         />
         {/* Border of the selected boundary  */}
         <Layer
+          beforeId={PLACEHOLDER_LAYER_ID_CHOROPLETH}
           id={`${tileset.mapboxSourceId}-selected`}
           source={tileset.mapboxSourceId}
           source-layer={tileset.sourceLayerId}

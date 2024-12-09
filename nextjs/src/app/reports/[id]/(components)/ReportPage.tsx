@@ -1,11 +1,15 @@
 'use client'
 
 import LocalisedMap from '@/components/LocalisedMap'
+import { PlaceholderLayer } from '@/components/PlaceholderLayer'
 import { getPoliticalTilesetsByCountry } from '../politicalTilesets'
 import { ConstituenciesPanel } from './ConstituenciesPanel'
 import PoliticalChoropleths from './MapLayers/PoliticalChoropleths'
 import ReportMapMarkers from './MapLayers/ReportMapMarkers'
 import { useReport } from './ReportProvider'
+
+export const PLACEHOLDER_LAYER_ID_CHOROPLETH = 'choropleths'
+export const PLACEHOLDER_LAYER_ID_MARKERS = 'markers'
 
 export default function ReportPage() {
   const { report } = useReport()
@@ -18,6 +22,7 @@ export default function ReportPage() {
           initViewCountry="uk"
           mapKey={report.id}
         >
+          <PlaceholderLayer id={PLACEHOLDER_LAYER_ID_CHOROPLETH} />
           {getPoliticalTilesetsByCountry('uk').map(
             ({ boundaryType, tileset }) => (
               <PoliticalChoropleths
@@ -28,6 +33,7 @@ export default function ReportPage() {
               />
             )
           )}
+          <PlaceholderLayer id={PLACEHOLDER_LAYER_ID_MARKERS} />
           <ReportMapMarkers />
         </LocalisedMap>
       </div>

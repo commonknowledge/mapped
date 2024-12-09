@@ -6,6 +6,7 @@ import { useAtom } from 'jotai'
 import { useEffect } from 'react'
 import { Layer, Source } from 'react-map-gl'
 import MarkerPopup from './MarkerPopup'
+import { PLACEHOLDER_LAYER_ID_MARKERS } from './ReportPage'
 
 const MIN_MEMBERS_ZOOM = 10
 
@@ -68,6 +69,7 @@ export function MembersListPointMarkers({
       >
         {index <= 1 ? (
           <Layer
+            beforeId={PLACEHOLDER_LAYER_ID_MARKERS}
             id={`${externalDataSourceId}-marker`}
             source={externalDataSourceId}
             source-layer={'generic_data'}
@@ -92,6 +94,7 @@ export function MembersListPointMarkers({
           />
         ) : (
           <Layer
+            beforeId={PLACEHOLDER_LAYER_ID_MARKERS}
             id={`${externalDataSourceId}-marker`}
             source={externalDataSourceId}
             source-layer={'generic_data'}
@@ -115,6 +118,7 @@ export function MembersListPointMarkers({
 
         {!!selectedSourceMarker?.properties?.id && (
           <Layer
+            beforeId={PLACEHOLDER_LAYER_ID_MARKERS}
             id={`${externalDataSourceId}-marker-selected`}
             source={externalDataSourceId}
             source-layer={'generic_data'}
