@@ -3,7 +3,6 @@ from django.core.management.base import BaseCommand
 
 frequent_updates = [
     "import_mps",
-    "import_2024_ppcs",
     "import_last_election_data",
     "import_mps_select_committee_membership",
     "import_mps_appg_data",

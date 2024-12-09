@@ -227,10 +227,3 @@ async def signal_request_complete(request_id: str, *args, **kwargs):
     Empty task which is used to query the status of the batch tasks.
     """
     pass
-
-
-# cron that calls the `import_2024_ppcs` command every hour
-@app.periodic(cron="0 * * * *")
-@app.task(queue="built_in_data")
-def import_2024_ppcs(timestamp=None):
-    management.call_command("import_2024_ppcs")

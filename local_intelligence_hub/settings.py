@@ -441,11 +441,11 @@ LOGGING = {
             "level": "DEBUG",
         },
         # Silence endless waiting for job log
-        "procrastinate.worker": {
-            "handlers": ["truncated"],
-            "level": "INFO",
-            "propagate": False,
-        },
+        # "procrastinate.worker": {
+        #     "handlers": ["truncated"],
+        #     "level": "INFO",
+        #     "propagate": False,
+        # },
         "django": {
             "handlers": ["console"],
             "level": DJANGO_LOG_LEVEL,
