@@ -168,7 +168,7 @@ def create_map_report(info: Info, data: MapReportInput) -> models.MapReport:
             "organisation": organisation,
             "slug": data.slug or slugify(data.name),
             "name": f"New map ({date_time_str})",  # Default name for reports
-            "display_options": data.display_options or {}
+            "display_options": data.display_options or {},
         },
     }
 
