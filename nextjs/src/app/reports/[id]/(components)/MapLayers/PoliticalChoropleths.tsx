@@ -113,8 +113,8 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
           }}
           paint={{
             'text-color': 'white',
-            'text-halo-color': 'black',
-            'text-halo-width': 0.3,
+            'text-halo-color': '#24262b',
+            'text-halo-width': 1.5,
           }}
         />
         <Layer
@@ -126,9 +126,9 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
           }}
           paint={{
             'text-color': 'white',
-            'text-opacity': 0.9,
-            'text-halo-color': 'black',
-            'text-halo-width': 0.3,
+            'text-opacity': 1,
+            'text-halo-color': '#24262b',
+            'text-halo-width': 1.5,
           }}
         />
       </Source>

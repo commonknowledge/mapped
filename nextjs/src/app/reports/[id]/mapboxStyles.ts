@@ -65,17 +65,28 @@ export function getChoroplethFill(
 export function getChoroplethEdge(): LineLayerSpecification['paint'] {
   return {
     'line-color': 'white',
-    'line-gap-width': [
+    'line-opacity': [
       'interpolate',
       ['exponential', 1],
       ['zoom'],
+      //
       8,
-      0,
+      0.3,
+      //
       12,
-      3,
+      1,
     ],
-    'line-opacity': 0.5,
-    'line-width': ['interpolate', ['exponential', 1], ['zoom'], 8, 0.1, 12, 1],
+    'line-width': [
+      'interpolate',
+      ['exponential', 1],
+      ['zoom'],
+      //
+      8,
+      0.3,
+      //
+      12,
+      2,
+    ],
   }
 }
 
