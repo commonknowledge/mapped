@@ -38,7 +38,8 @@ class Analytics:
     def imported_data_count_by_area(
         self,
         postcode_io_key: str = None,
-        sum_column: str = None,
+        operation: str = "count",
+        column: str = None,
         gss: str = None,
     ) -> QuerySet[RegionCount]:
         qs = self.get_analytics_queryset()
@@ -51,7 +52,19 @@ class Analytics:
             except Exception:
                 return []
             
-        if sum_column is None:
+        if operation == "sum" and column is not None:
+            return (
+                qs.annotate(
+                    label=F(f"postcode_data__{postcode_io_key}"),
+                    gss=F(f"postcode_data__codes__{postcode_io_key}"),
+                    value=Cast(KT(f"json__{column}"), FloatField()),
+                )
+                .values("label", "gss")
+                .annotate(count=Sum("value"))
+                .order_by("-count")
+            )
+        else:
+            # count rows in the area
             return (
                 qs.annotate(
                     label=F(f"postcode_data__{postcode_io_key}"),
@@ -59,17 +72,6 @@ class Analytics:
                 )
                 .values("label", "gss")
                 .annotate(count=Count("label"))
-                .order_by("-count")
-            )
-        else:
-            return (
-                qs.annotate(
-                    label=F(f"postcode_data__{postcode_io_key}"),
-                    gss=F(f"postcode_data__codes__{postcode_io_key}"),
-                    value=Cast(KT(f"json__{sum_column}"), FloatField()),
-                )
-                .values("label", "gss")
-                .annotate(count=Sum("value"))
                 .order_by("-count")
             )
 

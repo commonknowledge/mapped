@@ -16,7 +16,8 @@ export const MAP_REPORT_WARD_STATS = gql`
       id
       importedDataCountByArea(
         analyticalAreaType: admin_ward
-        sumColumn: "Observation"
+        operation: "sum"
+        column: "Observation"
       ) {
         label
         gss

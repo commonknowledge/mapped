@@ -576,7 +576,7 @@ class GroupedDataCount:
     # Provide area_type if gss code is not unique (e.g. WMC and WMC23 constituencies)
     area_type: Optional[str] = None
     gss: Optional[str]
-    count: Optional[float]
+    count: float = 0
     area_data: Optional[strawberry.Private[Area]] = None
 
     @strawberry_django.field
@@ -704,11 +704,12 @@ class Analytics:
 
     @strawberry_django.field
     def imported_data_count_by_area(
-        self, analytical_area_type: AnalyticalAreaType, sum_column: Optional[str] = None
+        self, analytical_area_type: AnalyticalAreaType, operation: Optional[str] = None, column: Optional[str] = None
     ) -> List[GroupedDataCount]:
         data = self.imported_data_count_by_area(
             postcode_io_key=analytical_area_type.value,
-            sum_column=sum_column
+            operation=operation,
+            column=column
         )
         area_key = postcodeIOKeyAreaTypeLookup[analytical_area_type]
         return [GroupedDataCount(**datum, area_type=area_key) for datum in data]
