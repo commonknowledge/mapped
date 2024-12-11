@@ -4,7 +4,7 @@ import itertools
 import json
 import math
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import List, Optional, Self, Type, TypedDict, Union
 from urllib.parse import urlencode, urljoin
@@ -15,6 +15,7 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.gis.db.models import MultiPolygonField, PointField
 from django.contrib.gis.geos import Point
 from django.core.cache import cache
+from django.core.mail import EmailMessage
 from django.db import models
 from django.db.models import Avg, IntegerField, Max, Min, Q
 from django.db.models.functions import Cast, Coalesce
@@ -1211,6 +1212,24 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         )
         return original_job
 
+    def get_latest_parent_job(self, filter: dict):
+        latest_batch_job_for_this_source = (
+            self.event_log_queryset()
+            .filter(**filter, args__request_id__isnull=False)
+            .first()
+        )
+        if latest_batch_job_for_this_source is None:
+            return None
+        request_id = latest_batch_job_for_this_source.args.get("request_id", None)
+        # Now find the oldest, first job with that request_id
+        original_job = (
+            self.event_log_queryset()
+            .filter(args__request_id=request_id)
+            .order_by("id")
+            .first()
+        )
+        return original_job
+
     def get_scheduled_import_job(self):
         return self.get_scheduled_parent_job(
             dict(task_name__contains="hub.tasks.import")
@@ -1221,6 +1240,12 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             dict(task_name__contains="hub.tasks.refresh")
         )
 
+    def get_latest_import_job(self):
+        return self.get_latest_parent_job(dict(task_name__contains="hub.tasks.import"))
+
+    def get_latest_update_job(self):
+        return self.get_latest_parent_job(dict(task_name__contains="hub.tasks.refresh"))
+
     class BatchJobProgress(TypedDict):
         status: str
         id: str
@@ -1230,13 +1255,16 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         doing: int = 0
         failed: int = 0
         estimated_seconds_remaining: float = 0
+        actual_finish_time: Optional[datetime]
         estimated_finish_time: Optional[datetime]
         has_forecast: bool = True
         seconds_per_record: float = 0
         done: int = 0
         remaining: int = 0
+        number_of_jobs_ahead_in_queue: int = 0
+        send_email: bool = False
 
-    def get_scheduled_batch_job_progress(self, parent_job: ProcrastinateJob):
+    def get_scheduled_batch_job_progress(self, parent_job: ProcrastinateJob, user=None):
         # TODO: This doesn't work for import/refresh by page. How can it cover this case?
         request_id = parent_job.args.get("request_id")
 
@@ -1272,25 +1300,36 @@ class ExternalDataSource(PolymorphicModel, Analytics):
                 )
 
         jobs = self.event_log_queryset().filter(args__request_id=request_id).all()
+        status = "todo"
 
-        total = 2
+        if any([job.status == "doing" for job in jobs]):
+            status = "doing"
+        elif any([job.status == "failed" for job in jobs]):
+            status = "failed"
+        elif all([job.status == "succeeded" for job in jobs]):
+            status = "succeeded"
+
+        total = 0
         statuses = dict()
 
         for job in jobs:
-            job_count = len(job.args.get("members", []))
-            total += job_count
+            job_record_count = len(job.args.get("members", []))
+            total += job_record_count
             if statuses.get(job.status, None) is not None:
-                statuses[job.status] += job_count
+                statuses[job.status] += job_record_count
             else:
-                statuses[job.status] = job_count
+                statuses[job.status] = job_record_count
 
         done = (
-            int(
-                statuses.get("succeeded", 0)
-                + statuses.get("failed", 0)
-                + statuses.get("doing", 0)
-            )
-            + 1
+            statuses.get("succeeded", 0)
+            + statuses.get("failed", 0)
+            + statuses.get("doing", 0)
+        )
+
+        number_of_jobs_ahead_in_queue = (
+            ProcrastinateJob.objects.filter(id__lt=parent_job.id)
+            .filter(status__in=["todo", "doing"])
+            .count()
         )
 
         time_started = (
@@ -1303,29 +1342,82 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         remaining = total - done
 
         time_so_far = datetime.now(pytz.utc) - time_started
-        duration_per_record = time_so_far / done
+        duration_per_record = time_so_far / (done or 1)
         time_remaining = duration_per_record * remaining
-        estimated_finish_time = datetime.now() + time_remaining
+        estimated_finish_time = datetime.now(pytz.utc) + time_remaining
+
+        if status == "succeeded" or status == "failed":
+            actual_finish_time = (
+                ProcrastinateEvent.objects.filter(job__in=jobs)
+                .order_by("-at")
+                .first()
+                .at.replace(tzinfo=pytz.utc)
+            )
+
+        else:
+            actual_finish_time = None
+
+        time_threshold = timedelta(minutes=5)
+        send_email = False
+        actual_job_duration = None
+
+        estimated_job_duration = estimated_finish_time - time_started
+
+        if actual_finish_time is not None:
+            actual_job_duration = actual_finish_time - time_started
+
+        if estimated_job_duration > time_threshold:
+            send_email = True
+
+        if actual_job_duration and actual_job_duration > time_threshold:
+            if status == "succeeded" and user and user.is_authenticated:
+                user_email = user.email
+                email_subject = "Mapped Job Progress Notification"
+                email_body = "Your job has been successfully completed."
+                try:
+                    email = EmailMessage(
+                        subject=email_subject,
+                        body=email_body,
+                        from_email="noreply@example.com",
+                        to=[user_email],
+                    )
+                    email.send()
+
+                except Exception as e:
+                    logger.error(f"Failed to send email: {e}")
+
+            elif status == "failed" and user and user.is_authenticated:
+                user_email = user.email
+                email_subject = "Mapped Job Progress Notification"
+                email_body = "Your job has failed. Please check the details."
+                try:
+                    email = EmailMessage(
+                        subject=email_subject,
+                        body=email_body,
+                        from_email="noreply@example.com",
+                        to=[user_email],
+                    )
+                    email.send()
+
+                except Exception as e:
+                    logger.error(f"Failed to send email to {user_email}: {e}")
 
         return self.BatchJobProgress(
-            status=(
-                "succeeded"
-                if remaining <= 0
-                else (
-                    parent_job.status if parent_job.status != "succeeded" else "doing"
-                )
-            ),
+            send_email=send_email,
+            status=status,
             id=request_id,
             started_at=time_started,
             estimated_seconds_remaining=time_remaining,
             estimated_finish_time=estimated_finish_time,
+            actual_finish_time=actual_finish_time,
             seconds_per_record=duration_per_record.seconds,
-            total=total - 2,
-            done=done - 1,
-            remaining=remaining - 1,
+            total=total,
+            done=done,
+            remaining=remaining,
             succeeded=statuses.get("succeeded", 0),
             failed=statuses.get("failed", 0),
             doing=statuses.get("doing", 0),
+            number_of_jobs_ahead_in_queue=number_of_jobs_ahead_in_queue,
         )
 
     def get_update_mapping(self) -> list[UpdateMapping]:
@@ -2158,6 +2250,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
     async def deferred_refresh_many(
         cls, external_data_source_id: str, members: list, request_id: str = None
     ):
+
         if not cls.allow_updates:
             logger.error(f"Updates requested for non-updatable CRM {cls}")
             return
@@ -2222,6 +2315,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
     async def deferred_import_many(
         cls, external_data_source_id: str, members: list, request_id: str = None
     ):
+
         external_data_source: ExternalDataSource = await cls.objects.aget(
             id=external_data_source_id
         )

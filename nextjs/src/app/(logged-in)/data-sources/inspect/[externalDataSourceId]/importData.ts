@@ -20,7 +20,6 @@ export default function importData(
           id
           externalDataSource {
             importedDataCount
-            isImportScheduled
             importProgress {
               status
               hasForecast
@@ -29,6 +28,7 @@ export default function importData(
               succeeded
               failed
               estimatedFinishTime
+              inQueue
             }
           }
         }

@@ -1,5 +1,4 @@
 'use client'
-
 import { FetchResult, gql, useApolloClient, useQuery } from '@apollo/client'
 import { format } from 'd3-format'
 import { formatRelative } from 'date-fns'
@@ -122,6 +121,10 @@ const GET_UPDATE_CONFIG = gql`
         total
         succeeded
         estimatedFinishTime
+        actualFinishTime
+        inQueue
+        numberOfJobsAheadInQueue
+        sendEmail
       }
       isUpdateScheduled
       updateProgress {
@@ -131,6 +134,10 @@ const GET_UPDATE_CONFIG = gql`
         total
         succeeded
         estimatedFinishTime
+        actualFinishTime
+        inQueue
+        numberOfJobsAheadInQueue
+        sendEmail
       }
       importedDataCount
       fieldDefinitions {
@@ -264,10 +271,10 @@ export default function InspectExternalDataSource({
                 .
               </p>
               <Button
-                disabled={source.isImportScheduled}
+                disabled={source.importProgress?.inQueue}
                 onClick={() => importData(client, externalDataSourceId)}
               >
-                {!source.isImportScheduled ? (
+                {!source.importProgress?.inQueue ? (
                   'Import all data'
                 ) : (
                   <span className="flex flex-row gap-2 items-center">
@@ -281,13 +288,33 @@ export default function InspectExternalDataSource({
                   </span>
                 )}
               </Button>
-              {source.importProgress?.status ===
-                ProcrastinateJobStatus.Doing && (
+              {source.importProgress?.status !== 'todo' ? (
                 <BatchJobProgressReport
                   batchJobProgress={source.importProgress}
                   pastTenseVerb="Imported"
                 />
-              )}
+              ) : null}
+              {source?.importProgress?.status === 'todo' &&
+                source?.importProgress?.numberOfJobsAheadInQueue != null &&
+                source.importProgress.numberOfJobsAheadInQueue > 0 && (
+                  <div>
+                    {source.importProgress.numberOfJobsAheadInQueue}{' '}
+                    {source.importProgress.numberOfJobsAheadInQueue === 1
+                      ? 'job'
+                      : 'jobs'}{' '}
+                    ahead of this one in the queue
+                  </div>
+                )}
+
+              {source.importProgress?.sendEmail &&
+                (source?.importProgress?.status === 'todo' ||
+                  source?.importProgress?.status === 'doing') && (
+                  <div>
+                    This job is predicted to take more than 5 minutes. Feel free
+                    to navigate away from this page and we will send you an
+                    email when it's finished.
+                  </div>
+                )}
               {source.hasWebhooks && (
                 <section className="space-y-4">
                   <h2 className="text-hSm mb-5">Auto-import</h2>
@@ -436,11 +463,8 @@ export default function InspectExternalDataSource({
                       />
                     </p>
                     <div className="space-y-4">
-                      {!source.isUpdateScheduled ? (
-                        <TriggerUpdateButton
-                          id={source.id}
-                          crmType={source.crmType}
-                        />
+                      {!source.updateProgress?.inQueue ? (
+                        <TriggerUpdateButton id={source.id} />
                       ) : (
                         <>
                           <Button disabled>
@@ -454,15 +478,36 @@ export default function InspectExternalDataSource({
                               </span>
                             </span>
                           </Button>
-                          {source.updateProgress?.status ===
-                            ProcrastinateJobStatus.Doing && (
-                            <BatchJobProgressReport
-                              batchJobProgress={source.updateProgress}
-                              pastTenseVerb="Done"
-                            />
-                          )}
                         </>
                       )}
+                      {source?.updateProgress?.status === 'todo' &&
+                        source?.updateProgress?.numberOfJobsAheadInQueue !=
+                          null &&
+                        source.updateProgress.numberOfJobsAheadInQueue > 0 && (
+                          <div>
+                            {source.updateProgress.numberOfJobsAheadInQueue}{' '}
+                            {source.updateProgress.numberOfJobsAheadInQueue ===
+                            1
+                              ? 'job'
+                              : 'jobs'}{' '}
+                            ahead of this one in the queue
+                          </div>
+                        )}
+                      {source.updateProgress?.sendEmail &&
+                        (source?.updateProgress?.status === 'todo' ||
+                          source?.updateProgress?.status === 'doing') && (
+                          <div>
+                            This job is predicted to take more than 5 minutes.
+                            Feel free to navigate away from this page and we
+                            will send you an email when it's finished.
+                          </div>
+                        )}
+                      {source.updateProgress?.status !== 'todo' ? (
+                        <BatchJobProgressReport
+                          batchJobProgress={source.updateProgress}
+                          pastTenseVerb="Done"
+                        />
+                      ) : null}
                     </div>
                   </section>
                   {source.hasWebhooks && (
