@@ -1590,15 +1590,27 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             await asyncio.gather(*[create_import_record(record) for record in data])
         elif (
             self.geography_column
-            and self.geography_column_type == self.GeographyTypes.WARD
+            and (
+                self.geography_column_type == self.GeographyTypes.WARD or
+                self.geography_column_type == self.GeographyTypes.ADMIN_DISTRICT or
+                self.geography_column_type == self.GeographyTypes.PARLIAMENTARY_CONSTITUENCY or
+                self.geography_column_type == self.GeographyTypes.PARLIAMENTARY_CONSTITUENCY_2024
+            )
         ):
             loaders = await self.get_loaders()
 
             async def create_import_record(record):
                 structured_data = get_update_data(record)
                 wards = Area.objects.filter(
-                    area_type__code="WD23",
-                    gss=self.get_record_field(record, self.geography_column),
+                    area_type__code__in=(
+                        ["WD23"] if self.geography_column_type == self.GeographyTypes.WARD else
+                        ["STC", "DIS"] if self.geography_column_type == self.GeographyTypes.ADMIN_DISTRICT else
+                        ["WMC"] if self.geography_column_type == self.GeographyTypes.PARLIAMENTARY_CONSTITUENCY else
+                        ["WMC23"]
+                    )
+                ).filter(
+                    Q(gss=self.get_record_field(record, self.geography_column)) |
+                    Q(name__iexact=self.get_record_field(record, self.geography_column))
                 )
                 ward = await sync_to_async(wards.first)()
                 coord = ward.point.centroid
