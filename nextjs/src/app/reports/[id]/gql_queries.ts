@@ -14,7 +14,10 @@ export const MAP_REPORT_WARD_STATS = gql`
   query MapReportWardStats($reportID: ID!) {
     mapReport(pk: $reportID) {
       id
-      importedDataCountByWard {
+      importedDataCountByArea(
+        analyticalAreaType: admin_ward
+        sumColumn: "Observation"
+      ) {
         label
         gss
         count

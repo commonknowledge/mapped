@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, List, Optional, TypedDict
 
-from django.db.models import Count, F, QuerySet
+from django.db.models import Count, F, QuerySet, Sum, FloatField
+from django.db.models.fields.json import KT
+from django.db.models.functions import Cast
 from django.db.models.manager import BaseManager
 
 if TYPE_CHECKING:
@@ -36,6 +38,7 @@ class Analytics:
     def imported_data_count_by_area(
         self,
         postcode_io_key: str = None,
+        sum_column: str = None,
         gss: str = None,
     ) -> QuerySet[RegionCount]:
         qs = self.get_analytics_queryset()
@@ -47,16 +50,28 @@ class Analytics:
                 qs = qs.filter(**{f"postcode_data__codes__{postcode_io_key}": gss})
             except Exception:
                 return []
-
-        return (
-            qs.annotate(
-                label=F(f"postcode_data__{postcode_io_key}"),
-                gss=F(f"postcode_data__codes__{postcode_io_key}"),
+            
+        if sum_column is None:
+            return (
+                qs.annotate(
+                    label=F(f"postcode_data__{postcode_io_key}"),
+                    gss=F(f"postcode_data__codes__{postcode_io_key}"),
+                )
+                .values("label", "gss")
+                .annotate(count=Count("label"))
+                .order_by("-count")
             )
-            .values("label", "gss")
-            .annotate(count=Count("label"))
-            .order_by("-count")
-        )
+        else:
+            return (
+                qs.annotate(
+                    label=F(f"postcode_data__{postcode_io_key}"),
+                    gss=F(f"postcode_data__codes__{postcode_io_key}"),
+                    value=Cast(KT(f"json__{sum_column}"), FloatField()),
+                )
+                .values("label", "gss")
+                .annotate(count=Sum("value"))
+                .order_by("-count")
+            )
 
     def imported_data_count_by_constituency(
         self, gss: str = None
