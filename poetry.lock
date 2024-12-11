@@ -2025,6 +2025,17 @@ xlsx = ["openpyxl (>=2.6.2)"]
 xpath = ["lxml (>=4.4.0)"]
 
 [[package]]
+name = "phonenumbers"
+version = "8.13.51"
+description = "Python version of Google's common library for parsing, formatting, storing and validating international phone numbers."
+optional = false
+python-versions = "*"
+files = [
+    {file = "phonenumbers-8.13.51-py2.py3-none-any.whl", hash = "sha256:3bdacc0a155c8761c2a0ba7fc5632fe1541e5291ab70a4f345ab80a5742874b6"},
+    {file = "phonenumbers-8.13.51.tar.gz", hash = "sha256:e8f4969841a163a3df3cb3ed8c499f0e00d58b2a1ecaa661e84e1d5fee67335f"},
+]
+
+[[package]]
 name = "pillow"
 version = "10.4.0"
 description = "Python Imaging Library (Fork)"
@@ -3765,4 +3776,4 @@ wand = ["Wand (>=0.6,<1.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.11,<=3.12.3"
-content-hash = "e8f85c0876a7cfb3f31229a9f9921e2d07f0e9fa6dff78a7f18b255c1e7aec4d"
+content-hash = "4fa2635f3c73f4aaecbaa85d72896e6a42da469e32d4359fb843c58dfd2088b8"
