@@ -1,7 +1,6 @@
 'use client'
 
 import { formatRelative } from 'date-fns'
-import Image from 'next/image'
 import Link from 'next/link'
 
 import { ListReportsQuery } from '@/__generated__/graphql'
@@ -13,6 +12,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
+import { Map } from 'lucide-react'
+
 export function ReportCard({
   report,
 }: {
@@ -20,25 +21,19 @@ export function ReportCard({
 }) {
   return (
     <Link href={`/reports/${report.id}`}>
-      <Card>
-        <CardHeader>
+      <Card className="hover:bg-meepGray-700 transition-colors duration-200">
+        <CardHeader className="p-4">
           <CardContent>
-            <Image
-              src="/reports_page_card_image.png"
-              alt="Description of the image"
-              width={300}
-              height={300}
-              className="w-auto"
-            />
+            <Map className="w-4 text-brandBlue" />
           </CardContent>
-          <CardTitle className="mb-1 px-5 pt-4">{report.name}</CardTitle>
-          <CardDescription className="text-sm text-meepGray-400 px-5 pb-5">
-            Last edited{' '}
-            <span className="text-meepGray-300">
-              {formatRelative(report.lastUpdate, new Date())}
-            </span>
-          </CardDescription>
+          <CardTitle className="mb-1">{report.name}</CardTitle>
         </CardHeader>
+        <CardDescription className="text-sm text-meepGray-400 px-5 pb-5">
+          Last edited{' '}
+          <span className="text-meepGray-300">
+            {formatRelative(report.lastUpdate, new Date())}
+          </span>
+        </CardDescription>
       </Card>
     </Link>
   )
