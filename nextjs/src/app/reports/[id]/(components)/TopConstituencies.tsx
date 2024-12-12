@@ -1,7 +1,6 @@
 import { gql, useQuery } from '@apollo/client'
-import { getYear } from 'date-fns'
-import { useAtom } from 'jotai'
-import { useState } from 'react'
+import { useAtom, useSetAtom } from 'jotai'
+import { useEffect, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 import {
@@ -27,6 +26,12 @@ import {
 import { useLoadedMap } from '@/lib/map/useLoadedMap'
 
 import { useReport } from './ReportProvider'
+
+import { Button } from '@/components/ui/button'
+import { isConstituencyPanelOpenAtom } from '@/lib/map'
+import { ArrowLeftIcon, Layers, X } from 'lucide-react'
+import { selectedBoundaryAtom } from '../useSelectBoundary'
+import { Combobox } from './ContituenciesComboBox'
 
 export function TopConstituencies() {
   const sortOptions = {
@@ -56,6 +61,8 @@ export function TopConstituencies() {
   )
   const [tab, setTab] = useAtom(constituencyPanelTabAtom)
   const map = useLoadedMap()
+  const setIsConstituencyPanelOpen = useSetAtom(isConstituencyPanelOpenAtom)
+  const [selectedBoundary, setSelectedBoundary] = useAtom(selectedBoundaryAtom)
 
   const constituencies =
     constituencyAnalytics.data?.mapReport.importedDataCountByConstituency
@@ -77,6 +84,26 @@ export function TopConstituencies() {
         return 0
       })
 
+  function comboboxMapFitBounds(value: string) {
+    const constituency = constituencies?.find((c) => c.gss === value)
+    map.loadedMap?.fitBounds(constituency?.gssArea?.fitBounds, {
+      maxZoom: 12,
+    })
+  }
+
+  useEffect(() => {
+    if (selectedConstituency && map.loadedMap) {
+      const constituency = constituencies?.find(
+        (c) => c.gss === selectedConstituency
+      )
+      if (constituency?.gssArea?.fitBounds) {
+        map.loadedMap.fitBounds(constituency.gssArea.fitBounds, {
+          maxZoom: 12,
+        })
+      }
+    }
+  }, [selectedConstituency, constituencies, map.loadedMap])
+
   if (constituencyAnalytics.loading && !constituencyAnalytics.data)
     return (
       <div className="flex flex-row items-center justify-center p-4 gap-2">
@@ -86,48 +113,104 @@ export function TopConstituencies() {
     )
 
   return (
-    // List of them here
-    <div className="grid grid-cols-1 gap-4">
-      <div className="text-meepGray-400 text-xs">
-        <Select
-          value={sortBy}
-          onValueChange={(value) =>
-            setSortBy(value as keyof typeof sortOptions)
+    <div className=" flex flex-col">
+      <div className="p-4 flex flex-col border-b bg-meepGray-600 gap-2 border-meepGray-800 pb-4">
+        <Combobox
+          options={
+            constituencies?.map((c) => ({
+              label: c.label!,
+              value: c.gss!,
+            })) || []
           }
-        >
-          <SelectTrigger
-            className={twMerge(
-              'h-7 w-full max-w-[200px] text-xs [&_svg]:h-4 [&_svg]:w-4'
-            )}
-          >
-            <span className="text-muted-foreground">Sort by: </span>
-            <SelectValue placeholder="Select style" />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(sortOptions).map(([value, label]) => (
-              <SelectItem key={value} value={value} className="text-xs">
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      {constituencies?.map((constituency) => (
-        <div
-          key={constituency.gss}
-          onClick={() => {
-            setSelectedConstituency(constituency.gss!)
-            setTab('selected')
-            map.loadedMap?.fitBounds(constituency.gssArea?.fitBounds)
+          setValue={(value) => {
+            setSelectedConstituency(value)
+            comboboxMapFitBounds(value)
           }}
-          className="cursor-pointer bg-meepGray-700 group hover:bg-meepGray-600 rounded-lg"
-        >
-          <ConstituencySummaryCard
-            constituency={constituency.gssArea!}
-            count={constituency.count}
-          />
+          value={selectedConstituency || ''}
+        />
+
+        <div className="flex flex-row gap-4 items-center justify-center">
+          {!selectedConstituency && (
+            <Select
+              value={sortBy}
+              onValueChange={(value) =>
+                setSortBy(value as keyof typeof sortOptions)
+              }
+            >
+              <SelectTrigger
+                className={twMerge(
+                  'h-7 w-full max-w-[200px] text-xs [&_svg]:h-4 [&_svg]:w-4'
+                )}
+              >
+                <span className="text-muted-foreground">Sort by: </span>
+                <SelectValue placeholder="Select style" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(sortOptions).map(([value, label]) => (
+                  <SelectItem key={value} value={value} className="text-xs">
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {selectedConstituency && (
+            <Button
+              variant="link"
+              className="h-7 text-xs gap-1 px-0 "
+              onClick={() => setSelectedConstituency('')}
+            >
+              <X className="w-4 h-4" />
+              Show all
+            </Button>
+          )}
         </div>
-      ))}
+      </div>
+
+      {constituencies?.length === 0 ? (
+        <div className="text-left p-4 text-meepGray-300 flex items-center gap-2 bg-meepGray-700 rounded-lg">
+          <ArrowLeftIcon className="w-8 h-4" />
+          <p>
+            Add data to the{' '}
+            <span className=" bg-meepGray-500 px-2 py-1 rounded-sm">
+              <Layers className="inline-block w-4 mr-1" />
+              Map Layers
+            </span>{' '}
+            panel first to see constituency data
+          </p>
+        </div>
+      ) : (
+        <div className="max-h-[70vh] overflow-y-auto divide-y divide-meepGray-500 ">
+          {constituencies
+            ?.filter(
+              (constituency) =>
+                !selectedConstituency ||
+                constituency.gss === selectedConstituency
+            )
+            ?.map((constituency) => (
+              <div
+                key={constituency.gss}
+                onClick={() => {
+                  if (selectedBoundary === constituency.gss) {
+                    setSelectedBoundary(null)
+                    setIsConstituencyPanelOpen(false)
+                  } else {
+                    setSelectedBoundary(constituency.gss!)
+                    setIsConstituencyPanelOpen(true)
+                  }
+                  map.loadedMap?.fitBounds(constituency.gssArea?.fitBounds, {
+                    maxZoom: 12,
+                  })
+                }}
+              >
+                <ConstituencySummaryCard
+                  constituency={constituency.gssArea!}
+                  count={constituency.count}
+                />
+              </div>
+            ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -148,71 +231,66 @@ export function ConstituencySummaryCard({
   } = useReport()
 
   return (
-    <div className="p-3 ">
-      <h2 className="font-PPRightGrotesk text-hLgPP mb-3">
-        {constituency.name}
-      </h2>
-      {!!constituency.mp?.name && display?.showMPs && (
-        <div className="mb-5 mt-4">
-          <Person
-            name={constituency.mp?.name}
-            subtitle={constituency.mp?.party?.name}
-            img={constituency.mp?.photo?.url}
+    <div className="flex flex-col p-4 hover:bg-meepGray-700 cursor-pointer pb-8">
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-row gap-2 items-start">
+          <div
+            className="w-4 h-4 rounded-full flex-shrink-0 mt-2"
+            style={{
+              backgroundColor:
+                constituency.lastElection?.stats.firstPartyResult.shade ||
+                'gray',
+            }}
+          ></div>
+          <h2 className="text-xl">{constituency.name}</h2>
+        </div>
+        {!!constituency.mp?.name && display?.showMPs && (
+          <div className="mb-5 mt-4">
+            <Person
+              name={constituency.mp?.name}
+              subtitle={constituency.mp?.party?.name}
+              img={constituency.mp?.photo?.url}
+            />
+          </div>
+        )}
+        {/* {!!constituency.lastElection?.stats &&
+          display?.showLastElectionData && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <p className="text-dataName font-IBMPlexSansCondensed uppercase text-meepGray-300">
+                  1st in {getYear(constituency.lastElection.stats.date)}
+                </p>
+                <div className="flex items-center gap-1">
+                  <p className="text-dataResult font-IBMPlexMono">
+                    {constituency.lastElection.stats.firstPartyResult.party.replace(
+                      ' Party',
+                      ''
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-dataName font-IBMPlexSansCondensed uppercase text-meepGray-300">
+                  2nd in {getYear(constituency.lastElection.stats.date)}
+                </p>
+                <div className="flex items-center gap-1">
+                  <p className="text-dataResult font-IBMPlexMono">
+                    {constituency.lastElection.stats.secondPartyResult.party.replace(
+                      ' Party',
+                      ''
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )} */}
+        <div>
+          <MemberElectoralInsights
+            totalCount={count}
+            electionStats={constituency.lastElection?.stats}
+            bg="bg-meepGray-600 group-hover:bg-meepGray-700"
           />
         </div>
-      )}
-      {!!constituency.lastElection?.stats && display?.showLastElectionData && (
-        <div className="flex justify-between mb-6">
-          <div className="flex flex-col gap-1">
-            <p className="text-dataName font-IBMPlexSansCondensed uppercase text-meepGray-300">
-              1st in {getYear(constituency.lastElection.stats.date)}
-            </p>
-            <div className="flex items-center gap-1">
-              <div
-                className={`w-3 h-3 rounded-full`}
-                style={{
-                  backgroundColor:
-                    constituency.lastElection.stats.firstPartyResult.shade ||
-                    'gray',
-                }}
-              ></div>
-              <p className="text-dataResult font-IBMPlexMono">
-                {constituency.lastElection.stats.firstPartyResult.party.replace(
-                  ' Party',
-                  ''
-                )}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <p className="text-dataName font-IBMPlexSansCondensed uppercase text-meepGray-300">
-              2nd in {getYear(constituency.lastElection.stats.date)}
-            </p>
-            <div className="flex items-center gap-1">
-              <div
-                className={`w-3 h-3 rounded-full`}
-                style={{
-                  backgroundColor:
-                    constituency.lastElection.stats.secondPartyResult.shade ||
-                    'gray',
-                }}
-              ></div>
-              <p className="text-dataResult font-IBMPlexMono">
-                {constituency.lastElection.stats.secondPartyResult.party.replace(
-                  ' Party',
-                  ''
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-      <div>
-        <MemberElectoralInsights
-          totalCount={count}
-          electionStats={constituency.lastElection?.stats}
-          bg="bg-meepGray-700 group-hover:bg-meepGray-600"
-        />
       </div>
     </div>
   )

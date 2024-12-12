@@ -77,9 +77,7 @@ export const ConstituencyElectionDeepDive = ({
 
   return (
     <div key={data.constituency.id} className="divide-y space-y-4">
-      <h1 className="font-PPRightGrotesk text-hLgPP">
-        {data.constituency.name}
-      </h1>
+      <h1 className=" text-3xl font-bold">{data.constituency.name}</h1>
       {data.constituency.mp && showMPs && (
         <section className="mb-8">
           <div className="uppercase font-IBMPlexMono text-xs text-meepGray-400 mb-1">

@@ -18,11 +18,11 @@ const ReportDisplaySettings: React.FC = () => {
     <div
       id="report-display-settings"
       style={{
-        top: NAVBAR_HEIGHT + 15 + 'px',
+        top: NAVBAR_HEIGHT,
         right: isConstituencyPanelOpen ? '400px' : '15px',
         // right: 'calc(var(--sidebar-width) + 15px)',
       }}
-      className="fixed z-10"
+      className="fixed z-10 pt-5"
     >
       <Popover>
         <PopoverTrigger asChild>
