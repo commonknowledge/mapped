@@ -84,11 +84,23 @@ export const MAP_REPORT_LAYER_ANALYTICS = gql`
     }
   }
 `
-export const MAP_REPORT_REGION_STATS = gql`
-  query MapReportRegionStats($reportID: ID!) {
+
+/**
+ * This query is used to get the data for the choropleth layers on the map.
+ * It returns the count of data points in each area, which is used to colour the choropleth.
+ */
+export const MAP_REPORT_COUNT_BY_AREA = gql`
+  query MapReportCountByArea(
+    $reportID: ID!
+    $analyticalAreaType: AnalyticalAreaType!
+    $layerIds: [String!]
+  ) {
     mapReport(pk: $reportID) {
       id
-      importedDataCountByRegion {
+      importedDataCountByArea: importedDataCountByArea(
+        analyticalAreaType: $analyticalAreaType
+        layerIds: $layerIds
+      ) {
         label
         gss
         count
@@ -106,19 +118,22 @@ export const MAP_REPORT_REGION_STATS = gql`
     }
   }
 `
-export const MAP_REPORT_CONSTITUENCY_STATS = gql`
-  query MapReportConstituencyStats(
+
+export const MAP_REPORT_DATA_BY_AREA = gql`
+  query MapReportDataByArea(
     $reportID: ID!
     $analyticalAreaType: AnalyticalAreaType!
+    $layerIds: [String!]
   ) {
     mapReport(pk: $reportID) {
       id
-      importedDataCountByConstituency: importedDataCountByArea(
+      importedDataByArea: importedDataByArea(
         analyticalAreaType: $analyticalAreaType
+        layerIds: $layerIds
       ) {
         label
         gss
-        count
+        importedData
         gssArea {
           point {
             id

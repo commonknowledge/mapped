@@ -1,8 +1,10 @@
 'use client'
 
+import { Separator } from '@/components/ui/separator'
 import { ReportConfig } from '../reportContext'
 import ReportBoundaries from './ReportBoundaries'
 import { useReport } from './ReportProvider'
+import ReportVisualisation from './ReportVisualisation'
 
 export interface UpdateConfigProps {
   updateVisualisationConfig: (
@@ -31,10 +33,13 @@ const ReportConfiguration: React.FC = () => {
   return (
     <div className="flex flex-col gap-2">
       <ReportBoundaries updateVisualisationConfig={updateVisualisationConfig} />
-      {/* <Separator className="bg-meepGray-800" />
+      <Separator
+        className="bg-meepGray-800 ml-[-16px]"
+        style={{ width: 'calc(100% + 32px)' }}
+      />
       <ReportVisualisation
         updateVisualisationConfig={updateVisualisationConfig}
-      /> */}
+      />
     </div>
   )
 }

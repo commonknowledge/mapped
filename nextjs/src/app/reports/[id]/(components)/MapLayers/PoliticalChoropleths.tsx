@@ -1,6 +1,6 @@
 import { AnalyticalAreaType } from '@/__generated__/graphql'
 import { useLoadedMap } from '@/lib/map'
-import { useAtomValue } from 'jotai'
+import { useAtom } from 'jotai'
 import React, { useEffect } from 'react'
 import { Layer, Source } from 'react-map-gl'
 import { addCountByGssToMapboxLayer } from '../../addCountByGssToMapboxLayer'
@@ -15,8 +15,8 @@ import {
 } from '../../mapboxStyles'
 import { MapReportExtended } from '../../reportContext'
 import { Tileset } from '../../types'
-import useBoundaryAnalytics from '../../useBoundaryAnalytics'
-import useSelectBoundary, {
+import useDataByBoundary from '../../useDataByBoundary'
+import useClickOnBoundaryEvents, {
   selectedBoundaryAtom,
 } from '../../useSelectBoundary'
 import { PLACEHOLDER_LAYER_ID_CHOROPLETH } from '../ReportPage'
@@ -32,31 +32,43 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
   boundaryType,
   tileset,
 }) => {
-  const countsByBoundaryType = useBoundaryAnalytics(report, boundaryType)
-  const map = useLoadedMap()
-  const selectedBoundary = useAtomValue(selectedBoundaryAtom)
-  useSelectBoundary(tileset)
-
   // Show the layer only if the report is set to show the boundary type
   const visibility =
     report.displayOptions?.dataVisualisation?.boundaryType === boundaryType
       ? 'visible'
       : 'none'
 
-  // When the map is loaded and we have the data, add the layer to the map
+  const { data: dataByBoundary } = useDataByBoundary({ report, boundaryType })
+  const map = useLoadedMap()
+  const [selectedBoundary, setSelectedBoundary] = useAtom(selectedBoundaryAtom)
+  useClickOnBoundaryEvents(visibility === 'visible' ? tileset : null)
+
   useEffect(() => {
-    if (map.loaded && countsByBoundaryType) {
+    if (visibility === 'none') {
+      setSelectedBoundary(null)
+    }
+  }, [visibility])
+
+  // When the map is loaded and we have the data, add the data to the boundaries
+  useEffect(() => {
+    if (map.loaded && dataByBoundary) {
+      // If the currently selected dataSource is of type "MEMBER",
+      // we need to add the count to the mapbox layer
       addCountByGssToMapboxLayer(
-        countsByBoundaryType,
+        dataByBoundary,
         tileset.mapboxSourceId,
         tileset.sourceLayerId,
         map.loadedMap
       )
+
+      // If the currently selected boundary is of type "AREA_STATS"
+      // we need to get the chosen dataSourecField
+      // and add the area stats to the mapbox layer
     }
-  }, [map.loaded, countsByBoundaryType])
+  }, [map.loaded, dataByBoundary, report])
 
   if (!map.loaded) return null
-  if (!countsByBoundaryType || !tileset) return null
+  if (!dataByBoundary || !tileset) return null
 
   return (
     <>
@@ -73,9 +85,9 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
           source={tileset.mapboxSourceId}
           source-layer={tileset.sourceLayerId}
           type="fill"
-          filter={getChoroplethFillFilter(countsByBoundaryType, tileset)}
-          paint={getChoroplethFill(countsByBoundaryType)}
-          layout={{ visibility }}
+          filter={getChoroplethFillFilter(dataByBoundary, tileset)}
+          paint={getChoroplethFill(dataByBoundary, visibility === 'visible')}
+          //layout={{ visibility: delayedVisibility }}
         />
         {/* Border of the boundary */}
         <Layer
@@ -84,8 +96,11 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
           source={tileset.mapboxSourceId}
           source-layer={tileset.sourceLayerId}
           type="line"
-          paint={getChoroplethEdge()}
-          layout={{ visibility, 'line-join': 'round', 'line-round-limit': 0.1 }}
+          paint={getChoroplethEdge(visibility === 'visible')}
+          layout={{
+            'line-join': 'round',
+            'line-round-limit': 0.1,
+          }}
         />
         {/* Border of the selected boundary  */}
         <Layer
@@ -102,13 +117,13 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
       <Source
         id={`${tileset.mapboxSourceId}-area-count`}
         type="geojson"
-        data={getAreaGeoJSON(countsByBoundaryType)}
+        data={getAreaGeoJSON(dataByBoundary)}
       >
         <Layer
           id={`${tileset.mapboxSourceId}-area-count`}
           type="symbol"
           layout={{
-            ...getAreaCountLayout(countsByBoundaryType),
+            ...getAreaCountLayout(dataByBoundary),
             visibility,
           }}
           paint={{
@@ -132,7 +147,7 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
           id={`${tileset.mapboxSourceId}-area-label`}
           type="symbol"
           layout={{
-            ...getAreaLabelLayout(countsByBoundaryType),
+            ...getAreaLabelLayout(dataByBoundary),
             visibility,
           }}
           paint={{
@@ -142,10 +157,10 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
               ['exponential', 1],
               ['zoom'],
               //
-              6.5,
+              7.5,
               0,
               //
-              7,
+              7.8,
               1,
             ],
             'text-halo-color': '#24262b',

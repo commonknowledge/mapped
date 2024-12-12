@@ -54,10 +54,10 @@ export function ReportSidebarLeft() {
               </HoverCardContent>
             </HoverCard>
           </TabsList>
-          <TabsContent value="data-sources" className="px-4">
+          <TabsContent value="data-sources" className="px-4 pb-24">
             <ReportDataSources />
           </TabsContent>
-          <TabsContent value="configuration" className="px-4">
+          <TabsContent value="configuration" className="px-4 pb-24">
             <ReportConfiguration />
           </TabsContent>
         </Tabs>

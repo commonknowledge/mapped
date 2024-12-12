@@ -6,10 +6,11 @@ import {
   SymbolLayerSpecification,
 } from 'mapbox-gl'
 import { Tileset } from './types'
-import { BoundaryAnalytics } from './useBoundaryAnalytics'
+import { DataByBoundary } from './useDataByBoundary'
 
 export function getChoroplethFill(
-  data: { count: number }[]
+  data: { count: number }[],
+  visible?: boolean
 ): FillLayerSpecification['paint'] {
   let min =
     data.reduce(
@@ -59,24 +60,30 @@ export function getChoroplethFill(
       ['to-number', ['feature-state', 'count'], 0],
       ...colourStops,
     ],
-    'fill-opacity': 0.75,
+    'fill-opacity': visible ? 1 : 0,
+    'fill-opacity-transition': { duration: 750 },
   }
 }
 
-export function getChoroplethEdge(): LineLayerSpecification['paint'] {
+export function getChoroplethEdge(
+  visible?: boolean
+): LineLayerSpecification['paint'] {
   return {
     'line-color': 'white',
-    'line-opacity': [
-      'interpolate',
-      ['exponential', 1],
-      ['zoom'],
-      //
-      8,
-      0.3,
-      //
-      12,
-      1,
-    ],
+    'line-opacity-transition': { duration: 750 },
+    'line-opacity': visible
+      ? [
+          'interpolate',
+          ['exponential', 1],
+          ['zoom'],
+          //
+          8,
+          0.3,
+          //
+          12,
+          1,
+        ]
+      : 0,
     'line-width': [
       'interpolate',
       ['exponential', 1],
@@ -98,13 +105,12 @@ export function getSelectedChoroplethEdge(): LineLayerSpecification['paint'] {
   }
 }
 export const getChoroplethFillFilter = (
-  data: BoundaryAnalytics,
+  data: DataByBoundary,
   tileset: Tileset
 ) => {
   return [
     'in',
     ['get', tileset.promoteId],
-    // @ts-ignore
     ['literal', data.map((d) => d.gss || '')],
   ]
 }
@@ -116,13 +122,11 @@ export const getSelectedChoroplethFillFilter = (
   return ['==', ['get', tileset.promoteId], selectedGss]
 }
 
-export function getAreaGeoJSON(data: BoundaryAnalytics) {
+export function getAreaGeoJSON(data: DataByBoundary) {
   return {
     type: 'FeatureCollection',
     features: data
-      // @ts-ignore
       .filter((d) => d.gssArea?.point?.geometry)
-      // @ts-ignore
       .map((d) => ({
         type: 'Feature',
         geometry: d.gssArea?.point?.geometry! as GeoJSON.Point,
@@ -134,16 +138,14 @@ export function getAreaGeoJSON(data: BoundaryAnalytics) {
   }
 }
 
-function getStatsForData(data: BoundaryAnalytics) {
+function getStatsForData(data: DataByBoundary) {
   let min =
     data.reduce(
-      // @ts-ignore
       (min, p) => (p?.count! < min ? p?.count! : min),
       data?.[0]?.count!
     ) || 0
   let max =
     data.reduce(
-      // @ts-ignore
       (max, p) => (p?.count! > max ? p?.count! : max),
       data?.[0]?.count!
     ) || 1
@@ -163,7 +165,7 @@ function getStatsForData(data: BoundaryAnalytics) {
 }
 
 export const getAreaCountLayout = (
-  data: BoundaryAnalytics
+  data: DataByBoundary
 ): SymbolLayerSpecification['layout'] => {
   const { min, max, textScale } = getStatsForData(data)
 
@@ -204,7 +206,7 @@ export const getAreaCountLayout = (
 }
 
 export const getAreaLabelLayout = (
-  data: BoundaryAnalytics
+  data: DataByBoundary
 ): SymbolLayerSpecification['layout'] => {
   const { min, max, textScale } = getStatsForData(data)
 

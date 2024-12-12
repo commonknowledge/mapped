@@ -34,6 +34,19 @@ const ReportProvider = ({ report, children }: ReportProviderProps) => {
     setNavbarTitle(report.name)
   }, [report.name])
 
+  // If the report has only one layer, set it as the data source
+  useEffect(() => {
+    if (report.layers.length === 1) {
+      updateReport({
+        displayOptions: {
+          dataVisualisation: {
+            dataSource: report.layers[0].id,
+          },
+        },
+      })
+    }
+  }, [report.layers])
+
   function updateReport(payload: {
     name?: string
     displayOptions?: Partial<ReportConfig>

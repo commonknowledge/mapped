@@ -1,3 +1,4 @@
+import { AnalyticalAreaType } from '@/__generated__/graphql'
 import { LayerProps } from 'react-map-gl'
 
 export type Tileset = {
@@ -13,3 +14,8 @@ export type Tileset = {
   >
   downloadUrl?: string
 }
+export const ENABLED_ANALYTICAL_AREA_TYPES = [
+  AnalyticalAreaType.ParliamentaryConstituency_2024,
+  AnalyticalAreaType.AdminWard,
+  AnalyticalAreaType.AdminDistrict,
+]

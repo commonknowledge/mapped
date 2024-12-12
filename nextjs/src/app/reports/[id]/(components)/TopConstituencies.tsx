@@ -49,6 +49,7 @@ export function TopConstituencies() {
     variables: {
       reportID: id,
       analyticalAreaType: dataVisualisation?.boundaryType!,
+      layerIds: [dataVisualisation?.dataSource!],
     },
   })
   const [selectedConstituency, setSelectedConstituency] = useAtom(
@@ -222,11 +223,13 @@ const CONSTITUENCY_STATS_OVERVIEW = gql`
   query ConstituencyStatsOverview(
     $reportID: ID!
     $analyticalAreaType: AnalyticalAreaType!
+    $layerIds: [String!]!
   ) {
     mapReport(pk: $reportID) {
       id
       importedDataCountByConstituency: importedDataCountByArea(
         analyticalAreaType: $analyticalAreaType
+        layerIds: $layerIds
       ) {
         label
         gss

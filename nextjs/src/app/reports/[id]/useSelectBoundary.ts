@@ -6,7 +6,7 @@ import { Tileset } from './types'
 
 export const selectedBoundaryAtom = atom<string | null>(null)
 
-const useSelectBoundary = (tileset?: Tileset | null) => {
+const useClickOnBoundaryEvents = (tileset?: Tileset | null) => {
   const { loadedMap } = useLoadedMap()
   const [selectedBoundary, setSelectedBoundary] = useAtom(selectedBoundaryAtom)
   const setIsConstituencyPanelOpen = useSetAtom(isConstituencyPanelOpenAtom)
@@ -58,4 +58,4 @@ const useSelectBoundary = (tileset?: Tileset | null) => {
   )
 }
 
-export default useSelectBoundary
+export default useClickOnBoundaryEvents

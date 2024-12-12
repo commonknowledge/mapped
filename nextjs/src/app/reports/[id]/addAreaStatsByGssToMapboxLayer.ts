@@ -1,12 +1,12 @@
+import { GroupedDataCount } from '@/__generated__/graphql'
 import { MAPBOX_LOAD_INTERVAL } from '@/lib/map/useLoadedMap'
 import { MapRef } from 'react-map-gl'
-import { DataByBoundary } from './useDataByBoundary'
 
 // GSS (Geographic Statistical System) codes are unique identifiers
 // used in the UK to reference geographic areas for statistical purposes.
 // The data prop needs to contain the gss code and the count
-export function addCountByGssToMapboxLayer(
-  data: DataByBoundary,
+export function addAreaStatsByGssToMapboxLayer(
+  data: GroupedDataCount[],
   mapboxSourceId: string,
   sourceLayerId?: string,
   mapbox?: MapRef | null

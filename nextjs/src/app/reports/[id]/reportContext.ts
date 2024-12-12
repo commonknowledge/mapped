@@ -20,13 +20,14 @@ export type MapReportExtended = Omit<MapReport, 'displayOptions'> & {
 }
 
 export interface ReportConfig {
-  dataVisualisation?: {
+  dataVisualisation: {
     boundaryType?: AnalyticalAreaType
     visualisationType?: VisualisationType
     palette?: Palette
     dataSource?: MapLayer['id']
+    dataSourceField?: string
   }
-  display?: {
+  display: {
     showStreetDetails?: boolean
     showMPs?: boolean
     showLastElectionData?: boolean
@@ -55,7 +56,7 @@ interface ReportContextProps {
   deleteReport: () => void
   updateReport: (payload: {
     name?: string
-    displayOptions?: ReportConfig
+    displayOptions?: Partial<ReportConfig>
     layers?: any[]
   }) => void
   refreshReportData: () => void

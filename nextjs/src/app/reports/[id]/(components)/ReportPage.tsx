@@ -22,6 +22,9 @@ export default function ReportPage() {
           mapKey={report.id}
         >
           <PlaceholderLayer id={PLACEHOLDER_LAYER_ID_CHOROPLETH} />
+          {/* We load and populate all available political boundaries first, then toggle their visibility later.
+          This prevents re-rendering and re-initialisting the layers and re-calculating stats when a user
+          just wants to change the visible boundary type */}
           {report.politicalBoundaries.map(({ boundaryType, tileset }) => (
             <PoliticalChoropleths
               key={`${boundaryType}-${tileset.mapboxSourceId}`}

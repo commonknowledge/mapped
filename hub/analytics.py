@@ -14,31 +14,24 @@ class Analytics:
         raise NotImplementedError("Subclasses must implement this method")
 
     # TODO: Rename this because it's a big clash with "region" in the specific geographic sense (EERs)
-    class RegionCount(TypedDict):
+    class AreaCount(TypedDict):
         label: str
         gss: Optional[str]
         count: int
 
-    # TODO: Rename to ...by_eer
-    def imported_data_count_by_region(self) -> List[RegionCount]:
-        return (
-            self.get_analytics_queryset()
-            .annotate(
-                label=F("postcode_data__european_electoral_region"),
-                gss=F("postcode_data__codes__european_electoral_region"),
-            )
-            .values("label", "gss")
-            .annotate(count=Count("label"))
-            .order_by("-count")
-        )
+    class AreaStat(TypedDict):
+        label: str
+        gss: Optional[str]
+        external_data: dict
 
     # TODO: Rename to e.g. row_count_by_political_boundary
     def imported_data_count_by_area(
         self,
         postcode_io_key: str = None,
         gss: str = None,
-    ) -> QuerySet[RegionCount]:
-        qs = self.get_analytics_queryset()
+        layer_ids: Optional[List[str]] = None,
+    ) -> QuerySet[AreaCount]:
+        qs = self.get_analytics_queryset(layer_ids=layer_ids)
         if postcode_io_key is None:
             return []
 
@@ -58,9 +51,24 @@ class Analytics:
             .order_by("-count")
         )
 
+    def imported_data_by_area(
+        self,
+        postcode_io_key: str = None,
+        layer_ids: List[str] = None,
+    ) -> QuerySet[AreaStat]:
+        qs = self.get_analytics_queryset(layer_ids=layer_ids)
+        if postcode_io_key is None:
+            return []
+
+        return qs.annotate(
+            label=F(f"postcode_data__{postcode_io_key}"),
+            gss=F(f"postcode_data__codes__{postcode_io_key}"),
+            imported_data=F("json"),
+        ).values("label", "gss", "imported_data")
+
     def imported_data_count_by_constituency(
         self, gss: str = None
-    ) -> QuerySet[RegionCount]:
+    ) -> QuerySet[AreaCount]:
         qs = self.get_analytics_queryset()
 
         if gss:
@@ -81,7 +89,7 @@ class Analytics:
 
     def imported_data_count_by_constituency_by_source(
         self, gss: str = None
-    ) -> List[RegionCount]:
+    ) -> List[AreaCount]:
         qs = self.get_analytics_queryset()
 
         if gss:
@@ -103,7 +111,7 @@ class Analytics:
 
     def imported_data_count_by_constituency_2024(
         self, gss: str = None
-    ) -> List[RegionCount]:
+    ) -> List[AreaCount]:
         qs = self.get_analytics_queryset()
 
         if gss:
@@ -124,7 +132,7 @@ class Analytics:
             .order_by("-count")
         )
 
-    def imported_data_count_by_council(self) -> List[RegionCount]:
+    def imported_data_count_by_council(self) -> List[AreaCount]:
         return (
             self.get_analytics_queryset()
             .annotate(
@@ -136,7 +144,7 @@ class Analytics:
             .order_by("-count")
         )
 
-    def imported_data_count_by_ward(self) -> List[RegionCount]:
+    def imported_data_count_by_ward(self) -> List[AreaCount]:
         return (
             self.get_analytics_queryset()
             .annotate(
