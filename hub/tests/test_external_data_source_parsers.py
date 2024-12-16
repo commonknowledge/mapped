@@ -5,6 +5,7 @@ from asgiref.sync import async_to_sync
 from hub.models import LocalJSONSource
 from hub.validation import validate_and_format_phone_number
 from benedict import benedict
+import subprocess
 
 
 class TestDateFieldParer(TestCase):
@@ -149,6 +150,9 @@ class TestMultiFieldGeocoding(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        # Get wards and council areas in to the DB
+        subprocess.call("bin/import_preview_env_seed.sh --quiet")
+
         cls.source = LocalJSONSource.objects.create(
             name="geo_test",
             id_field="id",
