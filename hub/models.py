@@ -89,7 +89,7 @@ from utils.findthatpostcode import (
     get_example_postcode_from_area_gss,
     get_postcode_from_coords_ftp,
 )
-from utils.py import batched, ensure_list, get, is_maybe_id, parse_datetime
+from utils.py import batched, ensure_list, get, is_maybe_id, parse_datetime, find
 
 User = get_user_model()
 
@@ -1085,7 +1085,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             "PARLIAMENTARY_CONSTITUENCY_2024",
             "Constituency (2024)",
         )
-        # TODO: LNG_LAT = "LNG_LAT", "Longitude and Latitude"
+        COORDINATES = "COORDINATES", "Coordinates"
 
     geocoding_config = JSONField(blank=True, null=True, default=list)
     geography_column_type = TextChoicesField(
@@ -1672,133 +1672,265 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             and isinstance(self.geocoding_config, list)
             and len(self.geocoding_config) > 0
         ):
-            """
-            geocoding_config will look something like:
-            [
-              {
-                "type": ["STC", "DIS"],
-                "field": "Local authority"
-              },
-              {
-                "type": "WD23",
-                "field": "Ward"
-              }
-            ]
-            """
+            def find_config_item(key: str, value, default = None):
+                return find(self.geocoding_config, lambda item: item.get(key, None) == value, default)
+            
+            def get_config_item_value(config_item, default = None):
+                if config_item.get("field", None):
+                    # Data comes from the member record
+                    field = config_item.get("field", None)
+                    value = self.get_record_field(record, field)
+                elif config_item.get("value", None):
+                    # Data has been manually defined by the organiser
+                    # (e.g. "all these venues are in Glasgow")
+                    value = config_item.get("value", None)
+                return value or default
 
-            async def create_import_record(record):
-                update_data = get_update_data(record)
-                id = self.get_record_id(record)
+            if all(
+                item.get("area_type__code", None) is not None
+                for item in self.geocoding_config
+            ):
+                """
+                geocoding_config will look something like:
+                [
+                  {
+                    "type": ["STC", "DIS"],
+                    "field": "Local authority"
+                  },
+                  {
+                    "type": "WD23",
+                    "field": "Ward"
+                  }
+                ]
+                """
 
-                # Filter down geographies by the config
-                parent_area = None
-                area = None
-                geocoding_data = {}
-                for item in self.geocoding_config:
-                    parent_area = area
-                    literal_area_type = item.get("type", None)
-                    literal_area_field = item.get("field", None)
-                    raw_area_value = self.get_record_field(record, literal_area_field)
-                    if literal_area_type is None or literal_area_field is None:
-                        continue
+                async def create_import_record(record):
+                    update_data = get_update_data(record)
+                    id = self.get_record_id(record)
 
-                    # make searchable for the MapIt database
-                    searchable_name = str(raw_area_value).lower()
-                    # E.g. ""Bristol, city of" becomes "bristol city" (https://mapit.mysociety.org/area/2561.html)
-                    searchable_name = re.sub(
-                        r"(.+), (.+) of", r"\1 \2", searchable_name, flags=re.IGNORECASE
-                    )
+                    # Filter down geographies by the config
+                    parent_area = None
+                    area = None
+                    geocoding_data = {}
+                    for item in self.geocoding_config:
+                        parent_area = area
+                        literal_area_type = item.get("area_type__code", None)
+                        literal_area_field = item.get("field", None)
+                        raw_area_value = self.get_record_field(record, literal_area_field)
+                        if literal_area_type is None or literal_area_field is None:
+                            continue
 
-                    parsed_area_types = ensure_list(literal_area_type)
-                    is_council = (
-                        "STC" in parsed_area_types or "DIS" in parsed_area_types
-                    )
-
-                    logger.debug(
-                        f"Searching for {searchable_name} via {literal_area_field} of type {literal_area_type}. is_council? {is_council}"
-                    )
-
-                    qs = Area.objects.select_related("area_type").filter(
-                        area_type__code__in=parsed_area_types
-                    )
-                    if is_council:
-                        logger.debug(f"Searching council names for {searchable_name}")
-                        # Mapit stores councils with their type in the name
-                        # e.g. https://mapit.mysociety.org/area/2641.html
-                        qs = qs.filter(
-                            Q(gss__iexact=raw_area_value)
-                            | Q(name__iexact=raw_area_value)
-                            | Q(name__iexact=searchable_name)
-                            | Q(name__iexact=f"{searchable_name} council")
-                            | Q(name__iexact=f"{searchable_name} city council")
-                            | Q(name__iexact=f"{searchable_name} borough council")
-                            | Q(name__iexact=f"{searchable_name} district council")
-                            | Q(name__iexact=f"{searchable_name} county council")
-                        )
-                    else:
-                        qs = qs.filter(
-                            Q(gss__iexact=raw_area_value)
-                            | Q(name__iexact=raw_area_value)
-                            | Q(name__iexact=searchable_name)
+                        # make searchable for the MapIt database
+                        searchable_name = str(raw_area_value).lower()
+                        # E.g. ""Bristol, city of" becomes "bristol city" (https://mapit.mysociety.org/area/2561.html)
+                        searchable_name = re.sub(
+                            r"(.+), (.+) of", r"\1 \2", searchable_name, flags=re.IGNORECASE
                         )
 
-                    if parent_area is not None and parent_area.polygon is None:
-                        # I.e. if a parent area was already identified
-                        qs = qs.filter(polygon__overlaps=parent_area.polygon)
+                        parsed_area_types = ensure_list(literal_area_type)
+                        is_council = (
+                            "STC" in parsed_area_types or "DIS" in parsed_area_types
+                        )
 
-                    query_str = qs.query
-
-                    area = await qs.afirst()
-                    if area is None:
                         logger.debug(
-                            f"Could not find area for {searchable_name} using query: {query_str}"
+                            f"Searching for {searchable_name} via {literal_area_field} of type {literal_area_type}. is_council? {is_council}"
                         )
+
+                        qs = Area.objects.select_related("area_type").filter(
+                            area_type__code__in=parsed_area_types
+                        )
+                        if is_council:
+                            logger.debug(f"Searching council names for {searchable_name}")
+                            # Mapit stores councils with their type in the name
+                            # e.g. https://mapit.mysociety.org/area/2641.html
+                            qs = qs.filter(
+                                Q(gss__iexact=raw_area_value)
+                                | Q(name__iexact=raw_area_value)
+                                | Q(name__iexact=searchable_name)
+                                | Q(name__iexact=f"{searchable_name} council")
+                                | Q(name__iexact=f"{searchable_name} city council")
+                                | Q(name__iexact=f"{searchable_name} borough council")
+                                | Q(name__iexact=f"{searchable_name} district council")
+                                | Q(name__iexact=f"{searchable_name} county council")
+                            )
+                        else:
+                            qs = qs.filter(
+                                Q(gss__iexact=raw_area_value)
+                                | Q(name__iexact=raw_area_value)
+                                | Q(name__iexact=searchable_name)
+                            )
+
+                        if parent_area is not None and parent_area.polygon is None:
+                            # I.e. if a parent area was already identified
+                            qs = qs.filter(polygon__overlaps=parent_area.polygon)
+
+                        query_str = qs.query
+
+                        area = await qs.afirst()
+                        if area is None:
+                            logger.debug(
+                                f"Could not find area for {searchable_name} using query: {query_str}"
+                            )
+                        else:
+                            geocoding_data["area_fields"] = geocoding_data.get(
+                                "area_fields", {}
+                            )
+                            geocoding_data["area_fields"][area.area_type.code] = area.gss
+                    if area is not None:
+                        sample_point = area.polygon.centroid
+
+                        # get postcodeIO result for area.coordinates
+                        postcode_data: PostcodesIOResult = await loaders[
+                            "postcodesIOFromPoint"
+                        ].load(sample_point)
+
+                        # Try a few other backup strategies (example postcode, another geocoder)
+                        # to get postcodes.io data
+                        if postcode_data is None:
+                            postcode = await get_example_postcode_from_area_gss(area.gss)
+                            if postcode is not None:
+                                postcode_data = await loaders["postcodesIO"].load(postcode)
+                        if postcode_data is None:
+                            postcode = await get_postcode_from_coords_ftp(sample_point)
+                            if postcode is not None:
+                                postcode_data = await loaders["postcodesIO"].load(postcode)
+
+                        update_data["postcode_data"] = postcode_data
+                        update_data["geocoder"] = Geocoder.GEOCODING_CONFIG.value
+                        update_data["geocode_data"] = {
+                            "config": self.geocoding_config,
+                            "data": geocoding_data,
+                            "area": {
+                                "centroid": area.polygon.centroid.json,
+                                "name": area.name,
+                                "id": area.id,
+                                "gss": area.gss,
+                            },
+                        }
+
+                    args = dict(
+                        data_type=data_type,
+                        data=id,
+                        defaults=update_data,
+                    )
+
+                    await GenericData.objects.aupdate_or_create(**args)
+
+                await asyncio.gather(*[create_import_record(record) for record in data])
+            elif find_config_item("type", self.GeographyTypes.ADDRESS):
+                async def create_import_record(record):
+                    """
+                    Converts a record fetched from the API into
+                    a GenericData record in the MEEP db.
+
+                    Used to batch-import data.
+                    """
+                    # get address field from config
+                    # address_field = next(
+                    #     item.get("field", None)
+                    #     for item in self.geocoding_config
+                    #     if item.get("type", None) == self.GeographyTypes.ADDRESS
+                    # )
+                    address_field = find_config_item("type", self.GeographyTypes.ADDRESS, {}).get(
+                        "field", None
+                    )
+                    address = self.get_record_field(record, address_field)
+                    point = None
+                    address_data = None
+                    postcode_data = None
+                    if address is None or (
+                        isinstance(address, str)
+                        and (address.strip() == "" or address.lower() == "online")
+                    ):
+                        address_data = None
                     else:
-                        geocoding_data["area_fields"] = geocoding_data.get(
-                            "area_fields", {}
+                        # Prefix
+                        prefix_config = find_config_item("type", "prefix")
+                        prefix_value = get_config_item_value(prefix_config)
+                        # Suffix
+                        suffix_config = find_config_item("type", "suffix")
+                        suffix_value = get_config_item_value(suffix_config)
+                        # Countries
+                        countries_config = find_config_item("type", "countries")
+                        countries_value = ensure_list(get_config_item_value(countries_config, self.countries))
+                        # join them into a string using join and a comma
+                        query = ", ".join([x for x in [prefix_value, address, suffix_value] if x is not None])
+                        address_data = await sync_to_async(google_maps.geocode_address)(
+                            google_maps.GeocodingQuery(
+                                query=query,
+                                country=countries_value,
+                            )
                         )
-                        geocoding_data["area_fields"][area.area_type.code] = area.gss
-                if area is not None:
-                    sample_point = area.polygon.centroid
+                        if address_data is not None:
+                            point = (
+                                Point(
+                                    x=address_data.geometry.location.lng,
+                                    y=address_data.geometry.location.lat,
+                                )
+                                if (
+                                    address_data is not None
+                                    and address_data.geometry is not None
+                                    and address_data.geometry.location is not None
+                                )
+                                else None
+                            )
+                            if point is not None:
+                                # Capture this so we have standardised Postcodes IO data for all records
+                                # (e.g. for analytical queries that aggregate on region)
+                                # even if the address is not postcode-specific (e.g. "London").
+                                # this can be gleaned from geocode_data__types, e.g. [ "administrative_area_level_1", "political" ]
+                                postcode_data: PostcodesIOResult = await loaders[
+                                    "postcodesIOFromPoint"
+                                ].load(point)
 
-                    # get postcodeIO result for area.coordinates
-                    postcode_data: PostcodesIOResult = await loaders[
-                        "postcodesIOFromPoint"
-                    ].load(sample_point)
-
-                    # Try a few other backup strategies (example postcode, another geocoder)
-                    # to get postcodes.io data
-                    if postcode_data is None:
-                        postcode = await get_example_postcode_from_area_gss(area.gss)
-                        if postcode is not None:
-                            postcode_data = await loaders["postcodesIO"].load(postcode)
-                    if postcode_data is None:
-                        postcode = await get_postcode_from_coords_ftp(sample_point)
-                        if postcode is not None:
-                            postcode_data = await loaders["postcodesIO"].load(postcode)
-
-                    update_data["postcode_data"] = postcode_data
-                    update_data["geocoder"] = Geocoder.GEOCODING_CONFIG.value
-                    update_data["geocode_data"] = {
-                        "config": self.geocoding_config,
-                        "data": geocoding_data,
-                        "area": {
-                            "centroid": area.polygon.centroid.json,
-                            "name": area.name,
-                            "id": area.id,
-                            "gss": area.gss,
-                        },
+                    update_data = {
+                        **get_update_data(record),
+                        "postcode_data": postcode_data,
+                        "geocode_data": address_data,
+                        "geocoder": (
+                            Geocoder.GOOGLE.value if address_data is not None else None
+                        ),
+                        "point": point,
                     }
 
-                args = dict(
-                    data_type=data_type,
-                    data=id,
-                    defaults=update_data,
-                )
+                    await GenericData.objects.aupdate_or_create(
+                        data_type=data_type,
+                        data=self.get_record_id(record),
+                        defaults=update_data,
+                    )
 
-                await GenericData.objects.aupdate_or_create(**args)
+                await asyncio.gather(*[create_import_record(record) for record in data])
+            elif find_config_item("type", self.GeographyTypes.COORDINATES):
+                async def create_import_record(record):
+                    structured_data = get_update_data(record)
+                    point = Point(
+                        x=get_config_item_value(find_config_item("type", "longitude")),
+                        y=get_config_item_value(find_config_item("type", "latitude")),
+                    )
+                    postcode_data: PostcodesIOResult = await loaders[
+                        "postcodesIOFromPoint"
+                    ].load(point)
 
-            await asyncio.gather(*[create_import_record(record) for record in data])
+                    # Try a backup geocoder in case that one fails
+                    if postcode_data is None:
+                        postcode = await get_postcode_from_coords_ftp(point)
+                        if postcode is not None:
+                            postcode_data = await loaders["postcodesIO"].load(postcode)
+
+                    update_data = {
+                        **structured_data,
+                        "postcode_data": postcode_data,
+                        "geocoder": Geocoder.POSTCODES_IO.value,
+                        "point": point,
+                    }
+
+                    await GenericData.objects.aupdate_or_create(
+                        data_type=data_type,
+                        data=self.get_record_id(record),
+                        defaults=update_data,
+                    )
+
+                await asyncio.gather(*[create_import_record(record) for record in data])
         elif (
             self.geography_column
             and self.geography_column_type == self.GeographyTypes.POSTCODE

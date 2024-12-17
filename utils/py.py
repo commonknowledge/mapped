@@ -57,6 +57,10 @@ def ensure_list(possible):
         return []
 
 
+def find(list, fn, default=None):
+    # find first by matching fn, or return default
+    return next((x for x in list if fn(x)), default)
+
 def get_path(d, *keys):
     for k in keys:
         d = get(d, k)

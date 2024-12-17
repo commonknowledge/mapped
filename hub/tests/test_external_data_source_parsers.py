@@ -160,8 +160,8 @@ class TestMultiLevelGeocoding(TestCase):
             id_field="id",
             data=cls.fixture.copy(),
             geocoding_config=[
-                {"field": "council", "type": ["STC", "DIS"]},
-                {"field": "ward", "type": "WD23"},
+                {"field": "council", "area_type__code": ["STC", "DIS"]},
+                {"field": "ward", "area_type__code": "WD23"},
             ],
         )
 
