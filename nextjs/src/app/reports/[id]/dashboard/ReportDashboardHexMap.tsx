@@ -35,8 +35,8 @@ export default function ReportDashboardHexMap({
     const rect = event.currentTarget.getBoundingClientRect()
     setTooltip({
       content: hex.n,
-      x: rect.left + window.scrollX,
-      y: rect.top + window.scrollY,
+      x: rect.left + rect.width / 2,
+      y: rect.top,
     })
   }
 
@@ -81,10 +81,12 @@ export default function ReportDashboardHexMap({
 
         {tooltip && (
           <div
-            className="absolute z-50 bg-popover text-popover-foreground px-3 py-1.5 text-sm rounded-md shadow-md"
+            className="fixed z-50 bg-popover text-popover-foreground px-3 py-1.5 text-sm rounded-md shadow-md"
             style={{
               left: tooltip.x,
-              top: tooltip.y - 60,
+              top: tooltip.y - 40,
+              transform: 'translateX(-50%)',
+              pointerEvents: 'none',
             }}
           >
             {tooltip.content}
