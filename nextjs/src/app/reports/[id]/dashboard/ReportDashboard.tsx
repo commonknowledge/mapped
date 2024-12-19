@@ -62,7 +62,7 @@ export default function ReportDashboard() {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="grid sm:grid-cols-3 grid-cols-1 gap-4 w-full ">
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 grid-cols-1 gap-4 w-full ">
         {constituencies && (
           <>
             <ReportDashboardKeyStats constituencies={constituencies} />

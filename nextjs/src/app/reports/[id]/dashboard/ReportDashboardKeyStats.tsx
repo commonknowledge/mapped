@@ -109,7 +109,7 @@ function TotalMembersChart({
 }) {
   return (
     <Card>
-      <CardHeader className="items-center">
+      <CardHeader className="">
         <CardTitle>Total Members</CardTitle>
         <CardDescription>Distribution by Constituency</CardDescription>
       </CardHeader>
@@ -184,7 +184,7 @@ function TotalConstituencyChart({
 
   return (
     <Card>
-      <CardHeader className="items-center">
+      <CardHeader className="">
         <CardTitle>Total Constituencies reached</CardTitle>
         <CardDescription>Total constituency distribution</CardDescription>
       </CardHeader>
