@@ -43,6 +43,7 @@ const GET_UPDATE_CONFIG = gql`
       crmType
       geographyColumn
       geographyColumnType
+      geocodingConfig
       postcodeField
       firstNameField
       lastNameField
@@ -148,6 +149,7 @@ export default function Page({
       {externalDataSource.data ? (
         <UpdateMappingForm
           crmType={externalDataSource.data?.externalDataSource.crmType}
+          externalDataSourceId={externalDataSourceId}
           initialData={{
             geographyColumn:
               externalDataSource.data?.externalDataSource.geographyColumn,

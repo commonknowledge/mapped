@@ -65,6 +65,7 @@ const TEST_DATA_SOURCE = gql`
       }
       geographyColumn
       geographyColumnType
+      geocodingConfig
       healthcheck
       predefinedColumnNames
       defaultDataType
@@ -205,7 +206,11 @@ export default function Page({
     return getFieldsForDataSourceType(dataType)
   }, [dataType])
 
-  const geographyFields = ['geographyColumn', 'geographyColumnType']
+  const geographyFields = [
+    'geographyColumn',
+    'geographyColumnType',
+    'geocodingConfig',
+  ]
 
   async function fetchSheetNamesUsingCredentials(
     spreadsheetId: string,
