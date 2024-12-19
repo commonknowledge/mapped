@@ -7,7 +7,7 @@ from hub.models import Area
 from utils.mapit import MapIt
 
 
-def mock_areas_of_type(types):
+def mock_areas_of_type(types, *args, **kwargs):
     if "WMC" in types:
         return [
             {

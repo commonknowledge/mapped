@@ -97,6 +97,7 @@ const GET_UPDATE_CONFIG = gql`
       webhookHealthcheck
       geographyColumn
       geographyColumnType
+      geocodingConfig
       postcodeField
       firstNameField
       lastNameField
@@ -200,9 +201,6 @@ export default function InspectExternalDataSource({
   }
 
   const source = data?.externalDataSource
-
-  const allowMapping =
-    source?.dataType == DataSourceType.Member && source.allowUpdates
 
   const crmInfo = source?.crmType
     ? externalDataSourceOptions[source?.crmType]
@@ -442,6 +440,7 @@ export default function InspectExternalDataSource({
               <UpdateExternalDataSourceFields
                 crmType={source.crmType}
                 fieldDefinitions={source.fieldDefinitions}
+                allowGeocodingConfigChange={!source.geocodingConfig}
                 initialData={{
                   geographyColumn: source.geographyColumn,
                   geographyColumnType: source.geographyColumnType,
@@ -496,14 +495,20 @@ export default function InspectExternalDataSource({
                     <p className="text-meepGray-400">
                       <span className="align-middle">
                         Pull Mapped data into your {crmInfo?.name || 'database'}{' '}
-                        based on each record
-                        {"'"}s
                       </span>
-                      <DataSourceFieldLabel
-                        className="align-middle"
-                        label={source.geographyColumnType}
-                        crmType={source.crmType}
-                      />
+                      {!source.geocodingConfig && (
+                        <>
+                          <span>
+                            based on each record
+                            {"'"}s
+                          </span>
+                          <DataSourceFieldLabel
+                            className="align-middle"
+                            label={source.geographyColumnType}
+                            crmType={source.crmType}
+                          />
+                        </>
+                      )}
                     </p>
                     <div className="space-y-4">
                       {!source.updateProgress?.inQueue ? (
@@ -633,12 +638,14 @@ export default function InspectExternalDataSource({
                   after changing these settings.
                 </p>
                 <UpdateMappingForm
-                  allowMapping={allowMapping}
+                  allowMapping={true}
                   crmType={source.crmType}
                   fieldDefinitions={source.fieldDefinitions}
                   refreshFieldDefinitions={() => {
                     refetch()
                   }}
+                  allowGeocodingConfigChange={!source.geocodingConfig}
+                  externalDataSourceId={source.id}
                   initialData={{
                     // Trim out the __typenames
                     geographyColumn: source?.geographyColumn,

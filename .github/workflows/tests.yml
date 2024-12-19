@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: testing
     services:
-      postgres:
+      db:
         image: kartoza/postgis:13
         env:
           POSTGRES_USER: postgres
@@ -31,7 +31,7 @@ jobs:
       # https://stackoverflow.com/questions/78593700/langchain-community-langchain-packages-giving-error-missing-1-required-keywor
       image: python:3.12.3
       env:
-        DATABASE_URL: postgis://postgres:password@postgres:5432/local-intelligence
+        DATABASE_URL: postgis://postgres:password@db:5432/local-intelligence
         CACHE_FILE: /tmp/meep
         POETRY_VIRTUALENVS_CREATE: "false"
         GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
@@ -63,7 +63,7 @@ jobs:
         run: |
           curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
           echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | tee /etc/apt/sources.list.d/ngrok.list
-          apt-get update && apt-get install -y binutils gdal-bin libproj-dev ngrok less
+          apt-get update && apt-get install -y binutils gdal-bin libproj-dev ngrok less postgresql-client
       - name: Install poetry
         run: curl -sSL https://install.python-poetry.org | python3 -
       - name: Install python dependencies
@@ -86,6 +86,8 @@ jobs:
         run: gunicorn local_intelligence_hub.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 > server.log 2>&1 &
       - name: Run django tests
         run: cat .env && coverage run --source=. --branch manage.py test || (cat server.log && exit 1)
+      - name: Run geocoding tests in isolation
+        run: RUN_GEOCODING_TESTS=1 manage.py test hub.tests.test_external_data_source_parsers || (cat server.log && exit 1)
       - name: Generate coverage xml
         run: coverage xml
       - name: Upload coverage.xml

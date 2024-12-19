@@ -38,6 +38,7 @@ export function UpdateExternalDataSourceFields({
   fieldDefinitions,
   onSubmit,
   dataType,
+  allowGeocodingConfigChange = true,
 }: {
   onSubmit: (
     data: ExternalDataSourceInput,
@@ -47,6 +48,7 @@ export function UpdateExternalDataSourceFields({
   initialData?: ExternalDataSourceInput
   fieldDefinitions?: FieldDefinition[] | null
   dataType: DataSourceType
+  allowGeocodingConfigChange?: boolean
 }) {
   const form = useForm<FormInputs>({
     defaultValues: initialData,
@@ -86,78 +88,83 @@ export function UpdateExternalDataSourceFields({
         onSubmit={form.handleSubmit(onSubmit)}
         className="grid sm:grid-cols-2 gap-4 max-w-lg"
       >
-        <FormField
-          control={form.control}
-          name="geographyColumnType"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Type of location data</FormLabel>
-              <FormControl>
-                {/* @ts-ignore */}
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a geography type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Geography type</SelectLabel>
-                      {locationTypeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="geographyColumn"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {form.watch('geographyColumnType')?.toLocaleLowerCase()} field
-              </FormLabel>
-              <FormControl>
-                {fieldDefinitions?.length ? (
-                  <Select
-                    // @ts-ignore
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    required
-                  >
-                    <SelectTrigger className="pl-1">
-                      <SelectValue
-                        placeholder={`Choose ${form.watch('geographyColumnType') || 'geography'} field`}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Geography field</SelectLabel>
-                        {fieldDefinitions?.map((field) => (
-                          <SelectItem key={field.value} value={field.value}>
-                            <DataSourceFieldLabel
-                              fieldDefinition={field}
-                              crmType={crmType}
-                            />
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  // @ts-ignore
-                  <Input {...field} required={required} />
-                )}
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {allowGeocodingConfigChange && (
+          <>
+            <FormField
+              control={form.control}
+              name="geographyColumnType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type of location data</FormLabel>
+                  <FormControl>
+                    {/* @ts-ignore */}
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a geography type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Geography type</SelectLabel>
+                          {locationTypeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="geographyColumn"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {form.watch('geographyColumnType')?.toLocaleLowerCase()}{' '}
+                    field
+                  </FormLabel>
+                  <FormControl>
+                    {fieldDefinitions?.length ? (
+                      <Select
+                        // @ts-ignore
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        required
+                      >
+                        <SelectTrigger className="pl-1">
+                          <SelectValue
+                            placeholder={`Choose ${form.watch('geographyColumnType') || 'geography'} field`}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Geography field</SelectLabel>
+                            {fieldDefinitions?.map((field) => (
+                              <SelectItem key={field.value} value={field.value}>
+                                <DataSourceFieldLabel
+                                  fieldDefinition={field}
+                                  crmType={crmType}
+                                />
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      // @ts-ignore
+                      <Input {...field} required={required} />
+                    )}
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
         {collectFields?.map((field) => (
           <FPreopulatedSelectField key={field} name={field} />
         ))}

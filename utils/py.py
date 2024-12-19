@@ -1,5 +1,6 @@
 import datetime
 import itertools
+import json
 import pprint
 from types import SimpleNamespace
 from uuid import UUID
@@ -208,3 +209,17 @@ def parse_datetime(value):
         dt = dt.replace(tzinfo=datetime.timezone.utc)
 
     return dt
+
+
+def find(list, fn, default=None):
+    # find first by matching fn, or return default
+    return next((x for x in list if fn(x)), default)
+
+
+def are_dicts_equal(d1, d2):
+    """
+    Compare two dictionaries, ignoring order of keys
+    """
+    D1 = json.dumps(d1, sort_keys=True, indent=2)
+    D2 = json.dumps(d2, sort_keys=True, indent=2)
+    return D1 == D2

@@ -1,8 +1,9 @@
 'use client'
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { gql, useQuery } from '@apollo/client'
 import { useAtomValue } from 'jotai'
-import { ArrowRight, Plus, RefreshCcw, X } from 'lucide-react'
+import { ArrowRight, Plus, RefreshCcw, Terminal, X } from 'lucide-react'
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'
 
@@ -73,8 +74,10 @@ export function UpdateMappingForm({
   fieldDefinitions,
   refreshFieldDefinitions,
   crmType,
+  externalDataSourceId,
   allowMapping = true,
   saveButtonLabel = 'Save settings',
+  allowGeocodingConfigChange = true,
 }: {
   onSubmit: (
     data: ExternalDataSourceInput,
@@ -87,6 +90,8 @@ export function UpdateMappingForm({
   saveButtonLabel?: string
   children?: React.ReactNode
   allowMapping?: boolean
+  allowGeocodingConfigChange?: boolean
+  externalDataSourceId: string
 }) {
   const form = useForm<ExternalDataSourceInput>({
     defaultValues: initialData,
@@ -110,97 +115,112 @@ export function UpdateMappingForm({
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="space-y-7">
           <div className="flex flex-row w-full items-end">
-            <div className="max-w-md">
-              <div className="grid grid-cols-2 gap-4 w-full">
-                <FormField
-                  control={form.control}
-                  name="geographyColumnType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Type of location data</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          /* @ts-ignore */
-                          value={field.value}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a location type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              <SelectLabel>Location type</SelectLabel>
-                              {locationTypeOptions.map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value}
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="geographyColumn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {form.watch('geographyColumnType')?.toLocaleLowerCase()}{' '}
-                        field
-                      </FormLabel>
-                      <FormControl>
-                        {fieldDefinitions?.length ? (
+            {!allowGeocodingConfigChange ? (
+              <span>
+                <Alert>
+                  <Terminal className="h-4 w-4" />
+                  <AlertTitle>Geocoding</AlertTitle>
+                  <AlertDescription>
+                    Contact support to change the geography type for this data
+                    source
+                  </AlertDescription>
+                </Alert>
+              </span>
+            ) : (
+              <div className="max-w-md">
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  <FormField
+                    control={form.control}
+                    name="geographyColumnType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type of location data</FormLabel>
+                        <FormControl>
                           <Select
-                            // @ts-ignore
-                            value={field.value}
                             onValueChange={field.onChange}
-                            required
+                            /* @ts-ignore */
+                            value={field.value}
                           >
-                            <SelectTrigger className="pl-1">
-                              <SelectValue
-                                placeholder={`Choose ${data.geographyColumnType || 'geography'} field`}
-                              />
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a location type" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectGroup>
-                                <SelectLabel>
-                                  {form
-                                    .watch('geographyColumnType')
-                                    ?.toLocaleLowerCase()}{' '}
-                                  field
-                                </SelectLabel>
-                                {fieldDefinitions?.map((field) => (
+                                <SelectLabel>Location type</SelectLabel>
+                                {locationTypeOptions.map((option) => (
                                   <SelectItem
-                                    key={field.value}
-                                    value={field.value}
+                                    key={option.value}
+                                    value={option.value}
                                   >
-                                    <DataSourceFieldLabel
-                                      fieldDefinition={field}
-                                      crmType={crmType}
-                                    />
+                                    {option.label}
                                   </SelectItem>
                                 ))}
                               </SelectGroup>
                             </SelectContent>
                           </Select>
-                        ) : (
-                          // @ts-ignore
-                          <Input {...field} required />
-                        )}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="geographyColumn"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {form
+                            .watch('geographyColumnType')
+                            ?.toLocaleLowerCase()}{' '}
+                          field
+                        </FormLabel>
+                        <FormControl>
+                          {fieldDefinitions?.length ? (
+                            <Select
+                              // @ts-ignore
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              required
+                            >
+                              <SelectTrigger className="pl-1">
+                                <SelectValue
+                                  placeholder={`Choose ${data.geographyColumnType || 'geography'} field`}
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectGroup>
+                                  <SelectLabel>
+                                    {form
+                                      .watch('geographyColumnType')
+                                      ?.toLocaleLowerCase()}{' '}
+                                    field
+                                  </SelectLabel>
+                                  {fieldDefinitions?.map((field) => (
+                                    <SelectItem
+                                      key={field.value}
+                                      value={field.value}
+                                    >
+                                      <DataSourceFieldLabel
+                                        fieldDefinition={field}
+                                        crmType={crmType}
+                                      />
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            // @ts-ignore
+                            <Input {...field} required />
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
-            </div>
+            )}
             <Button
               type="button"
               onClick={refreshFieldDefinitions}
@@ -235,7 +255,13 @@ export function UpdateMappingForm({
                             }
                             loading={enrichmentLayers.loading}
                             sources={
-                              enrichmentLayers.data?.mappingSources || []
+                              enrichmentLayers.data?.mappingSources?.filter(
+                                // disallow this own one to be used for itself
+                                (source) =>
+                                  !source.externalDataSource ||
+                                  source.externalDataSource?.id !==
+                                    externalDataSourceId
+                              ) || []
                             }
                             value={{
                               source: form.watch(

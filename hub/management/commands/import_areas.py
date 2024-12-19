@@ -1,4 +1,5 @@
 import json
+import logging
 from time import sleep
 
 # from django postgis
@@ -8,42 +9,13 @@ from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
 from hub.models import Area, AreaType
-from utils import mapit
+from utils import mapit, mapit_types
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
     help = "Import basic area information from Mapit"
-
-    boundary_types = [
-        {
-            "mapit_type": ["WMC"],
-            "name": "2023 Parliamentary Constituency",
-            "code": "WMC23",
-            "area_type": "Westminster Constituency",
-            "description": "Westminster Parliamentary Constituency boundaries, as created in 2023",
-        },
-        {
-            "mapit_type": ["LBO", "UTA", "COI", "LGD", "CTY", "MTD"],
-            "name": "Single Tier Councils",
-            "code": "STC",
-            "area_type": "Single Tier Council",
-            "description": "Single Tier Council",
-        },
-        {
-            "mapit_type": ["DIS", "NMD"],
-            "name": "District Councils",
-            "code": "DIS",
-            "area_type": "District Council",
-            "description": "District Council",
-        },
-        {
-            "mapit_type": ["COI", "CPW", "DIW", "LBW", "LGW", "MTW", "UTE", "UTW"],
-            "name": "Wards",
-            "code": "WD23",
-            "area_type": "Electoral Ward",
-            "description": "Electoral wards",
-        },
-    ]
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -58,8 +30,13 @@ class Command(BaseCommand):
 
     def handle(self, quiet: bool = False, all_names: bool = False, *args, **options):
         self.mapit_client = mapit.MapIt()
-        for b_type in self.boundary_types:
-            areas = self.mapit_client.areas_of_type(b_type["mapit_type"])
+        for b_type in mapit_types.boundary_types:
+            areas = self.mapit_client.areas_of_type(
+                b_type["mapit_type"],
+                {
+                    "min_generation": 1,
+                },
+            )
             area_type, created = AreaType.objects.get_or_create(
                 name=b_type["name"],
                 code=b_type["code"],
@@ -79,19 +56,34 @@ class Command(BaseCommand):
 
     def import_area(self, area, area_type, all_names):
         area_details = self.mapit_client.area_details(area["id"]) if all_names else {}
+
+        if "gss" not in area["codes"]:
+            # logger.debug(f"no gss code for {area['id']}")
+            return
+
+        geom = None
         try:
-            geom = self.mapit_client.area_geometry(area["id"])
-            geom = {
-                "type": "Feature",
-                "geometry": geom,
-                "properties": {
-                    "PCON13CD": area["codes"]["gss"],
-                    "name": area["name"],
-                    "type": area_type.code,
-                    "mapit_type": area["type"],
-                },
-            }
-            geom_str = json.dumps(geom)
+            geom_already_loaded = Area.objects.filter(
+                gss=area["codes"]["gss"], polygon__isnull=False
+            ).exists()
+            if geom_already_loaded:
+                # Only fetch geometry data if required, to speed things up
+                # logger.debug(f"skipping geometry for {area['name']}")
+                pass
+            else:
+                geom = self.mapit_client.area_geometry(area["id"])
+
+                geom = {
+                    "type": "Feature",
+                    "geometry": geom,
+                    "properties": {
+                        "PCON13CD": area["codes"]["gss"],
+                        "name": area["name"],
+                        "type": area_type.code,
+                        "mapit_type": area["type"],
+                    },
+                }
+                geom_str = json.dumps(geom)
         except mapit.NotFoundException:  # pragma: no cover
             print(f"could not find mapit area for {area['name']}")
             geom = None
@@ -102,8 +94,10 @@ class Command(BaseCommand):
             defaults={
                 "mapit_id": area["id"],
                 "name": area["name"],
-                "mapit_type": area["type"],
-                "mapit_all_names": area_details.get("all_names"),
+                "mapit_type": area.get("type", None),
+                "mapit_generation_low": area.get("generation_low", None),
+                "mapit_generation_high": area.get("generation_high", None),
+                "mapit_all_names": area_details.get("all_names", None),
             },
         )
 
