@@ -2,6 +2,7 @@ import { ConstituencyStatsOverviewQuery } from '@/__generated__/graphql'
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ChartCard'
@@ -43,6 +44,7 @@ export default function ReportDashboardHexMap({
     <Card className="w-full row-span-2 relative">
       <CardHeader>
         <CardTitle>Constituency Map </CardTitle>
+        <CardDescription>Regional Distribution</CardDescription>
       </CardHeader>
       <CardContent>
         <HexGrid

@@ -34,12 +34,31 @@ export default function ReportDashboardKeyStats({
       sourceTotals.set(source, currentTotal + constituency.count)
     })
 
-    // Convert to chart format
-    return Array.from(sourceTotals.entries()).map(([source, count], index) => ({
-      source: source,
-      members: count,
-      fill: `hsl(var(--chart-${index + 1}))`,
-    }))
+    // Convert to array and sort by count
+    const sortedEntries = Array.from(sourceTotals.entries()).sort(
+      ([, a], [, b]) => b - a
+    ) // Sort by count descending
+
+    // Take first 19 entries as is, combine the rest as "Other"
+    const mainEntries = sortedEntries
+      .slice(0, 19)
+      .map(([source, count], index) => ({
+        source,
+        members: count,
+        fill: `hsl(var(--chart-${index + 1}))`,
+      }))
+
+    const otherEntries = sortedEntries.slice(19)
+    if (otherEntries.length > 0) {
+      const otherCount = otherEntries.reduce((sum, [, count]) => sum + count, 0)
+      mainEntries.push({
+        source: 'Other',
+        members: otherCount,
+        fill: `hsl(var(--chart-20))`,
+      })
+    }
+
+    return mainEntries
   }, [constituencies])
 
   const totalMembers = React.useMemo(() => {
