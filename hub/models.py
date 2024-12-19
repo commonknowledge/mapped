@@ -2830,7 +2830,8 @@ class AirtableSource(ExternalDataSource):
         return record["id"]
 
     def get_record_field(self, record, field, field_type=None):
-        d = record["fields"].get(str(field), None)
+        record_dict = record["fields"] if "fields" in record else record
+        d = record_dict.get(str(field), None)
         if field_type == "image_field" and d is not None and len(d) > 0:
             # TODO: implement image handling
             # e.g. [{'id': 'attDWjeMhUfNMTqRG', 'width': 2200, 'height': 1518, 'url': 'https://v5.airtableusercontent.com/v3/u/27/27/1712044800000/CxNHcR-sBRUhrWt_54_NFA/wcYpoqFV5W_wRmVwh2RM8qs-mJkwwHkQLZuhtf7rFk5-34gILMXJeIYg9vQMcTtgSEd1dDb7lU0CrgJldTcZBN9VyaTU0IkYiw1e5PzTs8ZsOEmA6wrva7UavQCnoacL8b7yUt4ZuWWhna8wzZD2MTZC1K1C1wLkfA1UyN76ZDO-Q6WkBjgg5uZv7rtXlhj9/WL6lQJQAHKXqA9J1YIteSJ3J0Yepj69c55PducG607k'

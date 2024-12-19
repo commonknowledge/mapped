@@ -61,12 +61,12 @@ class TestExternalDataSource:
             self.source.teardown_unused_webhooks(force=True)
         return super().tearDown()
 
-    def create_test_record(self, record: models.ExternalDataSource.CUDRecord):
+    async def create_test_record(self, record: models.ExternalDataSource.CUDRecord):
         record = self.source.create_one(record)
         self.records_to_delete.append((self.source.get_record_id(record), self.source))
         return record
 
-    def create_many_test_records(
+    async def create_many_test_records(
         self, records: List[models.ExternalDataSource.CUDRecord]
     ):
         records = self.source.create_many(records)
@@ -195,7 +195,7 @@ class TestExternalDataSource:
         self.assertEqual(len(df.index), import_count)
 
     async def test_fetch_one(self):
-        record = self.create_test_record(
+        record = await self.create_test_record(
             models.ExternalDataSource.CUDRecord(
                 email=f"eh{randint(0, 1000)}sp@gmail.com",
                 postcode="EH99 1SP",
@@ -220,16 +220,37 @@ class TestExternalDataSource:
         )
 
     async def test_fetch_many(self):
-        now = str(datetime.now().timestamp())
         test_record_data = [
             models.ExternalDataSource.CUDRecord(
-                postcode=now + "11111", email=now + "11111@gmail.com", data={}
+                postcode="E5 0AA",
+                email=f"E{randint(0, 1000)}AA@gmail.com",
+                data=(
+                    {
+                        "addr1": "Millfields Rd",
+                        "city": "London",
+                        "state": "London",
+                        "country": "GB",
+                    }
+                    if isinstance(self.source, models.MailchimpSource)
+                    else {}
+                ),
             ),
             models.ExternalDataSource.CUDRecord(
-                postcode=now + "22222", email=now + "22222@gmail.com", data={}
+                postcode="E10 6EF",
+                email=f"E{randint(0, 1000)}EF@gmail.com",
+                data=(
+                    {
+                        "addr1": "123 Colchester Rd",
+                        "city": "London",
+                        "state": "London",
+                        "country": "GB",
+                    }
+                    if isinstance(self.source, models.MailchimpSource)
+                    else {}
+                ),
             ),
         ]
-        records = self.create_many_test_records(test_record_data)
+        records = await self.create_many_test_records(test_record_data)
         record_ids = [self.source.get_record_id(record) for record in records]
         assert len(record_ids) == 2
 
@@ -254,8 +275,10 @@ class TestExternalDataSource:
         for test_record in test_record_data:
             record = next(
                 filter(
-                    lambda r: self.source.get_record_field(r, self.source.email_field)
-                    == test_record["email"],
+                    lambda r: self.source.get_record_field(
+                        r, self.source.postcode_field
+                    )
+                    == test_record["postcode"],
                     records,
                 ),
                 None,
@@ -263,7 +286,7 @@ class TestExternalDataSource:
             self.assertIsNotNone(record)
 
     async def test_refresh_one(self):
-        record = self.create_test_record(
+        record = await self.create_test_record(
             models.ExternalDataSource.CUDRecord(
                 email=f"eh{randint(0, 1000)}sp@gmail.com",
                 postcode="EH99 1SP",
@@ -315,7 +338,7 @@ class TestExternalDataSource:
             [self.custom_data_layer.get_record_id(record) for record in records]
         )
         # Add a test record
-        record = self.create_test_record(
+        record = await self.create_test_record(
             models.ExternalDataSource.CUDRecord(
                 email=f"NE{randint(0, 1000)}DD@gmail.com",
                 postcode="NE12 6DD",
@@ -348,16 +371,16 @@ class TestExternalDataSource:
         )
 
     async def test_refresh_many(self):
-        records = self.create_many_test_records(
+        records = await self.create_many_test_records(
             [
                 models.ExternalDataSource.CUDRecord(
-                    postcode="G11 5RD",
+                    postcode="E10 6EF",
                     email=f"gg{randint(0, 1000)}rardd@gmail.com",
                     data=(
                         {
-                            "addr1": "Byres Rd",
-                            "city": "Glasgow",
-                            "state": "Glasgow",
+                            "addr1": "123 Colchester Rd",
+                            "city": "London",
+                            "state": "London",
                             "country": "GB",
                         }
                         if isinstance(self.source, models.MailchimpSource)
@@ -365,13 +388,13 @@ class TestExternalDataSource:
                     ),
                 ),
                 models.ExternalDataSource.CUDRecord(
-                    postcode="G42 8PH",
+                    postcode="E5 0AA",
                     email=f"ag{randint(0, 1000)}rwefw@gmail.com",
                     data=(
                         {
-                            "addr1": "506 Victoria Rd",
-                            "city": "Glasgow",
-                            "state": "Glasgow",
+                            "addr1": "Millfields Rd",
+                            "city": "London",
+                            "state": "London",
                             "country": "GB",
                         }
                         if isinstance(self.source, models.MailchimpSource)
@@ -392,29 +415,67 @@ class TestExternalDataSource:
         for record in records:
             if (
                 self.source.get_record_field(record, self.source.geography_column)
-                == "G11 5RD"
+                == "E5 0AA"
             ):
                 self.assertEqual(
                     self.source.get_record_field(record, self.constituency_field),
-                    "Glasgow West",
+                    "Hackney North and Stoke Newington",
                 )
             elif (
                 self.source.get_record_field(record, self.source.geography_column)
-                == "G42 8PH"
+                == "E10 6EF"
             ):
                 self.assertEqual(
                     self.source.get_record_field(record, self.constituency_field),
-                    "Glasgow South",
+                    "Leyton and Wanstead",
                 )
             else:
                 self.fail()
 
-    async def test_analytics(self):
+    async def test_enrichment_electoral_commission(self):
         """
-        This is testing the ability to get analytics from the data source
+        This is testing the ability to enrich data from the data source
+        using a third party source
+        """
+        # Add a test record
+        record = await self.create_test_record(
+            models.ExternalDataSource.CUDRecord(
+                email=f"NE{randint(0, 1000)}DD@gmail.com",
+                postcode="DH1 1AE",
+                data=(
+                    {
+                        "addr1": "38 Swinside Dr",
+                        "city": "Durham",
+                        "state": "Durham",
+                        "country": "GB",
+                    }
+                    if isinstance(self.source, models.MailchimpSource)
+                    else {}
+                ),
+            )
+        )
+        mapped_member = await self.source.map_one(
+            record,
+            loaders=await self.source.get_loaders(),
+            mapping=[
+                models.UpdateMapping(
+                    source="electoral_commission_postcode_lookup",
+                    source_path="electoral_services.name",
+                    destination_column="electoral service",
+                )
+            ],
+        )
+        self.assertEqual(
+            mapped_member["update_fields"]["electoral service"],
+            "Durham County Council",
+        )
+
+    async def test_analytics_counts(self):
+        """
+        This is testing the ability to get record counts from the data source
         """
         # Add some test data
-        self.create_many_test_records(
+        created_records = await self.create_many_test_records(
             [
                 models.ExternalDataSource.CUDRecord(
                     postcode="E5 0AA",
@@ -447,13 +508,14 @@ class TestExternalDataSource:
             ]
         )
         # import
-        records = await self.source.fetch_all()
+        records = await self.source.fetch_many(
+            [self.source.get_record_id(record) for record in created_records]
+        )
         await self.source.import_many(
             [self.source.get_record_id(record) for record in records]
         )
         # check analytics
         analytics = self.source.imported_data_count_by_constituency()
-        # convert query set to list (is there a better way?)
         analytics = await sync_to_async(list)(analytics)
         self.assertGreaterEqual(len(analytics), 2)
         constituencies_in_report = [a["label"] for a in analytics]
@@ -465,6 +527,110 @@ class TestExternalDataSource:
                 self.assertGreaterEqual(a["count"], 1)
             elif a["label"] == "Leyton and Wanstead":
                 self.assertGreaterEqual(a["count"], 1)
+
+        analytics = self.source.imported_data_count_by_area("admin_district")
+        analytics = await sync_to_async(list)(analytics)
+        self.assertGreaterEqual(len(analytics), 2)
+        constituencies_in_report = [a["label"] for a in analytics]
+
+        self.assertIn("Hackney", constituencies_in_report)
+        self.assertIn("Waltham Forest", constituencies_in_report)
+        for a in analytics:
+            if a["label"] == "Hackney":
+                self.assertGreaterEqual(a["count"], 1)
+            elif a["label"] == "Waltham Forest":
+                self.assertGreaterEqual(a["count"], 1)
+
+    async def test_analytics_imported_data(self):
+        """
+        This is testing the ability to get record data from the data source
+        """
+        # Add some test data
+        created_records = await self.create_many_test_records(
+            [
+                models.ExternalDataSource.CUDRecord(
+                    postcode="E5 0AA",
+                    email=f"E{randint(0, 1000)}AA@gmail.com",
+                    data=(
+                        {
+                            "addr1": "Millfields Rd",
+                            "city": "London",
+                            "state": "London",
+                            "country": "GB",
+                        }
+                        if isinstance(self.source, models.MailchimpSource)
+                        else {}
+                    ),
+                ),
+                models.ExternalDataSource.CUDRecord(
+                    postcode="E5 0AB",
+                    email=f"E{randint(0, 1000)}AA@gmail.com",
+                    data=(
+                        {
+                            "addr1": "Millfields Rd",
+                            "city": "London",
+                            "state": "London",
+                            "country": "GB",
+                        }
+                        if isinstance(self.source, models.MailchimpSource)
+                        else {}
+                    ),
+                ),
+                models.ExternalDataSource.CUDRecord(
+                    postcode="E10 6EF",
+                    email=f"E{randint(0, 1000)}EF@gmail.com",
+                    data=(
+                        {
+                            "addr1": "123 Colchester Rd",
+                            "city": "London",
+                            "state": "London",
+                            "country": "GB",
+                        }
+                        if isinstance(self.source, models.MailchimpSource)
+                        else {}
+                    ),
+                ),
+            ]
+        )
+        # import
+        records = await self.source.fetch_many(
+            [self.source.get_record_id(record) for record in created_records]
+        )
+        await self.source.import_many(
+            [self.source.get_record_id(record) for record in records]
+        )
+        # check analytics
+        analytics = self.source.imported_data_by_area("parliamentary_constituency")
+        analytics = await sync_to_async(list)(analytics)
+        self.assertGreaterEqual(len(analytics), 3)
+        constituencies_in_report = [a["label"] for a in analytics]
+
+        self.assertIn("Hackney North and Stoke Newington", constituencies_in_report)
+        self.assertIn("Leyton and Wanstead", constituencies_in_report)
+        for a in analytics:
+            postcode = self.source.get_record_field(
+                a["imported_data"], self.source.postcode_field
+            )
+            if a["label"] == "Hackney North and Stoke Newington":
+                self.assertIn(postcode, ["E5 0AA", "E5 0AB"])
+            elif a["label"] == "Leyton and Wanstead":
+                self.assertEqual(postcode, "E10 6EF")
+
+        analytics = self.source.imported_data_by_area("admin_district")
+        analytics = await sync_to_async(list)(analytics)
+        self.assertGreaterEqual(len(analytics), 3)
+        constituencies_in_report = [a["label"] for a in analytics]
+
+        self.assertIn("Hackney", constituencies_in_report)
+        self.assertIn("Waltham Forest", constituencies_in_report)
+        for a in analytics:
+            postcode = self.source.get_record_field(
+                a["imported_data"], self.source.postcode_field
+            )
+            if a["label"] == "Hackney":
+                self.assertIn(postcode, ["E5 0AA", "E5 0AB"])
+            elif a["label"] == "Waltham Forest":
+                self.assertEqual(postcode, "E10 6EF")
 
 
 class TestAirtableSource(TestExternalDataSource, TestCase):
@@ -495,35 +661,6 @@ class TestAirtableSource(TestExternalDataSource, TestCase):
             ],
         )
         return self.source
-
-    async def test_enrichment_electoral_commission(self):
-        """
-        This is testing the ability to enrich data from the data source
-        using a third party source
-        """
-        # Add a test record
-        record = self.create_test_record(
-            models.ExternalDataSource.CUDRecord(
-                email=f"NE{randint(0, 1000)}DD@gmail.com",
-                postcode="DH1 1AE",
-                data={},
-            )
-        )
-        mapped_member = await self.source.map_one(
-            record,
-            loaders=await self.source.get_loaders(),
-            mapping=[
-                models.UpdateMapping(
-                    source="electoral_commission_postcode_lookup",
-                    source_path="electoral_services.name",
-                    destination_column="electoral service",
-                )
-            ],
-        )
-        self.assertEqual(
-            mapped_member["update_fields"]["electoral service"],
-            "Durham County Council",
-        )
 
 
 class TestMailchimpSource(TestExternalDataSource, TestCase):
@@ -587,44 +724,32 @@ class TestActionNetworkSource(TestExternalDataSource, TestCase):
         )
         return self.source
 
+    async def create_test_record(self, record: models.ExternalDataSource.CUDRecord):
+        records = await self.create_many_test_records([record])
+        return records[0]
+
+    async def create_many_test_records(
+        self, records: List[models.ExternalDataSource.CUDRecord]
+    ):
+        # don't create records, and return existing records
+        # this is because Action Network records can't be deleted
+        postcodes_to_ids = {
+            "EH99 1SP": "c6d37304-200c-44b4-8eda-04a03e706531",
+            "NE12 6DD": "2574d845-f5bb-4ba2-af9b-a712d10119b1",
+            "DH1 1AE": "42fe3b4a-f445-47ce-ba81-7ec38d95dc70",
+            "E10 6EF": "d88da43f-8984-41d8-80fa-4f9fbb3d6006",
+            "E5 0AA": "ad6228a2-74c1-48fd-85ee-90eafbaca397",
+            "E5 0AB": "b762c93b-a23d-45c8-85c4-0d20c3c8a9e5",
+        }
+        records = await self.source.fetch_many(
+            [postcodes_to_ids[record["postcode"]] for record in records]
+        )
+        return records
+
     async def test_fetch_page(self):
         """
         Ensure that fetching page-by-page gives the same count as fetching all.
         """
-        # Add some test data
-        self.create_many_test_records(
-            [
-                models.ExternalDataSource.CUDRecord(
-                    postcode="E5 0AA",
-                    email=f"E{randint(0, 1000)}AA@gmail.com",
-                    data=(
-                        {
-                            "addr1": "Millfields Rd",
-                            "city": "London",
-                            "state": "London",
-                            "country": "GB",
-                        }
-                        if isinstance(self.source, models.MailchimpSource)
-                        else {}
-                    ),
-                ),
-                models.ExternalDataSource.CUDRecord(
-                    postcode="E10 6EF",
-                    email=f"E{randint(0, 1000)}EF@gmail.com",
-                    data=(
-                        {
-                            "addr1": "123 Colchester Rd",
-                            "city": "London",
-                            "state": "London",
-                            "country": "GB",
-                        }
-                        if isinstance(self.source, models.MailchimpSource)
-                        else {}
-                    ),
-                ),
-            ]
-        )
-
         all_records = await self.source.fetch_all()
         all_records = list(all_records)
         paged_records = []
@@ -683,7 +808,7 @@ class TestEditableGoogleSheetsSource(TestExternalDataSource, TestCase):
                 postcode=now + "22222", email=now + "22222@gmail.com", data={}
             ),
         ]
-        self.create_many_test_records(test_record_data)
+        await self.create_many_test_records(test_record_data)
 
         # Test this functionality
         records = await self.source.fetch_all()
@@ -692,8 +817,6 @@ class TestEditableGoogleSheetsSource(TestExternalDataSource, TestCase):
         # Assumes there were 4 records in the test data source before this test ran
         assert len(records) == 6
 
-        # Check the email field instead of postcode, because Mailchimp doesn't set
-        # the postcode without a full address, which is not present in this test
         for test_record in test_record_data:
             record = next(
                 filter(

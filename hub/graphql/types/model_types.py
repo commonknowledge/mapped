@@ -593,21 +593,17 @@ class GroupedDataCount:
 @strawberry_django.type(models.GenericData, filters=CommonDataFilter)
 class GroupedData:
     label: Optional[str]
-    # Provide area_type if gss code is not unique (e.g. WMC and WMC23 constituencies)
-    area_type: Optional[str] = None
+    # Provide filter if gss code is not unique (e.g. WMC and WMC23 constituencies)
+    area_type_filter: Optional["AreaTypeFilter"] = None
     gss: Optional[str]
     area_data: Optional[strawberry.Private[Area]] = None
     imported_data: Optional[JSON] = None
-    area_type_filter: Optional["AreaTypeFilter"] = None
 
     @strawberry_django.field
     async def gss_area(self, info: Info) -> Optional[Area]:
         if self.area_data is not None:
             return self.area_data
-        if self.area_type is not None:
-            filters = {"area_type__code": self.area_type}
-        else:
-            filters = {}
+        filters = self.area_type_filter.query_filter if self.area_type_filter else {}
         loader = FieldDataLoaderFactory.get_loader_class(
             models.Area, field="gss", filters=filters
         )
