@@ -155,14 +155,14 @@ class ActionNetwork(object):
         while True:
             response = self._get_page(object_name, page, per_page, filter=filter)
             page = page + 1
-            response_list = response["_embedded"][list(response["_embedded"])[0]]
-            if not response_list:
-                return
+            response_list = response["_embedded"][list(response["_embedded"])[0]] or []
             for item in response_list:
                 yield item
                 count = count + 1
                 if limit and count >= limit:
                     return
+            if len(response_list) < per_page:
+                return
 
     # Advocacy Campaigns
     def get_advocacy_campaigns(self, limit=None, per_page=25, page=None, filter=None):
