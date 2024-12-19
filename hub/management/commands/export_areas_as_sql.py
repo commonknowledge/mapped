@@ -29,6 +29,7 @@ TABLES = [
         output_column_templates={
             "area_type_id": "(SELECT id FROM hub_areatype WHERE code = '{area_type_code}')"
         },
+        exclude_columns=["mapit_all_names"],
     ),
 ]
 
@@ -39,7 +40,15 @@ class Command(BaseCommand):
     without causing primary key conflicts.
     """
 
-    def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "-a",
+            "--all-names",
+            action="store_true",
+            help="Fetch alternative names from MapIt",
+        )
+
+    def handle(self, all_names: bool = False, *args, **options):
         print("Exporting areas and area types from current database to data/areas.psql")
         count = 0
         output_file: Path = settings.BASE_DIR / "data" / "areas.psql"

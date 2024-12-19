@@ -166,8 +166,17 @@ async def get_bulk_postcode_geo(postcodes) -> list[PostcodesIOResult]:
 
 
 @async_batch_and_aggregate(settings.POSTCODES_IO_BATCH_MAXIMUM)
-async def get_bulk_postcode_geo_from_coords(coordinates: list[Point]):
-    coords = [{"longitude": coord.x, "latitude": coord.y} for coord in coordinates]
+async def get_bulk_postcode_geo_from_coords(coordinates: list[Point], radius=150):
+    coords = [
+        {
+            "longitude": coord.x,
+            "latitude": coord.y,
+            # Only return 1 item per query, since we're not picky
+            "limit": 1,
+            "radius": radius,
+        }
+        for coord in coordinates
+    ]
     async with httpx.AsyncClient(
         timeout=httpx.Timeout(settings.ASYNC_CLIENT_TIMEOUT_SECONDS)
     ) as client:

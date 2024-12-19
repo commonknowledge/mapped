@@ -60,6 +60,8 @@ from wagtail_json_widget.widgets import JSONEditorWidget
 import utils as lih_utils
 from hub.analytics import Analytics
 from hub.cache_keys import site_tile_filter_dict
+from hub.data_imports import geocoding_config
+from hub.data_imports.utils import get_update_data
 from hub.enrichment.sources import builtin_mapping_sources
 from hub.fields import EncryptedCharField, EncryptedTextField
 from hub.filters import Filter
@@ -83,7 +85,7 @@ from utils.postcodesIO import (
     get_bulk_postcode_geo,
     get_bulk_postcode_geo_from_coords,
 )
-from utils.py import batched, ensure_list, get, is_maybe_id, parse_datetime
+from utils.py import batched, ensure_list, get, is_maybe_id
 
 User = get_user_model()
 
@@ -93,8 +95,10 @@ logger = get_simple_debug_logger(__name__)
 # enum of geocoders: postcodes_io, mapbox, google
 class Geocoder(Enum):
     POSTCODES_IO = "postcodes_io"
+    FINDTHATPOSTCODE = "findthatpostcode"
     MAPBOX = "mapbox"
     GOOGLE = "google"
+    GEOCODING_CONFIG = "geocoding_config"
 
 
 class Organisation(models.Model):
@@ -838,6 +842,8 @@ class GenericData(CommonData):
 class Area(models.Model):
     mapit_id = models.CharField(max_length=30)
     mapit_type = models.CharField(max_length=30, db_index=True, blank=True, null=True)
+    mapit_generation_low = models.IntegerField(blank=True, null=True)
+    mapit_generation_high = models.IntegerField(blank=True, null=True)
     gss = models.CharField(max_length=30)
     name = models.CharField(max_length=200)
     mapit_all_names = models.JSONField(blank=True, null=True)
@@ -1082,6 +1088,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         )
         # TODO: LNG_LAT = "LNG_LAT", "Longitude and Latitude"
 
+    geocoding_config = JSONField(blank=True, null=True, default=list)
     geography_column_type = TextChoicesField(
         choices_enum=GeographyTypes,
         default=GeographyTypes.POSTCODE,
@@ -1611,29 +1618,38 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             data_set=data_set, name=self.id, defaults={"data_type": "json"}
         )
 
-        def get_update_data(record):
-            update_data = {
-                "json": self.get_record_dict(record),
-            }
-
-            for field in self.import_fields:
-                if getattr(self, field, None) is not None:
-                    value = self.get_record_field(record, getattr(self, field), field)
-                    if field.endswith("_time_field"):
-                        value: datetime = parse_datetime(value)
-                    if field == "can_display_point_field":
-                        value = bool(value)  # cast None value to False
-                    if field == "phone_field":
-                        value = validate_and_format_phone_number(value, self.countries)
-                    update_data[field.removesuffix("_field")] = value
-
-            return update_data
+        loaders = await self.get_loaders()
 
         if (
+            self.geocoding_config
+            and isinstance(self.geocoding_config, list)
+            and len(self.geocoding_config) > 0
+        ):
+            """
+            geocoding_config will look something like:
+            [
+              {
+                "type": ["STC", "DIS"],
+                "field": "Local authority"
+              },
+              {
+                "type": "WD23",
+                "field": "Ward"
+              }
+            ]
+            """
+            await asyncio.gather(
+                *[
+                    geocoding_config.create_import_record(
+                        record, self, data_type, loaders
+                    )
+                    for record in data
+                ]
+            )
+        elif (
             self.geography_column
             and self.geography_column_type == self.GeographyTypes.POSTCODE
         ):
-            loaders = await self.get_loaders()
 
             async def create_import_record(record):
                 """
@@ -1649,6 +1665,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
                 update_data = {
                     **structured_data,
                     "postcode_data": postcode_data,
+                    "geocoder": Geocoder.POSTCODES_IO.value,
                     "point": (
                         Point(
                             postcode_data["longitude"],
@@ -1674,7 +1691,6 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             self.geography_column
             and self.geography_column_type == self.GeographyTypes.WARD
         ):
-            loaders = await self.get_loaders()
 
             async def create_import_record(record):
                 structured_data = get_update_data(record)
@@ -1712,7 +1728,6 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             self.geography_column
             and self.geography_column_type == self.GeographyTypes.ADDRESS
         ):
-            loaders = await self.get_loaders()
 
             async def create_import_record(record):
                 """
@@ -1868,7 +1883,6 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         ]
 
     def get_import_data(self, **kwargs):
-        logger.debug(f"getting import data where external data source id is {self.id}")
         return GenericData.objects.filter(
             data_type__data_set__external_data_source_id=self.id
         )
@@ -1979,6 +1993,11 @@ class ExternalDataSource(PolymorphicModel, Analytics):
     async def get_source_loaders(self) -> dict[str, Self]:
         # If this isn't preloaded, it is a sync function to use self.organisation
         org: Organisation = await sync_to_async(getattr)(self, "organisation")
+        loaders = {}
+
+        if org is None:
+            return loaders
+
         sources = (
             org.get_external_data_sources(
                 # Allow enrichment via sources shared with this data source's organisation
@@ -1995,7 +2014,6 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             .all()
         )
 
-        loaders = {}
         async for source in sources:
             loaders[str(source.id)] = source.data_loader_factory()
 
@@ -3676,7 +3694,6 @@ class ActionNetworkSource(ExternalDataSource):
         return created_records
 
     def get_import_data(self):
-        logger.debug(f"getting import data where action network source id is {self.id}")
         return GenericData.objects.filter(
             models.Q(data_type__data_set__external_data_source_id=self.id)
             & (
@@ -3942,7 +3959,7 @@ class EditableGoogleSheetsSource(ExternalDataSource):
         del self.spreadsheet
 
     def get_record_id(self, record: dict):
-        return record[self.id_field]
+        return record.get(self.id_field, None)
 
     def get_record_dict(self, record: dict) -> dict:
         return record
