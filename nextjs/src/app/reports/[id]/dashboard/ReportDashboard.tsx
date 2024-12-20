@@ -51,17 +51,17 @@ export default function ReportDashboard() {
 
   return (
     <main className="flex flex-col w-full p-4 h-[calc(100vh-48px)] overflow-y-auto">
-      <Tabs defaultValue="Overview" className="">
-        <div className="flex gap-4 items-center">
-          <ReportDashboardConsSelector
-            constituencies={constituencies}
-            selectedBoundary={selectedBoundary}
-            setSelectedBoundary={setSelectedBoundary}
-          />
+      <Tabs defaultValue="Overview">
+        <div className="flex gap-4 items-center justify-between mb-4">
           <TabsList>
             <TabsTrigger value="Overview">Overview</TabsTrigger>
             <TabsTrigger value="Foodbanks">Foodbanks</TabsTrigger>
           </TabsList>
+          <ReportDashboardConsSelector
+            constituencies={constituencies ?? []}
+            selectedBoundary={selectedBoundary}
+            setSelectedBoundary={setSelectedBoundary}
+          />
         </div>
         <TabsContent value="Overview">
           <div className="grid sm:grid-cols-2 md:grid-cols-3 grid-cols-1 gap-4 w-full">
