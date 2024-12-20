@@ -46,21 +46,21 @@ export default function ReportDashboardHexMap({
         <CardTitle>Constituency Map </CardTitle>
         <CardDescription>Regional Distribution</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="text-7xl text-muted-foreground text-right">
+      <CardContent className="relative">
+        <div className="text-7xl text-muted-foreground text-right absolute top-2 right-2">
           {activeConstituencies?.length}
           <p className="text-sm text-muted-foreground"> constituencies</p>
         </div>
         <HexGrid
           width={'100%'}
           height={'100%'}
-          viewBox="0 0 220 420"
-          className="my0"
+          viewBox="0 0 220 410"
+          className=""
         >
           <Layout
             size={{ x: 4, y: 4 }}
             spacing={1.05}
-            origin={{ x: -250, y: -180 }}
+            origin={{ x: -250, y: -190 }}
           >
             {Object.entries(hexData.hexes).map(([id, hex]) => (
               <Hexagon
