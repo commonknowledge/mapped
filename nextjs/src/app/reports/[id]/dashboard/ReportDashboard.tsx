@@ -2,27 +2,30 @@ import {
   ConstituencyStatsOverviewQuery,
   ConstituencyStatsOverviewQueryVariables,
 } from '@/__generated__/graphql'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { gql, useQuery } from '@apollo/client'
-import { CogIcon } from 'lucide-react'
-import { ReportDataSources } from '../(components)/ReportDataSources'
+import { useAtom } from 'jotai'
 import { useReport } from '../(components)/ReportProvider'
+import { ConstituencyElectionDeepDive } from '../(components)/reportsConstituencyItem'
+import { selectedBoundaryAtom } from '../useSelectBoundary'
+import ReportDashboardConsSelector from './ReportDashboardConsSelector'
 import ReportDashboardHexMap from './ReportDashboardHexMap'
 import ReportDashboardList from './ReportDashboardList'
 import ReportDashboardMPs from './ReportDashboardMPs'
 import ReportDashboardMemberCount from './ReportDashboardMemberCount'
 import ReportDashboardMembersOverTime from './ReportDashboardMembersOverTime'
+
 export default function ReportDashboard() {
+  const [selectedBoundary, setSelectedBoundary] = useAtom(selectedBoundaryAtom)
   const {
     report: {
       id,
-      displayOptions: { dataVisualisation },
+      displayOptions: {
+        dataVisualisation: {
+          boundaryType: analyticalAreaType,
+          dataSource,
+        } = {},
+      } = {},
     },
   } = useReport()
 
@@ -32,8 +35,8 @@ export default function ReportDashboard() {
   >(CONSTITUENCY_STATS_OVERVIEW, {
     variables: {
       reportID: id,
-      analyticalAreaType: dataVisualisation?.boundaryType!,
-      layerIds: [dataVisualisation?.dataSource!],
+      analyticalAreaType: analyticalAreaType!,
+      layerIds: [dataSource!],
     },
   })
 
@@ -48,31 +51,41 @@ export default function ReportDashboard() {
 
   return (
     <main className="flex flex-col w-full p-4 h-[calc(100vh-48px)] overflow-y-auto">
-      <div className="flex justify-between items-center w-full mb-4">
-        <h1 className="text-2xl font-bold ">Dashboard</h1>
-        <Dialog>
-          <DialogTrigger className="flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity duration-200">
-            <CogIcon className="w-4 h-4" /> Data Sources
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Data Sources</DialogTitle>
-              <ReportDataSources />
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 grid-cols-1 gap-4 w-full ">
-        {constituencies && (
-          <>
-            <ReportDashboardMemberCount constituencies={constituencies} />
-            <ReportDashboardMembersOverTime />
-            <ReportDashboardHexMap activeConstituencies={constituencies} />
-            <ReportDashboardList constituencies={constituencies} />
-            <ReportDashboardMPs constituencies={constituencies} />
-          </>
-        )}
-      </div>
+      <Tabs defaultValue="Overview" className="">
+        <div className="flex gap-4 items-center">
+          <ReportDashboardConsSelector
+            constituencies={constituencies}
+            selectedBoundary={selectedBoundary}
+            setSelectedBoundary={setSelectedBoundary}
+          />
+          <TabsList>
+            <TabsTrigger value="Overview">Overview</TabsTrigger>
+            <TabsTrigger value="Foodbanks">Foodbanks</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="Overview">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 grid-cols-1 gap-4 w-full">
+            {constituencies && !selectedBoundary && (
+              <>
+                <ReportDashboardMemberCount constituencies={constituencies} />
+                <ReportDashboardMembersOverTime />
+                <ReportDashboardHexMap activeConstituencies={constituencies} />
+                <ReportDashboardList constituencies={constituencies} />
+                <ReportDashboardMPs constituencies={constituencies} />
+              </>
+            )}
+            {selectedBoundary && analyticalAreaType && (
+              <div className="col-span-full">
+                <ConstituencyElectionDeepDive
+                  gss={selectedBoundary}
+                  analyticalAreaType={analyticalAreaType}
+                />
+              </div>
+            )}
+          </div>
+        </TabsContent>
+        <TabsContent value="Foodbanks">Foodbanks Data goes here</TabsContent>
+      </Tabs>
     </main>
   )
 }
