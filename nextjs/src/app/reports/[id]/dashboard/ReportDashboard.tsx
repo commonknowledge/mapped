@@ -14,9 +14,9 @@ import { CogIcon } from 'lucide-react'
 import { ReportDataSources } from '../(components)/ReportDataSources'
 import { useReport } from '../(components)/ReportProvider'
 import ReportDashboardHexMap from './ReportDashboardHexMap'
-import ReportDashboardKeyStats from './ReportDashboardKeyStats'
 import ReportDashboardList from './ReportDashboardList'
 import ReportDashboardMPs from './ReportDashboardMPs'
+import ReportDashboardMemberCount from './ReportDashboardMemberCount'
 import ReportDashboardMembersOverTime from './ReportDashboardMembersOverTime'
 export default function ReportDashboard() {
   const {
@@ -65,9 +65,9 @@ export default function ReportDashboard() {
       <div className="grid sm:grid-cols-2 md:grid-cols-3 grid-cols-1 gap-4 w-full ">
         {constituencies && (
           <>
-            <ReportDashboardKeyStats constituencies={constituencies} />
-            <ReportDashboardHexMap activeConstituencies={constituencies} />
+            <ReportDashboardMemberCount constituencies={constituencies} />
             <ReportDashboardMembersOverTime />
+            <ReportDashboardHexMap activeConstituencies={constituencies} />
             <ReportDashboardList constituencies={constituencies} />
             <ReportDashboardMPs constituencies={constituencies} />
           </>

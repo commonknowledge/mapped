@@ -47,6 +47,10 @@ export default function ReportDashboardHexMap({
         <CardDescription>Regional Distribution</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="text-7xl text-muted-foreground text-right">
+          {activeConstituencies?.length}
+          <p className="text-sm text-muted-foreground"> constituencies</p>
+        </div>
         <HexGrid
           width={'100%'}
           height={'100%'}

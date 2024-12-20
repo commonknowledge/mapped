@@ -17,7 +17,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 
-export default function ReportDashboardKeyStats({
+export default function ReportDashboardMemberCount({
   constituencies,
 }: {
   constituencies: ConstituencyStatsOverviewQuery['mapReport']['importedDataCountByConstituency']
@@ -85,11 +85,6 @@ export default function ReportDashboardKeyStats({
     <>
       {/* Pie Chart */}
       <TotalMembersChart
-        chartConfig={chartConfig}
-        chartData={chartData}
-        totalMembers={totalMembers}
-      />
-      <TotalConstituencyChart
         chartConfig={chartConfig}
         chartData={chartData}
         totalMembers={totalMembers}
@@ -162,43 +157,6 @@ function TotalMembersChart({
               />
             </Pie>
           </PieChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
-  )
-}
-
-function TotalConstituencyChart({
-  chartConfig,
-  chartData,
-  totalMembers,
-}: {
-  chartConfig: ChartConfig
-  chartData: any[]
-  totalMembers: number
-}) {
-  // Calculate total number of constituencies
-  const totalConstituencies = React.useMemo(() => {
-    return chartData.length
-  }, [chartData])
-
-  return (
-    <Card>
-      <CardHeader className="">
-        <CardTitle>Total Constituencies reached</CardTitle>
-        <CardDescription>Total constituency distribution</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1">
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square max-h-[250px]"
-        >
-          <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-white text-7xl font-bold">
-              {totalConstituencies.toLocaleString()}
-            </p>
-            <p className="text-white text-sm">Constituencies</p>
-          </div>
         </ChartContainer>
       </CardContent>
     </Card>
