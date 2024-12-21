@@ -45,6 +45,8 @@ const LocalisedMap = forwardRef<MapRef, LocalisedMapProps>(
   }
 )
 
+LocalisedMap.displayName = 'LocalisedMap'
+
 export default LocalisedMap
 
 const mapboxTransformRequest: RequestTransformFunction = (url) => {
