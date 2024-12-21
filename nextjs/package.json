@@ -98,6 +98,7 @@
     "react-loader-spinner": "^6.1.6",
     "react-map-gl": "^7.1.7",
     "react-quill": "^2.0.0",
+    "react-resizable-panels": "^2.1.7",
     "react-simple-code-editor": "^0.13.1",
     "recharts": "^2.15.0",
     "slug": "^9.1.0",

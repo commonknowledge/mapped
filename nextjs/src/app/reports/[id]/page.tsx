@@ -15,11 +15,9 @@ import { currentOrganisationIdAtom } from '@/lib/organisation'
 
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { merge } from 'lodash'
-import ReportDisplaySettings from './(components)/ReportDisplaySettings'
 import ReportNavbar from './(components)/ReportNavbar'
 import ReportPage from './(components)/ReportPage'
 import ReportProvider from './(components)/ReportProvider'
-import { ReportSidebarLeft } from './(components)/ReportSidebarLeft'
 import { GET_MAP_REPORT } from './gql_queries'
 import { getPoliticalTilesetsByCountry } from './politicalTilesets'
 import { defaultReportConfig, MapReportExtended } from './reportContext'
@@ -71,8 +69,6 @@ export default function Page({ params: { id } }: { params: Params }) {
             }
           >
             <ReportNavbar />
-            <ReportSidebarLeft />
-            <ReportDisplaySettings />
             <ReportPage />
           </SidebarProvider>
         </ReportProvider>

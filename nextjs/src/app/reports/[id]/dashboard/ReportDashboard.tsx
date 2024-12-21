@@ -5,16 +5,51 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { gql, useQuery } from '@apollo/client'
 import { useAtom } from 'jotai'
+import { CalendarIcon, FileIcon, MapPinIcon, UsersIcon } from 'lucide-react'
 import { useReport } from '../(components)/ReportProvider'
+import { TabTriggerClasses } from '../(components)/ReportSidebarLeft'
 import { ConstituencyElectionDeepDive } from '../(components)/reportsConstituencyItem'
 import { selectedBoundaryAtom } from '../useSelectBoundary'
-import ReportDashboardConsSelector from './ReportDashboardConsSelector'
-import ReportDashboardHexMap from './ReportDashboardHexMap'
 import ReportDashboardList from './ReportDashboardList'
 import ReportDashboardMPs from './ReportDashboardMPs'
 import ReportDashboardMemberCount from './ReportDashboardMemberCount'
 import ReportDashboardMemberList from './ReportDashboardMemberList'
 import ReportDashboardMembersOverTime from './ReportDashboardMembersOverTime'
+
+const IconClasses = 'w-4 h-4 stroke-meepGray-400 stroke-1 mr-1'
+
+const dashboardTabItems = [
+  {
+    label: 'Overview',
+    value: 'overview',
+    bold: true,
+  },
+  {
+    label: 'Members',
+    value: 'members',
+    icon: <UsersIcon className={IconClasses} />,
+  },
+  {
+    label: 'Locations',
+    value: 'locations',
+    icon: <MapPinIcon className={IconClasses} />,
+  },
+  {
+    label: 'Groups',
+    value: 'groups',
+    icon: <UsersIcon className={IconClasses} />,
+  },
+  {
+    label: 'Events',
+    value: 'events',
+    icon: <CalendarIcon className={IconClasses} />,
+  },
+  {
+    label: 'Articles  ',
+    value: 'articles',
+    icon: <FileIcon className={IconClasses} />,
+  },
+]
 
 export default function ReportDashboard() {
   const [selectedBoundary, setSelectedBoundary] = useAtom(selectedBoundaryAtom)
@@ -51,49 +86,51 @@ export default function ReportDashboard() {
   }
 
   return (
-    <main className="grid grid-cols-5 gap-4 w-full p-4 h-[calc(100vh-48px)] overflow-y-auto">
-      <div className="col-span-1 flex flex-col gap-2">
-        <ReportDashboardConsSelector
-          constituencies={constituencies ?? []}
-          selectedBoundary={selectedBoundary}
-          setSelectedBoundary={setSelectedBoundary}
-        />
-        <ReportDashboardHexMap
-          activeConstituencies={constituencies}
-          selectedBoundary={selectedBoundary}
-          setSelectedBoundary={setSelectedBoundary}
-        />
-      </div>
-      <Tabs defaultValue="Overview" className="col-span-4">
-        <TabsList>
-          <TabsTrigger value="Overview">Overview</TabsTrigger>
-          <TabsTrigger value="Members">Members</TabsTrigger>
-          <TabsTrigger value="Foodbanks">Foodbanks</TabsTrigger>
+    <main className="flex flex-col gap-4 w-full  h-[calc(100vh-48px)] overflow-y-auto">
+      <Tabs defaultValue="overview" className="col-span-4">
+        <TabsList className={TabTriggerClasses.tabsList}>
+          {dashboardTabItems.map((item) => (
+            <TabsTrigger
+              key={item.value}
+              value={item.value}
+              className={`${TabTriggerClasses.tabsTrigger} ${
+                item.bold ? 'font-bold' : 'font-normal'
+              }`}
+            >
+              {item.icon}
+              {item.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
-        <TabsContent value="Overview">
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 grid-cols-1 gap-4 w-full">
-            {constituencies && !selectedBoundary && (
-              <>
-                <ReportDashboardMemberCount constituencies={constituencies} />
-                <ReportDashboardList constituencies={constituencies} />
-                <ReportDashboardMembersOverTime />
-                <ReportDashboardMPs constituencies={constituencies} />
-              </>
-            )}
-            {selectedBoundary && analyticalAreaType && (
-              <div className="col-span-full">
-                <ConstituencyElectionDeepDive
-                  gss={selectedBoundary}
-                  analyticalAreaType={analyticalAreaType}
-                />
-              </div>
-            )}
-          </div>
-        </TabsContent>
-        <TabsContent value="Members">
-          <ReportDashboardMemberList />
-        </TabsContent>
-        <TabsContent value="Foodbanks">Foodbanks Data goes here</TabsContent>
+        <div className="p-4">
+          <TabsContent value="overview">
+            <div className="grid sm:grid-cols-2 md:grid-cols-2 grid-cols-1 gap-4 w-full">
+              {constituencies && !selectedBoundary && (
+                <>
+                  <ReportDashboardMemberCount constituencies={constituencies} />
+                  <ReportDashboardList constituencies={constituencies} />
+                  <ReportDashboardMembersOverTime />
+                  <ReportDashboardMPs constituencies={constituencies} />
+                </>
+              )}
+              {selectedBoundary && analyticalAreaType && (
+                <div className="col-span-full">
+                  <ConstituencyElectionDeepDive
+                    gss={selectedBoundary}
+                    analyticalAreaType={analyticalAreaType}
+                  />
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="members">
+            <ReportDashboardMemberList />
+          </TabsContent>
+          <TabsContent value="locations">Foodbanks Data goes here</TabsContent>
+          <TabsContent value="groups">Groups Data goes here</TabsContent>
+          <TabsContent value="events">Events Data goes here</TabsContent>
+          <TabsContent value="articles">Articles Data goes here</TabsContent>
+        </div>
       </Tabs>
     </main>
   )
