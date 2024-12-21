@@ -13,6 +13,7 @@ import ReportDashboardHexMap from './ReportDashboardHexMap'
 import ReportDashboardList from './ReportDashboardList'
 import ReportDashboardMPs from './ReportDashboardMPs'
 import ReportDashboardMemberCount from './ReportDashboardMemberCount'
+import ReportDashboardMemberList from './ReportDashboardMemberList'
 import ReportDashboardMembersOverTime from './ReportDashboardMembersOverTime'
 
 export default function ReportDashboard() {
@@ -50,27 +51,32 @@ export default function ReportDashboard() {
   }
 
   return (
-    <main className="flex flex-col w-full p-4 h-[calc(100vh-48px)] overflow-y-auto">
-      <Tabs defaultValue="Overview">
-        <div className="flex gap-4 items-center justify-between mb-4">
-          <TabsList>
-            <TabsTrigger value="Overview">Overview</TabsTrigger>
-            <TabsTrigger value="Foodbanks">Foodbanks</TabsTrigger>
-          </TabsList>
-          <ReportDashboardConsSelector
-            constituencies={constituencies ?? []}
-            selectedBoundary={selectedBoundary}
-            setSelectedBoundary={setSelectedBoundary}
-          />
-        </div>
+    <main className="grid grid-cols-5 gap-4 w-full p-4 h-[calc(100vh-48px)] overflow-y-auto">
+      <div className="col-span-1 flex flex-col gap-2">
+        <ReportDashboardConsSelector
+          constituencies={constituencies ?? []}
+          selectedBoundary={selectedBoundary}
+          setSelectedBoundary={setSelectedBoundary}
+        />
+        <ReportDashboardHexMap
+          activeConstituencies={constituencies}
+          selectedBoundary={selectedBoundary}
+          setSelectedBoundary={setSelectedBoundary}
+        />
+      </div>
+      <Tabs defaultValue="Overview" className="col-span-4">
+        <TabsList>
+          <TabsTrigger value="Overview">Overview</TabsTrigger>
+          <TabsTrigger value="Members">Members</TabsTrigger>
+          <TabsTrigger value="Foodbanks">Foodbanks</TabsTrigger>
+        </TabsList>
         <TabsContent value="Overview">
           <div className="grid sm:grid-cols-2 md:grid-cols-3 grid-cols-1 gap-4 w-full">
             {constituencies && !selectedBoundary && (
               <>
                 <ReportDashboardMemberCount constituencies={constituencies} />
-                <ReportDashboardMembersOverTime />
-                <ReportDashboardHexMap activeConstituencies={constituencies} />
                 <ReportDashboardList constituencies={constituencies} />
+                <ReportDashboardMembersOverTime />
                 <ReportDashboardMPs constituencies={constituencies} />
               </>
             )}
@@ -83,6 +89,9 @@ export default function ReportDashboard() {
               </div>
             )}
           </div>
+        </TabsContent>
+        <TabsContent value="Members">
+          <ReportDashboardMemberList />
         </TabsContent>
         <TabsContent value="Foodbanks">Foodbanks Data goes here</TabsContent>
       </Tabs>

@@ -41,7 +41,7 @@ export default function ReportDashboardList({
       <CardHeader>
         <CardTitle>Key Constituencies</CardTitle>
       </CardHeader>
-      <CardContent className="h-[500px] overflow-y-auto">
+      <CardContent className="h-[400px] overflow-y-auto">
         <ChartContainer config={chartConfig} className={`h-[1000px] w-full`}>
           <BarChart
             accessibilityLayer

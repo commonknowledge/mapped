@@ -58,37 +58,41 @@ export default function ReportDashboardConsSelector({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <div className="flex gap-1 items-center">
+      <div className="flex flex-col gap-1 items-center">
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-[300px] justify-between text-sm font-normal"
+            className=" justify-between text-sm font-normal w-full"
           >
-            {value
-              ? constituencies.find(
-                  (constituency) => constituency?.gssArea?.id === value
-                )?.gssArea?.name
-              : 'Filter by constituency...'}
+            <div className="flex items-center gap-1">
+              {selectedBoundary && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSelectedBoundary(null)
+                    setValue('')
+                  }}
+                  className="text-sm font-normal flex items-center  -ml-4 hover:bg-white hover:text-red-400"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
+              <span className="truncate">
+                {value
+                  ? constituencies.find(
+                      (constituency) => constituency?.gssArea?.id === value
+                    )?.gssArea?.name
+                  : 'Filter by constituency...'}
+              </span>
+            </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        {selectedBoundary && (
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSelectedBoundary(null)
-              setValue('')
-            }}
-            className="text-sm font-normal flex items-center gap-2"
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        )}
       </div>
 
-      <PopoverContent className="w-[300px] p-0">
+      <PopoverContent className="w-full  p-0" align="start">
         <Command>
           <CommandInput
             placeholder="Search constituencies..."

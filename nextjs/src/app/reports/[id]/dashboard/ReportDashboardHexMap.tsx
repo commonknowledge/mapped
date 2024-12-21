@@ -18,8 +18,12 @@ interface TooltipState {
 
 export default function ReportDashboardHexMap({
   activeConstituencies,
+  selectedBoundary,
+  setSelectedBoundary,
 }: {
   activeConstituencies?: ConstituencyStatsOverviewQuery['mapReport']['importedDataCountByConstituency']
+  selectedBoundary?: string
+  setSelectedBoundary?: (boundary: string) => void
 }) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
@@ -41,8 +45,8 @@ export default function ReportDashboardHexMap({
   }
 
   return (
-    <Card className="w-full row-span-2 relative">
-      <CardHeader>
+    <Card className="w-full row-span-2 relative bg-meepGray-800">
+      <CardHeader className=" border-meepGray-600">
         <CardTitle>Constituency Map </CardTitle>
         <CardDescription>Regional Distribution</CardDescription>
       </CardHeader>
@@ -73,11 +77,12 @@ export default function ReportDashboardHexMap({
                     ? `hsl(var(--chart-1))`
                     : `hsl(var(--chart-2))`
                 }
-                className={`fill-white transition-colors duration-200 hover:opacity-75 ${
-                  activeGssCodes?.has(id) ? 'opacity-100' : 'opacity-50'
-                }`}
+                className={`fill-white transition-colors duration-200 hover:opacity-75 
+                  ${activeGssCodes?.has(id) ? 'opacity-100 ' : 'opacity-50'}
+                  ${selectedBoundary === id ? 'fill-brandBlue' : ''}`}
                 onMouseEnter={(e) => handleMouseEnter(e, hex)}
                 onMouseLeave={() => setTooltip(null)}
+                onClick={() => setSelectedBoundary?.(id)}
               />
             ))}
           </Layout>
@@ -85,7 +90,7 @@ export default function ReportDashboardHexMap({
 
         {tooltip && (
           <div
-            className="fixed z-50 bg-popover text-popover-foreground px-3 py-1.5 text-sm rounded-md shadow-md"
+            className="fixed z-50 bg-meepGray-600 text-popover-foreground px-3 py-1.5 text-sm rounded-md shadow-md"
             style={{
               left: tooltip.x,
               top: tooltip.y - 40,
