@@ -1,4 +1,5 @@
 import { AnalyticalAreaType } from '@/__generated__/graphql'
+import { INITIAL_VIEW_STATES } from '@/components/LocalisedMap'
 import { useLoadedMap } from '@/lib/map'
 import { useAtom } from 'jotai'
 import React, { useEffect } from 'react'
@@ -65,6 +66,30 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
       // and add the area stats to the mapbox layer
     }
   }, [map.loaded, dataByBoundary, report])
+
+  // When the selected boundary changes, fly to it
+  useEffect(() => {
+    if (selectedBoundary) {
+      const coordinates = dataByBoundary.find((d) => d.gss === selectedBoundary)
+        ?.gssArea?.point?.geometry?.coordinates
+      map.loadedMap?.flyTo({
+        center: (coordinates as [number, number]) || [
+          INITIAL_VIEW_STATES.uk.longitude,
+          INITIAL_VIEW_STATES.uk.latitude,
+        ],
+        zoom: 11 || INITIAL_VIEW_STATES.uk.zoom,
+      })
+    }
+    if (!selectedBoundary) {
+      map.loadedMap?.flyTo({
+        center: [
+          INITIAL_VIEW_STATES.uk.longitude,
+          INITIAL_VIEW_STATES.uk.latitude,
+        ],
+        zoom: INITIAL_VIEW_STATES.uk.zoom,
+      })
+    }
+  }, [selectedBoundary])
 
   if (!map.loaded) return null
   if (!dataByBoundary || !tileset) return null
