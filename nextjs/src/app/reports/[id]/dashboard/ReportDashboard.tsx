@@ -86,7 +86,7 @@ export default function ReportDashboard() {
   }
 
   return (
-    <main className="flex flex-col gap-4 w-full  h-[calc(100vh-48px)] overflow-y-auto">
+    <main className="flex flex-col gap-4 w-full  h-[calc(100vh-48px)] overflow-y-auto z-30">
       <Tabs defaultValue="overview" className="col-span-4">
         <TabsList className={TabTriggerClasses.tabsList}>
           {dashboardTabItems.map((item) => (
@@ -104,7 +104,7 @@ export default function ReportDashboard() {
         </TabsList>
         <div className="p-4">
           <TabsContent value="overview">
-            <div className="grid sm:grid-cols-2 md:grid-cols-2 grid-cols-1 gap-4 w-full">
+            <div className="flex flex-wrap gap-4 w-full">
               {constituencies && !selectedBoundary && (
                 <>
                   <ReportDashboardMemberCount constituencies={constituencies} />

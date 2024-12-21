@@ -18,7 +18,7 @@ export const TabTriggerClasses = {
   tabsList:
     'w-full justify-start text-white rounded-none px-4 border border-b-meepGray-800 pt-4 pb-0 h-fit flex gap-4',
   tabsTrigger:
-    'pb-2 bg-transparent px-0 data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b border-white rounded-none',
+    'pb-2 bg-transparent px-0 data-[state=active]:bg-transparent text-meepGray-200 data-[state=active]:text-white data-[state=active]:border-b border-white rounded-none',
 }
 
 export function ReportSidebarLeft() {
