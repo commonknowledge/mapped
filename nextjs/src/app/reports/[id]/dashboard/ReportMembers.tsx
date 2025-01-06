@@ -12,6 +12,12 @@ import { gql, useApolloClient } from '@apollo/client'
 import { useAtom } from 'jotai'
 import useSWR from 'swr'
 import { useReport } from '../(components)/ReportProvider'
+
+interface ExtendedGenericData extends GenericData {
+  sourceColour: string
+  sourceId: string
+}
+
 export default function ReportDashboardMemberList() {
   const {
     report: { layers },
@@ -43,7 +49,7 @@ export default function ReportDashboardMemberList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {records?.map((member) => (
+          {records?.map((member: ExtendedGenericData) => (
             <TableRow
               key={member.id}
               className="relative font-mono font-normal text-xs cursor-pointer hover:bg-meepGray-600"
@@ -80,7 +86,7 @@ export default function ReportDashboardMemberList() {
 function useGenericDataByExternalDataSources(sourceIds: string[]) {
   const client = useApolloClient()
   return useSWR(sourceIds, async (sourceIds: string[]) => {
-    let array: GenericData[] = []
+    let array: ExtendedGenericData[] = []
     for (const sourceId of sourceIds) {
       const { data } = await client.query({
         query: gql`
@@ -104,7 +110,7 @@ function useGenericDataByExternalDataSources(sourceIds: string[]) {
       if (data?.genericDataByExternalDataSource) {
         array = [
           ...array,
-          ...data?.genericDataByExternalDataSource.map((d) => ({
+          ...data?.genericDataByExternalDataSource.map((d: GenericData) => ({
             ...d,
             sourceId,
             sourceColour: layerIdColour(sourceId),
