@@ -138,14 +138,14 @@ export default function ReportDashboardHexMap() {
                 r={hex.r * -1}
                 s={hex.q - hex.r}
                 style={{ fill: fillColor }}
-                className={`transition-colors duration-200 hover:brightness-125
-                  ${selectedBoundary === id ? 'stroke-2 stroke-pink-700' : ''}
+                className={`transition-colors duration-1000 hover:brightness-125
+                  ${selectedBoundary === id ? 'stroke-1 stroke-pink-700 animate-pulse' : ''}
                   ${count > 0 ? 'opacity-100' : 'opacity-50'}
                 `}
                 onMouseEnter={(e) => handleMouseEnter(e, hex)}
                 onMouseLeave={() => setTooltip(null)}
                 onClick={() => setSelectedBoundary?.(id)}
-              />
+              ></Hexagon>
             )
           })}
         </Layout>
