@@ -103,6 +103,7 @@
     "recharts": "^2.15.0",
     "slug": "^9.1.0",
     "sonner": "^1.4.3",
+    "swr": "^2.3.0",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
     "theme-colors": "^0.1.0",
