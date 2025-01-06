@@ -5,16 +5,23 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { gql, useQuery } from '@apollo/client'
 import { useAtom } from 'jotai'
-import { CalendarIcon, FileIcon, MapPinIcon, UsersIcon } from 'lucide-react'
+import {
+  CalendarIcon,
+  FileIcon,
+  MapPinIcon,
+  MessageSquareIcon,
+  UsersIcon,
+} from 'lucide-react'
 import { useReport } from '../(components)/ReportProvider'
 import { TabTriggerClasses } from '../(components)/ReportSidebarLeft'
 import { ConstituencyElectionDeepDive } from '../(components)/reportsConstituencyItem'
 import { selectedBoundaryAtom } from '../useSelectBoundary'
+import ReportDashboardChat from './ReportDashboardChat'
 import ReportDashboardList from './ReportDashboardList'
 import ReportDashboardMPs from './ReportDashboardMPs'
 import ReportDashboardMemberCount from './ReportDashboardMemberCount'
-import ReportDashboardMemberList from './ReportDashboardMemberList'
 import ReportDashboardMembersOverTime from './ReportDashboardMembersOverTime'
+import ReportMembers from './ReportMembers'
 
 const IconClasses = 'w-4 h-4 stroke-meepGray-400 stroke-1 mr-1'
 
@@ -48,6 +55,11 @@ const dashboardTabItems = [
     label: 'Articles  ',
     value: 'articles',
     icon: <FileIcon className={IconClasses} />,
+  },
+  {
+    label: 'Chat',
+    value: 'chat',
+    icon: <MessageSquareIcon className={IconClasses} />,
   },
 ]
 
@@ -87,8 +99,10 @@ export default function ReportDashboard() {
 
   return (
     <main className="flex flex-col gap-4 w-full  h-[calc(100vh-48px)] overflow-y-auto z-30">
-      <Tabs defaultValue="overview" className="col-span-4">
-        <TabsList className={TabTriggerClasses.tabsList}>
+      <Tabs defaultValue="overview" className="col-span-4 h-full">
+        <TabsList
+          className={`${TabTriggerClasses.tabsList} bg-meepGray-800 border-0`}
+        >
           {dashboardTabItems.map((item) => (
             <TabsTrigger
               key={item.value}
@@ -102,35 +116,34 @@ export default function ReportDashboard() {
             </TabsTrigger>
           ))}
         </TabsList>
-        <div className="p-4">
-          <TabsContent value="overview">
-            <div className="flex flex-wrap gap-4 w-full">
-              {constituencies && !selectedBoundary && (
-                <>
-                  <ReportDashboardMemberCount constituencies={constituencies} />
-                  <ReportDashboardList constituencies={constituencies} />
-                  <ReportDashboardMembersOverTime />
-                  <ReportDashboardMPs constituencies={constituencies} />
-                </>
-              )}
-              {selectedBoundary && analyticalAreaType && (
-                <div className="col-span-full">
-                  <ConstituencyElectionDeepDive
-                    gss={selectedBoundary}
-                    analyticalAreaType={analyticalAreaType}
-                  />
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          <TabsContent value="members">
-            <ReportDashboardMemberList />
-          </TabsContent>
-          <TabsContent value="locations">Foodbanks Data goes here</TabsContent>
-          <TabsContent value="groups">Groups Data goes here</TabsContent>
-          <TabsContent value="events">Events Data goes here</TabsContent>
-          <TabsContent value="articles">Articles Data goes here</TabsContent>
-        </div>
+        <TabsContent value="overview" className="mt-0 p-4">
+          <div className="flex flex-wrap gap-4 w-full">
+            {constituencies && !selectedBoundary && (
+              <>
+                <ReportDashboardMemberCount constituencies={constituencies} />
+                <ReportDashboardList constituencies={constituencies} />
+                <ReportDashboardMembersOverTime />
+                <ReportDashboardMPs constituencies={constituencies} />
+              </>
+            )}
+            {selectedBoundary && analyticalAreaType && (
+              <ConstituencyElectionDeepDive
+                gss={selectedBoundary}
+                analyticalAreaType={analyticalAreaType}
+              />
+            )}
+          </div>
+        </TabsContent>
+        <TabsContent value="members">
+          <ReportMembers />
+        </TabsContent>
+        <TabsContent value="locations">Foodbanks Data goes here</TabsContent>
+        <TabsContent value="groups">Groups Data goes here</TabsContent>
+        <TabsContent value="events">Events Data goes here</TabsContent>
+        <TabsContent value="articles">Articles Data goes here</TabsContent>
+        <TabsContent value="chat">
+          <ReportDashboardChat />
+        </TabsContent>
       </Tabs>
     </main>
   )
