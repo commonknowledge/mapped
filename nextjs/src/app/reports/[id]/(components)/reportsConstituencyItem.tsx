@@ -77,7 +77,10 @@ export const ConstituencyElectionDeepDive = ({
     .filter((l) => !!l.source.importedDataCountForConstituency?.count)
 
   return (
-    <Card key={data.constituency.id} className="divide-y space-y-4">
+    <Card
+      key={data.constituency.id}
+      className="divide-y space-y-4 w-full max-w-full"
+    >
       <CardHeader>
         <CardTitle>{data.constituency.name}</CardTitle>
         <CardDescription>

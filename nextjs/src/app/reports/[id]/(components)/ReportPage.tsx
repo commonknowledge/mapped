@@ -47,7 +47,7 @@ export default function ReportPage() {
           onLayout={handlePanelResize}
         >
           <ReportSidebarLeft />
-          <ResizablePanel>
+          <ResizablePanel className="min-w-[300px]">
             <div className="relative w-full h-full transition-all duration-300">
               <Tabs defaultValue="map" className="w-full h-full ">
                 <TabsList className="absolute top-[15px] left-[15px] z-10 ">
@@ -91,7 +91,7 @@ export default function ReportPage() {
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle={true} />
-          <ResizablePanel>
+          <ResizablePanel className="min-w-[300px]">
             <ReportDashboard />
           </ResizablePanel>
         </ResizablePanelGroup>

@@ -16,9 +16,9 @@ import { useReport } from './ReportProvider'
 
 export const TabTriggerClasses = {
   tabsList:
-    'w-full justify-start text-white rounded-none px-4 border border-b-meepGray-800 pt-4 pb-0 h-fit flex gap-4',
+    'w-full justify-start text-white rounded-none px-4 border border-b-meepGray-800 pt-4 pb-0 h-fit flex gap-6 overflow-x-auto scroll',
   tabsTrigger:
-    'pb-2 bg-transparent px-0 data-[state=active]:bg-transparent text-meepGray-200 data-[state=active]:text-white data-[state=active]:border-b border-white rounded-none',
+    'pb-2 bg-transparent px-0 data-[state=active]:bg-transparent  text-meepGray-400 border-b border-b-meepGray-600 data-[state=active]:text-white data-[state=active]:border-b-meepGray-200 hover:border-b hover:border-meepGray-400 rounded-none',
 }
 
 export function ReportSidebarLeft() {
