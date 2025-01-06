@@ -45,6 +45,10 @@ export function MembersListPointMarkers({
         const feature = event.features?.[0]
         if (feature?.properties?.id) {
           setSelectedSourceMarker(feature)
+          map.flyTo({
+            center: feature.geometry.coordinates,
+            zoom: 16,
+          })
         }
       }
 
