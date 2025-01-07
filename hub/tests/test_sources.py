@@ -108,16 +108,23 @@ class TestExternalDataSource:
             self.assertRaises(NotImplementedError, self.source.field_definitions)
 
     async def test_webhooks(self):
-        if not self.source.automated_webhooks:
-            return self.skipTest("Webhooks not automated")
-        self.source.teardown_unused_webhooks(force=True)
         try:
-            self.source.webhook_healthcheck()
+            if not self.source.automated_webhooks:
+                return self.skipTest("Webhooks not automated")
+            self.source.teardown_unused_webhooks(force=True)
+            try:
+                self.source.webhook_healthcheck()
+                self.fail()
+            except ValueError as e:
+                self.assertTrue("Not enough webhooks" in str(e))
+            self.source.setup_webhooks()
+            self.assertTrue(self.source.webhook_healthcheck())
+        except Exception as e:
+            print(e)
+            # print the webhook url
+            print("self.source.webhook_url:", self.source.webhook_url())
+            self.source.teardown_unused_webhooks(force=True)
             self.fail()
-        except ValueError as e:
-            self.assertTrue("Not enough webhooks" in str(e))
-        self.source.setup_webhooks()
-        self.assertTrue(self.source.webhook_healthcheck())
 
     async def test_import_async(self):
         self.create_custom_layer_airtable_records(
