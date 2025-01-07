@@ -6,8 +6,7 @@
         "name": "James Madeupname",
         "external_id": "1",
         "person_type": "MP",
-        "id_type": "parlid",
-        "area": 1
+        "id_type": "parlid"
       }
     },
     {
@@ -17,8 +16,7 @@
         "name": "Juliet Madeupname",
         "external_id": "2",
         "person_type": "MP",
-        "id_type": "parlid",
-        "area": 2
+        "id_type": "parlid"
       }
     },
     {
@@ -28,8 +26,34 @@
           "name": "Juliet Replacement",
           "external_id": "3",
           "person_type": "MP",
-          "id_type": "parlid",
-          "area": 2
+          "id_type": "parlid"
+        }
+    },
+    {
+      "model": "hub.personarea",
+      "pk": 1,
+      "fields": {
+        "person": 1,
+        "area": 1,
+        "person_type": "MP"
+      }
+    },
+    {
+      "model": "hub.personarea",
+      "pk": 2,
+      "fields": {
+        "person": 2,
+        "area": 2,
+        "person_type": "MP"
+      }
+    },
+    {
+        "model": "hub.personarea",
+        "pk": 3,
+        "fields": {
+          "person": 3,
+          "area": 2,
+          "person_type": "MP"
         }
     },
     {
@@ -72,7 +96,7 @@
           "data_type": "date",
           "last_update": "2022-10-10T13:20:30+00:00",
           "source": "https://wikipedia.org",
-          "table": "person__persondata"
+          "table": "people__persondata"
         }
       },
       {

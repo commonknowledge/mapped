@@ -89,6 +89,8 @@ class Command(MultipleAreaTypesMixin, BaseConstituencyGroupListImportCommand):
         return None
 
     def get_df(self):
+        if not self.data_file.exists():
+            return None
         df = pd.read_csv(self.data_file)
         df.columns = [
             "group_name",

@@ -76,6 +76,7 @@ urlpatterns = [
     path("terms/", core.TermsView.as_view(), name="terms"),
     path("about/", core.AboutView.as_view(), name="about"),
     path("contact/", core.ContactView.as_view(), name="contact"),
+    path("tools/", core.ToolsView.as_view(), name="tools"),
     path("location/", area.AreaSearchView.as_view(), name="area_search"),
     path("go/", include(landingpages.urlpatterns)),
     path("style/", core.StyleView.as_view(), name="style"),

@@ -142,6 +142,10 @@ class Command(MultipleAreaTypesMixin, BaseImportFromDataFrameCommand):
             self.data_types[name] = data_type
 
     def get_dataframe(self):
+
+        if self.data_file.exists() is False:
+            return None
+
         df = pd.read_csv(self.data_file)
         df = filter_authority_type(df, self.area_type, "gss")
 

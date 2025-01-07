@@ -11,5 +11,5 @@ script/bootstrap
 if [ "$1" == "--coverage" ]; then
     script/dev-command coverage run --source=. --branch manage.py test
 else
-    script/dev-command ./manage.py test
+    script/dev-command ./manage.py test "$@"
 fi

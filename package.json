@@ -11,6 +11,7 @@
     "chart.js": "^4.4.1",
     "framer-motion": "^11.2.10",
     "i": "^0.3.7",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "jquery": "^3.7.1",
     "leaflet": "^1.9.4",
     "mapbox-gl": "^3.2.0",
@@ -20,6 +21,7 @@
     "react-grid-layout-next": "^2.2.0",
     "react-icons": "^5.0.1",
     "react-map-gl": "^7.1.7",
+    "leaflet-geosearch": "^4.0.0",
     "vue": "^3.4.15"
   }
 }

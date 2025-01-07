@@ -14,25 +14,9 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
-from hub.models import Area, DataSet, DataType, Person, PersonData
+from hub.models import Area, AreaType, DataSet, DataType, Person, PersonData
 
-party_shades = {
-    "Alba Party": "#005EB8",
-    "Alliance Party of Northern Ireland": "#F6CB2F",
-    "Conservative Party": "#0087DC",
-    "Democratic Unionist Party": "#D46A4C",
-    "Green Party": "#6AB023",
-    "Labour Co-operative": "#E4003B",
-    "Labour Party": "#E4003B",
-    "Liberal Democrats": "#FAA61A",
-    "Plaid Cymru": "#005B54",
-    "Scottish National Party": "#FDF38E",
-    "Sinn Féin": "#326760",
-    "Social Democratic and Labour Party": "#2AA82C",
-    "Speaker of the House of Commons": "#DCDCDC",
-    "Reclaim": "#101122",
-    "independent politician": "#DCDCDC",
-}
+from .base_importers import party_shades
 
 party_map = {
     "Conservative": "Conservative Party",
@@ -113,7 +97,7 @@ class Command(BaseCommand):
         return id_df
 
     def get_area_map(self):
-        areas = Area.objects.filter(area_type__code="WMC").all()
+        areas = Area.objects.filter(area_type__code=self.area_type).all()
         area_gss_lookup = {}
         for area in areas:
             area_gss_lookup[area.name] = area.gss
@@ -125,8 +109,8 @@ class Command(BaseCommand):
             "Accept": "application/json",
             "User-Agent": "Local Intelligence Hub beta",
         }
-        """ SPARQL QUERY
-        SELECT DISTINCT ?person ?personLabel ?twfyid ?partyLabel ?seatLabel ?gss_code ?twitter ?facebook ?wikipedia WHERE
+        query = """
+        SELECT DISTINCT ?person ?personLabel ?twfyid ?partyLabel ?seatLabel ?twitter ?facebook ?wikipedia WHERE
         {
           ?person wdt:P31 wd:Q5 . ?person p:P39 ?ps .
           ?ps ps:P39 ?term . ?term wdt:P279 wd:Q16707842 .
@@ -144,10 +128,11 @@ class Command(BaseCommand):
           SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
         }
         """
-        url = "https://query.wikidata.org/sparql?query=%20%20%20%20%20%20%20%20SELECT%20DISTINCT%20%3Fperson%20%3FpersonLabel%20%3FpartyLabel%20%3Ftwfyid%20%3FseatLabel%20%3Fgss_code%20%3Ftwitter%20%3Ffacebook%20%3Fwikipedia%20WHERE%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%3Fperson%20wdt%3AP31%20wd%3AQ5%20.%20%3Fperson%20p%3AP39%20%3Fps%20.%0A%20%20%20%20%20%20%20%20%20%20%3Fps%20ps%3AP39%20%3Fterm%20.%20%3Fterm%20wdt%3AP279%20wd%3AQ16707842%20.%0A%20%20%20%20%20%20%20%20%20%20%3Fps%20pq%3AP580%20%3Fstart%20.%20%3Fps%20pq%3AP4100%20%3Fparty%20.%20%3Fps%20pq%3AP768%20%3Fseat%20.%0A%20%20%20%20%20%20%20%20%20%20FILTER%20NOT%20EXISTS%20%7B%20%3Fps%20pq%3AP582%20%3Fend%20%7D%20.%0A%20%20%20%20%20%20%20%20%20%20%3Fseat%20wdt%3AP836%20%3Fgss_code%20.%0A%20%20%20%20%20%20%20%20%20%20OPTIONAL%20%7B%20%3Fperson%20wdt%3AP2171%20%3Ftwfyid%20%7D%20.%0A%20%20%20%20%20%20%20%20%20%20OPTIONAL%20%7B%20%3Fperson%20wdt%3AP10428%20%3Fparlid%20%7D%20.%0A%20%20%20%20%20%20%20%20%20%20OPTIONAL%20%7B%20%3Fperson%20wdt%3AP2002%20%3Ftwitter%20%7D%20.%0A%20%20%20%20%20%20%20%20%20%20OPTIONAL%20%7B%20%3Fperson%20wdt%3AP2013%20%3Ffacebook%20%7D%20.%0A%20%20%20%20%20%20%20%20%20%20OPTIONAL%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Fwikipedia%20schema%3Aabout%20%3Fperson%20.%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Fwikipedia%20schema%3AinLanguage%20%22en%22%20.%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Fwikipedia%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%0A%20%20%20%20%20%20%20%20%20%20%7D%20.%0A%20%20%20%20%20%20%20%20%20%20SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22.%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A"
+        # create an encoded url using the above
+        url = f"https://query.wikidata.org/sparql?query={urllib.parse.quote(query)}"
         r = requests.get(url, headers=headers)
 
-        # munge the wikidata JSON into a set of dicts so we can turn it into a datframe
+        # munge the wikidata JSON into a set of dicts so we can turn it into a dataframe
         records = r.json()["results"]["bindings"]
         data = []
         for record in records:
@@ -157,7 +142,8 @@ class Command(BaseCommand):
             data.append(row)
 
         wiki_df = pd.DataFrame(data)
-        wiki_df["twfyid"] = pd.to_numeric(wiki_df["twfyid"])
+        # when not a number use null
+        wiki_df["twfyid"] = pd.to_numeric(wiki_df["twfyid"], errors="coerce")
 
         return wiki_df
 
@@ -203,6 +189,7 @@ class Command(BaseCommand):
         data_types = {}
         if not self._quiet:
             print("Importing type names")
+        area_type = AreaType.objects.get(code=self.area_type)
         for data_type, props in tqdm(type_names.items(), disable=self._quiet):
             defaults = {
                 "data_type": "profile_id",
@@ -210,7 +197,7 @@ class Command(BaseCommand):
                 "release_date": str(date.today()),
                 "source": sources[props["source"]]["source"],
                 "source_label": sources[props["source"]]["source_label"],
-                "table": "person__persondata",
+                "table": "people__persondata",
                 "is_filterable": False,
             }
             if data_type == "party":
@@ -219,6 +206,7 @@ class Command(BaseCommand):
             ds, created = DataSet.objects.update_or_create(
                 name=data_type, defaults=defaults
             )
+            ds.areas_available.add(area_type)
             dt, created = DataType.objects.get_or_create(
                 data_set=ds,
                 name=data_type,
@@ -231,12 +219,16 @@ class Command(BaseCommand):
         if not self._quiet:
             print("Importing MPs")
         for _, mp in tqdm(data.iterrows(), disable=self._quiet, total=data.shape[0]):
-            area = Area.get_by_name(mp["Constituency"], area_type=self.area_type)
+            try:
+                area = Area.get_by_name(mp["Constituency"], area_type=self.area_type)
+            except Area.MultipleObjectsReturned:
+                print(
+                    f"Found multiple areas for {mp['personLabel']} - {mp['Constituency']}"
+                )
             if area is None:  # pragma: no cover
                 mp_dict = mp.to_dict()
                 print(
-                    f"Failed to add MP {mp_dict.get('personLabel')} as area "
-                    f"{mp_dict.get('Constituency')} / {mp_dict.get('gss_code')} does not exist"
+                    f"Failed to add MP {mp['personLabel']} as area {mp['gss_code']} does not exist"
                 )
                 continue
 
@@ -253,9 +245,9 @@ class Command(BaseCommand):
                         id_type="twfyid",
                         defaults={
                             "name": name,
-                            "area": area,
                         },
                     )
+                    person.areas.add(area, through_defaults={"person_type": "MP"})
                 except DataError as e:
                     print(f"Failed to create/update mp {name}: {e}")
                     continue
@@ -296,12 +288,13 @@ class Command(BaseCommand):
                             data=mp["Party"],
                         )
 
-        dataset = DataSet.objects.filter(name="party", options=list())
+        dataset = DataSet.objects.filter(name="party")
         if dataset:
             parties = list()
             all_parties = list(
                 PersonData.objects.filter(
-                    data_type__data_set__name="party"
+                    person__personarea__person_type="MP",
+                    data_type__data_set__name="party",
                 ).values_list("data")
             )
 
@@ -319,7 +312,9 @@ class Command(BaseCommand):
             print("Importing MP Images")
         for mp in tqdm(
             PersonData.objects.filter(
-                data_type__name="parlid", person__person_type="MP"
+                data_type__name="parlid",
+                person__personarea__person_type="MP",
+                person__personarea__area__area_type__code="WMC23",
             )
             .select_related("person")
             .all(),
@@ -336,10 +331,13 @@ class Command(BaseCommand):
             mp.person.save()
 
     def check_for_duplicate_mps(self):
+        # XXX this is a post 2024 election hack to get the MPs up while we fix the election count things
+        return
         duplicates = (
-            Person.objects.distinct()
-            .values("area_id")
-            .annotate(area_count=Count("area_id"))
+            Person.objects.filter(personarea__person_type="MP")
+            .distinct()
+            .values("personarea__area_id")
+            .annotate(area_count=Count("personarea__area_id"))
             .filter(area_count__gt=1)
         )
         if duplicates.count() > 0:
@@ -351,9 +349,9 @@ class Command(BaseCommand):
 
             # Remove all duplicate MPs
             for area in duplicates:
-                duplicate_mps = Person.objects.filter(area=area["area_id"]).values_list(
-                    "external_id", flat=True
-                )
+                duplicate_mps = Person.objects.filter(
+                    areas=area["personarea__area_id"]
+                ).values_list("external_id", flat=True)
                 mps_to_delete = list(duplicate_mps)
                 try:
                     least_recent_mp = (

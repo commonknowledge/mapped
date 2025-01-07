@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 import requests
 from tqdm import tqdm
 
-from hub.models import DataSet, DataType, Person, PersonData
+from hub.models import AreaType, DataSet, DataType, Person, PersonData
 
 
 class Command(BaseCommand):
@@ -191,12 +191,16 @@ class Command(BaseCommand):
                     "release_date": release_dates[vote_machine_name],
                     "source_label": "Data from UK Parliament.",
                     "source": "https://parliament.uk/",
-                    "table": "person__persondata",
+                    "table": "people__persondata",
                     "options": vote_options,
                     "subcategory": "vote",
                     "comparators": DataSet.in_comparators(),
                 },
             )
+
+            for at in AreaType.objects.filter(code__in=["WMC", "WMC23"]):
+                ds.areas_available.add(at)
+
             data_type, created = DataType.objects.update_or_create(
                 data_set=ds,
                 name=vote_machine_name,
@@ -215,12 +219,16 @@ class Command(BaseCommand):
                         "release_date": release_dates[edm_machine_name],
                         "source_label": "Data from UK Parliament.",
                         "source": "https://parliament.uk/",
-                        "table": "person__persondata",
+                        "table": "people__persondata",
                         "options": edm_options,
                         "subcategory": "supporter",
                         "comparators": DataSet.comparators_default(),
                     },
                 )
+
+                for at in AreaType.objects.filter(code__in=["WMC", "WMC23"]):
+                    ds.areas_available.add(at)
+
                 data_type, created = DataType.objects.update_or_create(
                     data_set=ds,
                     name=edm_machine_name,

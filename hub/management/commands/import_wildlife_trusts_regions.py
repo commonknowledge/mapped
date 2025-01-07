@@ -23,13 +23,13 @@ class Command(BaseConstituencyGroupListImportCommand):
                 "label": "Wildlife Trust Regions",
                 "description": "The Wildlife Trust Region(s) that a constituency falls under.",
                 "data_type": "json",
-                "category": "place",
+                "category": "movement",
                 "subcategory": "groups",
-                "source_label": "Data from The Widlife Trusts",
+                "source_label": "Data from The Widlife Trusts.",
                 "source": "https://www.wildlifetrusts.org/",
                 "source_type": "csv",
                 "table": "areadata",
-                "is_filterable": False,
+                "is_filterable": True,
                 "is_shadable": False,
                 "comparators": DataSet.in_comparators(),
             },
@@ -39,6 +39,10 @@ class Command(BaseConstituencyGroupListImportCommand):
     group_data_type = "wildlife_trusts_regions"
 
     def get_df(self):
+
+        if not self.data_file.exists():
+            return None
+
         return pd.read_csv(self.data_file, usecols=["Trust", "PCON19NM"]).rename(
             columns={"PCON19NM": "constituency"}
         )

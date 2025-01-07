@@ -20,6 +20,26 @@
     }
   },
   {
+    "model": "hub.areatype",
+    "pk": 3,
+    "fields": {
+      "name": "District Council",
+      "code": "DIS",
+      "area_type": "District Council",
+      "description": "District Council"
+    }
+  },
+  {
+    "model": "hub.areatype",
+    "pk": 4,
+    "fields": {
+      "name": "Single Tier Council",
+      "code": "STC",
+      "area_type": "Single Tier Council",
+      "description": "Single Tier Council"
+    }
+  },
+  {
     "model": "hub.area",
     "pk": 1,
     "fields": {
@@ -54,35 +74,24 @@
   },
   {
     "model": "hub.area",
-    "pk": 4,
+    "pk": 101,
     "fields": {
-      "gss": "E10000011",
-      "mapit_id": "4",
-      "name": "New South Borsetshire",
-      "area_type_id": 2,
-      "geometry": "{\"name\": \"New South Borsetshire\", \"properties\": {}}"
+      "gss": "E10000101",
+      "mapit_id": "101",
+      "name": "Borsetshire East District Council",
+      "area_type_id": 3,
+      "geometry": "{\"name\": \"Borsetshire East District Council\", \"properties\": {}}"
     }
   },
   {
     "model": "hub.area",
-    "pk": 5,
+    "pk": 102,
     "fields": {
-      "gss": "E10000012",
-      "mapit_id": "5",
-      "name": "New Borsetshire West",
-      "area_type_id": 2,
-      "geometry": "{\"name\": \"New Borsetshire West\", \"properties\": {}}"
-    }
-  },
-  {
-    "model": "hub.area",
-    "pk": 6,
-    "fields": {
-      "gss": "E10000013",
-      "mapit_id": "6",
-      "name": "New Borsetshire East",
-      "area_type_id": 2,
-      "geometry": "{\"name\": \"New Borsetshire East\", \"properties\": {}}"
+      "gss": "E10000102",
+      "mapit_id": "102",
+      "name": "Borsetshire East Council",
+      "area_type_id": 4,
+      "geometry": "{\"name\": \"Borsetshire East Council\", \"properties\": {}}"
     }
   }
 ]

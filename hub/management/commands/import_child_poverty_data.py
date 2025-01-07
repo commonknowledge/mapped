@@ -10,8 +10,8 @@ from .base_importers import BaseImportFromDataFrameCommand
 class Command(BaseImportFromDataFrameCommand):
     help = "Import data about child poverty"
 
-    source_url = "https://endchildpoverty.org.uk/child-poverty/"
-    data_url = "https://endchildpoverty.org.uk/wp-content/uploads/2022/07/Child-Poverty-AHC-estimates-2015-2021-FINAL.xlsx"
+    source_url = "https://endchildpoverty.org.uk/child-poverty-2024/"
+    data_url = "https://aaf1a18515da0e792f78-c27fdabe952dfc357fe25ebf5c8897ee.ssl.cf5.rackcdn.com/2010/Chid+poverty+AHC+2015-2023_Local+Authorities+and+Constituencies.xlsx?v=1716657555000"
 
     cast_field = FloatField
     uses_gss = True
@@ -22,7 +22,7 @@ class Command(BaseImportFromDataFrameCommand):
             "defaults": {
                 "label": "Estimated child poverty",
                 "description": "Percentage of children living in households with a net income (after housing costs) below 60% of the national median.",
-                "release_date": "March 2022",
+                "release_date": "June 2024",
                 "data_type": "percent",
                 "category": "place",
                 "source_label": "Data from End Child Poverty, based on data from DWP/HMRC.",
@@ -36,7 +36,7 @@ class Command(BaseImportFromDataFrameCommand):
                 "unit_type": "percentage",
                 "unit_distribution": "people_in_area",
             },
-            "col": "Percentage 2020/21",
+            "col": "Percentage 2022-23",
         }
     }
 
@@ -60,6 +60,8 @@ class Command(BaseImportFromDataFrameCommand):
             "Number 2018/19",
             "Number 2019/20",
             "Number 2020/21",
+            "Number 2021/22",
+            "Number 2022-23",
             "Percentage 2014/15",
             "Percentage 2015/16",
             "Percentage 2016/17",
@@ -67,7 +69,9 @@ class Command(BaseImportFromDataFrameCommand):
             "Percentage 2018/19",
             "Percentage 2019/20",
             "Percentage 2020/21",
-            "Percentage point change (2015-21)",
+            "Percentage 2021/22",
+            "Percentage 2022-23",
+            "Percentage point change (2015-22)",
         ]
         percentage_columns = [col for col in df.columns if "Percentage" in col]
         for col in percentage_columns:

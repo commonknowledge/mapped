@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
-from hub.models import DataSet, DataType, PersonData
+from hub.models import AreaType, DataSet, DataType, PersonData
 
 COMMITTEE_REQUEST_URL = "https://committees-api.parliament.uk/api/Committees"
 
@@ -23,7 +23,7 @@ class Command(BaseCommand):
         self._quiet = quiet
         self.import_results()
 
-    def get_results(self):
+    def get_df(self):
         if not self._quiet:
             self.stdout.write("Fetching all current Select Committee memberships")
 
@@ -43,7 +43,10 @@ class Command(BaseCommand):
                     select_committees_json.extend(response_json)
             else:
                 self.stdout.write(f"Request failed for MP with ID: {str(mp)}")
-
+        if len(select_committees_json) == 0:
+            # if say, there's an election
+            self.stdout.write("No current Select Committee memberships found")
+            return None
         df = pd.DataFrame.from_records(select_committees_json)[["committees", "id"]]
         df = df.explode("committees")
         df["committee_name"] = df.committees.str["name"]
@@ -62,11 +65,15 @@ class Command(BaseCommand):
                 "source_label": "Data from UK Parliament.",
                 "release_date": str(date.today()),
                 "source": "https://parliament.uk/",
-                "table": "person__persondata",
+                "table": "people__persondata",
                 "is_shadable": False,
                 "comparators": DataSet.in_comparators(),
             },
         )
+
+        for at in AreaType.objects.filter(code__in=["WMC", "WMC23"]):
+            select_committee_membership_ds.areas_available.add(at)
+
         select_committee_membership, created = DataType.objects.update_or_create(
             data_set=select_committee_membership_ds,
             name="select_committee_membership",
@@ -75,7 +82,7 @@ class Command(BaseCommand):
 
         return select_committee_membership
 
-    def add_results(self, results, data_type):
+    def add_results(self, results: pd.DataFrame, data_type):
         if not self._quiet:
             self.stdout.write("Adding Select Committee Membership")
         for index, result in tqdm(results.iterrows(), disable=self._quiet):
@@ -87,5 +94,6 @@ class Command(BaseCommand):
 
     def import_results(self):
         data_type = self.create_data_types()
-        results = self.get_results()
-        self.add_results(results, data_type)
+        df = self.get_df()
+        if not df.empty:
+            self.add_results(df, data_type)

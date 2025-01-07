@@ -46,7 +46,7 @@
     </p>
 {% elif dataset.subcategory == "groups" %}
     <ul class="tag-cloud">
-      {% for data in dataset.data.json %}
+      {% for data in dataset.data.sorted_groups %}
         {% if data.url %}
           <li><a href="{{ data.url }}" class="tag" title="{{ dataset.label }}">{{ data.group_name }}</a></li>
         {% else %}

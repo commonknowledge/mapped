@@ -17,6 +17,15 @@ class Command(BaseCommand):
     boundary_types = [
         {
             "mapit_type": ["WMC"],
+            "mapit_generation": 54,
+            "name": "2010 Parliamentary Constituency",
+            "code": "WMC",
+            "area_type": "Westminster Constituency",
+            "description": "Westminster Parliamentary Constituency boundaries, as created in 2010",
+        },
+        {
+            "mapit_type": ["WMC"],
+            "mapit_generation": None,
             "name": "2023 Parliamentary Constituency",
             "code": "WMC23",
             "area_type": "Westminster Constituency",
@@ -24,6 +33,7 @@ class Command(BaseCommand):
         },
         {
             "mapit_type": ["LBO", "UTA", "COI", "LGD", "CTY", "MTD"],
+            "mapit_generation": None,
             "name": "Single Tier Councils",
             "code": "STC",
             "area_type": "Single Tier Council",
@@ -31,6 +41,7 @@ class Command(BaseCommand):
         },
         {
             "mapit_type": ["DIS", "NMD"],
+            "mapit_generation": None,
             "name": "District Councils",
             "code": "DIS",
             "area_type": "District Council",
@@ -38,11 +49,12 @@ class Command(BaseCommand):
         },
         {
             "mapit_type": ["COI", "CPW", "DIW", "LBW", "LGW", "MTW", "UTE", "UTW"],
+            "mapit_generation": None,
             "name": "Wards",
             "code": "WD23",
             "area_type": "Electoral Ward",
             "description": "Electoral wards",
-        },
+        }
     ]
 
     def add_arguments(self, parser):
@@ -59,7 +71,7 @@ class Command(BaseCommand):
     def handle(self, quiet: bool = False, all_names: bool = False, *args, **options):
         self.mapit_client = mapit.MapIt()
         for b_type in self.boundary_types:
-            areas = self.mapit_client.areas_of_type(b_type["mapit_type"])
+            areas = self.mapit_client.areas_of_type(b_type["mapit_type"], generation=b_type.get("mapit_generation", None))
             area_type, created = AreaType.objects.get_or_create(
                 name=b_type["name"],
                 code=b_type["code"],

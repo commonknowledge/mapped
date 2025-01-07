@@ -51,6 +51,8 @@
                     <div class="card-footer bg-gray-100">
                         <p class="card-text fs-8 text-muted">
                             <a href="{{ dataset.source }}">{{ dataset.source_label }}</a>
+                            Available for
+                            {% for area_type in dataset.areas_available %}{% include 'hub/includes/comma.html' %}<a href="{% url "explore" %}?area_type={{ area_type.code }}">{{ area_type.name_plural }}</a>{% endfor %}.
                           {% if dataset.release_date %}
                             Updated {{ dataset.release_date }}.
                           {% endif %}

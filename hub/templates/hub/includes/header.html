@@ -10,6 +10,7 @@
             <ul class="navbar-nav ms-auto flex-wrap justify-content-end">
                 {% include 'hub/includes/nav-item.html' with name='home' label='Search' %}
                 {% include 'hub/includes/nav-item.html' with name='explore' label='Map' %}
+                {% include 'hub/includes/nav-item.html' with name='tools' label='Tools' %}
               {% if user.is_authenticated %}
                 {% include 'hub/includes/nav-item.html' with name='my_account' label='Account' %}
               {% else %}

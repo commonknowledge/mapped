@@ -1,6 +1,7 @@
 import $ from 'jquery/dist/jquery.slim'
-import Collapse from 'bootstrap/js/dist/collapse'
+import Modal from 'bootstrap/js/dist/modal'
 import trackEvent from './analytics.esm.js'
+import setUpCollapsable from './collapsable.esm.js'
 
 async function mailingListSignup($form) {
     const response = await fetch($form.attr('action'), {
@@ -88,16 +89,6 @@ $(function(){
         }
     })
 
-    $('.js-email-your-mp').on('click', function(e){
-        e.preventDefault()
-        let href = $(this).attr('href')
-        trackEvent('email_your_mp', {
-            area_name: $('#area_name').text(),
-            area_mp_name: $('#mp_name').text()
-        }).always(function(){
-            window.location.href = href
-        })
-    })
     $('.js-landingpage-search').on('submit', function(e){
         var $form = $(this);
         if ( ! $form.data('submitRecorded') ) {
@@ -122,35 +113,90 @@ $(function(){
         });
     })
 
-    $('.js-collapsable-mailing-list-form').each(setUpCollapsableMailingListForm);
+    $('.form-check + .conditional-fields').each(function(){
+        var $target = $(this); // the .conditional-fields element
+        var inputSetName = $target.prev().find('input').eq(0).attr('name');
+        var $triggers = $('input[name="' + inputSetName + '"]');
 
-    $('.js-mailing-list-signup').on('submit', function(e){
-        e.preventDefault();
-        var $form = $(this);
-        $('.invalid-feedback').remove()
-        mailingListSignup($form).then(function(response){
-            if (response['response'] == 'ok') {
-                $form.hide()
-                $('.js-mailing-list-success').removeClass('d-none')
-            } else {
-                console.log(response)
-                for (var k in response["errors"]) {
-                    var id = '#' + k
-                    var el = $(id)
-                    el.addClass('is-invalid')
-                    var error_el = $('<div>')
-                    error_el.addClass('invalid-feedback d-block fs-6 mt-2')
-                    error_el.html( '<p>' + response["errors"][k].join(", ") + '</p>' )
-                    el.after(error_el)
-                }
+        // jQuery can't see custom bootstrap events, so use .addEventListener instead
+        $target[0].addEventListener('shown.bs.collapse', function(){
+            $target.find('input').eq(0).trigger('focus');
+        });
 
-                if ("mailchimp" in response["errors"]) {
-                    var error_el = $('<div>')
-                    error_el.addClass('invalid-feedback d-block fs-6 mt-2')
-                    error_el.html( '<p>There was a problem signing you up, please try again.</p>' )
-                    $form.before(error_el)
+        setUpCollapsable(
+            $target,
+            $triggers,
+            'change',
+            function($target, $triggers){
+                return $target.prev().find('input').eq(0).prop('checked');
+            }
+        );
+    });
+
+    $('.feedback-modal').each(function(){
+        var modal = new Modal(this);
+
+        var shouldShowModal = function() {
+            if ( ! window.localStorage ) {
+                // Can’t trigger modal, because no localStorage support.
+                return false;
+            }
+            if ( localStorage.getItem('submitted-feedback-modal-timestamp') ) {
+                // Browser has already submitted the feedback form.
+                return false;
+            }
+            if ( localStorage.getItem('skipped-feedback-modal-timestamp') ) {
+                // Respect skipped modals for 7 days.
+                var skippedTimestamp = localStorage.getItem('skipped-feedback-modal-timestamp');
+                var nowTimestamp = (new Date()).getTime() / 1000;
+                var coolingOffPeriod = 60 * 60 * 24 * 7;
+                if ( nowTimestamp - skippedTimestamp < coolingOffPeriod ) {
+                    return false;
                 }
             }
+            return true;
+        }
+
+        this.addEventListener('hide.bs.modal', event => {
+            if ( ! localStorage.getItem('submitted-feedback-modal-timestamp') ) {
+                var timestamp = (new Date()).getTime() / 1000;
+                localStorage.setItem('skipped-feedback-modal-timestamp', timestamp);
+            }
+        });
+
+        if ( shouldShowModal() ) {
+            localStorage.removeItem('skipped-feedback-modal-timestamp');
+            modal.show();
+        }
+
+        this.addEventListener('submit', function(e){
+            e.preventDefault();
+            let form = this.querySelector('form');
+            let hasMadeSelection = form.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+            let params = new URLSearchParams(Array.from(new FormData(form))).toString()
+
+            if ( hasMadeSelection ) {
+                fetch(form.action + '?' + params, {
+                    method: form.method,
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    credentials: 'omit',
+                    headers: {
+                        "Content-Type": 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                if ( window.localStorage ) {
+                    var timestamp = (new Date()).getTime() / 1000;
+                    if ( hasMadeSelection ) {
+                        localStorage.setItem('submitted-feedback-modal-timestamp', timestamp);
+                    } else {
+                        localStorage.setItem('skipped-feedback-modal-timestamp', timestamp);
+                    }
+                }
+            }
+
+            modal.hide();
         });
     })
 })

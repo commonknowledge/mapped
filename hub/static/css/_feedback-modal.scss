@@ -1,0 +1,74 @@
+.feedback-modal {
+    --#{$prefix}modal-padding: 2rem;
+    --#{$prefix}modal-width: 550px;
+
+    @include media-breakpoint-up('lg') {
+        --#{$prefix}modal-padding: 2.5rem;
+        --#{$prefix}modal-width: 600px;
+        @include font-size(1.125rem);
+    }
+
+    .modal-header {
+        border-bottom: none;
+        align-items: center;
+        padding: var(--#{$prefix}modal-padding) var(--#{$prefix}modal-padding) 0 var(--#{$prefix}modal-padding);
+    }
+
+    .modal-body {
+        padding: 1rem var(--#{$prefix}modal-padding);
+    }
+
+    .modal-footer {
+        border-top: none;
+        justify-content: flex-start;
+        padding: 0 var(--#{$prefix}modal-padding) var(--#{$prefix}modal-padding) var(--#{$prefix}modal-padding);
+
+        & > * {
+            margin: 0;
+        }
+    }
+
+    .close {
+        padding: 1rem 1rem;
+        margin: -1rem -1rem -1rem auto;
+        background: transparent;
+        border: none;
+        color: $text-muted;
+        font-size: 1rem;
+    }
+
+    legend {
+        font-size: 1em; // match paragraphs
+        margin-bottom: 1em; // match paragraphs
+    }
+
+    .form-check {
+        margin-bottom: 0.25em;
+    }
+}
+
+.conditional-fields {
+    border-left: 4px solid $gray-400;
+    padding-left: 1rem;
+    margin-left: 0.4em;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.team-avatars {
+    display: flex;
+    margin: 0 -4px 1rem -4px;
+}
+
+.team-avatars__person {
+    display: flex;
+    align-items: center;
+    margin-right: -10px;
+
+    img {
+        width: 60px;
+        height: 60px;
+        border-radius: 30px;
+        border: 4px solid #fff;
+    }
+}

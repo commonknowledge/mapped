@@ -1,11 +1,10 @@
 import Modal from 'bootstrap/js/dist/modal'
-import { createApp } from 'vue/dist/vue.esm-bundler.js'
-import { Map } from 'leaflet/src/map'
-import { TileLayer } from 'leaflet/src/layer/tile'
-import { GeoJSON } from 'leaflet/src/layer'
-import { Zoom } from 'leaflet/src/control'
-import { Attribution } from 'leaflet/src/control'
+import { createApp, toRaw } from 'vue/dist/vue.esm-bundler.js'
+import * as L from 'leaflet';
+import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import trackEvent from './analytics.esm.js'
+
+L.Icon.Default.imagePath = '/static/leaflet/images/';
 
 const app = createApp({
   delimiters: ['${', '}'],
@@ -21,18 +20,18 @@ const app = createApp({
       filters: [], // filters to be applied on next Update
       shader: null, // shader to applied on next Update
       columns: [], // additional columns to be requested on next Update
-      area_type: "WMC", // the area type to fetch
+      area_type: "WMC23", // the area type to fetch
       area_type_changed: false, // so we know to reload the map
       area_types: [{
-        slug: "WMC",
-        label: "Current constituencies",
-        short_label: "constituencies",
-        description: "These are the constituencies currently represented by MPs in UK Parliament."
-      }, {
         slug: "WMC23",
-        label: "Future constituencies",
+        label: "New constituencies",
         short_label: "constituencies",
-        description: "These are the constituencies in which parliamentary candidates will soon be standing for election."
+        description: "These are the constituencies in which parliamentary candidates are currently standing for election."
+      }, {
+        slug: "WMC",
+        label: "Old constituencies",
+        short_label: "constituencies",
+        description: "These are the constituencies that were represented by MPs in UK Parliament until May 2024."
       }, {
         slug: "STC",
         label: "Single Tier councils",
@@ -63,9 +62,15 @@ const app = createApp({
   },
   computed: {
     datasetModal() {
+      if (this.datasetModal) {
+        return this.datasetModal
+      }
       return new Modal(this.$refs.datasetModal)
     },
     areaTypeModal() {
+      if (this.areaTypeModal) {
+        return this.areaTypeModal
+      }
       return new Modal(this.$refs.areaTypeModal)
     },
     selectableDatasets() {
@@ -381,7 +386,7 @@ const app = createApp({
         // because the map element should be visible by then.
         var _this = this
         setTimeout(function(){
-          _this.map.invalidateSize()
+          toRaw(_this.map).invalidateSize()
         }, 100)
       }
     },
@@ -410,21 +415,48 @@ const app = createApp({
       });
     },
     setUpMap() {
+      var _this = this;
       this.loading = true
-      this.map = new Map(this.$refs.map).setView([54.0934, -2.8948], 7)
+      this.map = new L.Map(this.$refs.map).setView([54.0934, -2.8948], 7)
 
-      var tiles = new TileLayer(
+      var tiles = new L.TileLayer(
         'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=7ac28b44c7414ced98cd4388437c718d',
         {
           maxZoom: 19,
           attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }
-      ).addTo(this.map)
+      ).addTo(toRaw(this.map))
+
+      const searchControl = new GeoSearchControl({
+        provider: new OpenStreetMapProvider({
+          params: {
+            email: 'localintelligencehub@theclimatecoalition.org',
+            countrycodes: 'gb', // limit results to UK
+            addressdetails: 1
+          }
+        }),
+        resultFormat: function(args){
+          // no need to include UK in the labels
+          return args.result.label.replace(', United Kingdom', '');
+        },
+        style: 'button',
+        updateMap: false // we handle our own pan/zoom
+      });
+      toRaw(this.map).addControl(searchControl);
+      toRaw(this.map).on('geosearch/showlocation', function(args){
+        trackEvent('explore_location_search', {
+          'search_term': args.location.label
+        });
+        toRaw(_this.map).fitBounds(args.location.bounds, {
+          maxZoom: 10,
+          padding: [100, 100]
+        });
+      });
 
       return this.setUpMapAreas()
     },
     removeMapAreas() {
-      this.map.removeLayer(window.geojson)
+      toRaw(this.map).removeLayer(window.geojson)
       return this.setUpMapAreas()
     },
     setUpMapAreas() {
@@ -432,7 +464,7 @@ const app = createApp({
       return fetch(this.geomUrl())
         .then(response => response.json())
         .then(data => {
-          window.geojson = new GeoJSON(data, {
+          window.geojson = new L.GeoJSON(data, {
             style: (feature) => {
               return {
                 fillColor: feature.properties.color,
@@ -458,7 +490,7 @@ const app = createApp({
                 },
               })
             }
-          }).addTo(this.map)
+          }).addTo(toRaw(this.map))
 
           this.key = null
           this.legend = null
@@ -571,6 +603,7 @@ const app = createApp({
             a.download = "explore.csv"
             a.click()
             window.URL.revokeObjectURL(a.href)
+            trackEvent('explore_download_csv')
           }
 
           this.loading = false

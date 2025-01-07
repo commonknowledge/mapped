@@ -36,6 +36,10 @@ class Command(BaseImportFromDataFrameCommand):
     }
 
     def get_dataframe(self):
+
+        if not self.data_file.exists():
+            return None
+
         df = pd.read_csv(
             self.data_file,
             usecols=[1, 4],

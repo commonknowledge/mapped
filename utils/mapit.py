@@ -104,8 +104,10 @@ class MapIt(object):
                 gss_codes[area["type"]] = area["codes"]["gss"]
         return gss_codes
 
-    def areas_of_type(self, types):
+    def areas_of_type(self, types, generation=None):
         url = self.areas_url % (self.base, ",".join(types), settings.MAPIT_API_KEY)
+        if generation:
+            url = "%s&generation=%s" % (url, generation)
         data = self.get(url)
         areas = []
         for code, area in data.items():

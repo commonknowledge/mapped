@@ -8,6 +8,8 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import List, Optional, Self, Type, TypedDict, Union
 from urllib.parse import urlencode, urljoin
+from datetime import datetime, timezone
+from operator import itemgetter
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -17,7 +19,7 @@ from django.contrib.gis.geos import Point
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Avg, IntegerField, Max, Min, Q
+from django.db.models import Avg, FloatField, IntegerField, Max, Min, Q
 from django.db.models.functions import Cast, Coalesce
 from django.db.utils import IntegrityError
 from django.dispatch import receiver
@@ -385,17 +387,19 @@ class ShaderMixin:
             )
             return data, min_max["min"], min_max["max"]
         else:
-            min_max = PersonData.objects.filter(
-                person__area__in=area, **self.shader_filter
-            ).aggregate(
+            pd = PersonData.objects.filter(
+                person__areas__in=area,
+                **self.shader_filter,
+            )
+            if self.person_type is not None:
+                pd = pd.filter(person__personarea__person_type=self.person_type)
+            min_max = pd.aggregate(
                 max=models.Max(self.value_col),
                 min=models.Min(self.value_col),
             )
 
-            data = (
-                PersonData.objects.filter(person__area__in=area, **self.shader_filter)
-                .select_related("person__area", "data_type")
-                .annotate(gss=models.F("person__area__gss"))
+            data = pd.select_related("data_type").annotate(
+                gss=models.F("person__areas__gss")
             )
             return data, min_max["min"], min_max["max"]
 
@@ -428,7 +432,7 @@ class DataSet(TypeMixin, ShaderMixin, models.Model):
 
     TABLE_CHOICES = [
         ("areadata", "AreaData"),
-        ("person__persondata", "PersonData"),
+        ("people__persondata", "PersonData"),
     ]
 
     UNIT_TYPE_CHOICES = [
@@ -542,6 +546,8 @@ class DataSet(TypeMixin, ShaderMixin, models.Model):
         blank=True,
         related_name="data_sets",
     )
+    person_type = models.CharField(max_length=10, null=True, blank=True)
+    visible = models.BooleanField(default=True)
 
     def __str__(self):
         if self.label:
@@ -584,10 +590,33 @@ class AreaType(models.Model):
         ("single_tier_council", "Single Tier Council"),
         ("district_council", "District Council"),
     ]
+
+    NAMES_SINGULAR = {
+        "WMC": "old constituency",
+        "WMC23": "new constituency",
+        "STC": "single tier council",
+        "DIS": "district council",
+    }
+
+    NAMES_PLURAL = {
+        "WMC": "old constituencies",
+        "WMC23": "new constituencies",
+        "STC": "single tier councils",
+        "DIS": "district councils",
+    }
+
     name = models.CharField(max_length=50, unique=True)
     code = models.CharField(max_length=10, unique=True)
     area_type = models.CharField(max_length=50, choices=AREA_TYPES)
     description = models.CharField(max_length=300)
+
+    @property
+    def name_singular(self):
+        return self.NAMES_SINGULAR[self.code]
+
+    @property
+    def name_plural(self):
+        return self.NAMES_PLURAL[self.code]
 
     def __str__(self):
         return self.code
@@ -656,6 +685,9 @@ class DataType(TypeMixin, ShaderMixin, models.Model):
 
     @property
     def cast_field(self):
+        if self.is_float:
+            return FloatField
+
         return IntegerField
 
     @property
@@ -757,6 +789,19 @@ class CommonData(models.Model):
     @property
     def is_url(self):
         return self.data_type.is_url
+
+    def _sorted_json(self, key):
+        if not self.is_json:
+            return None
+
+        data = sorted(self.json, key=itemgetter(key))
+        return data
+
+    def sorted_groups(self):
+        return self._sorted_json("group_name")
+
+    def sorted_json(self):
+        return self._sorted_json("name")
 
     class Meta:
         abstract = True
@@ -865,7 +910,7 @@ class Area(models.Model):
         if dataset.table == "areadata":
             scope = area.areadata_set
         else:
-            person = area.person_set.first()
+            person = area.people.first()
             scope = person.persondata_set if person else None
 
         if scope is None:
@@ -919,12 +964,21 @@ class AreaData(CommonData):
     area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name="data")
 
 
+class PersonArea(models.Model):
+    area = models.ForeignKey(Area, on_delete=models.CASCADE)
+    person = models.ForeignKey("Person", on_delete=models.CASCADE)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    person_type = models.CharField(max_length=10)
+
+
 class Person(models.Model):
     person_type = models.CharField(max_length=10)
     external_id = models.CharField(db_index=True, max_length=20)
     id_type = models.CharField(max_length=30)
     name = models.CharField(max_length=500)
-    area = models.ForeignKey(Area, on_delete=models.CASCADE)
+    old_area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.CASCADE)
+    areas = models.ManyToManyField(Area, through=PersonArea, related_name="people")
     photo = models.ImageField(null=True, upload_to="person")
     start_date = models.DateField(null=True)
     end_date = models.DateField(null=True)
@@ -932,9 +986,10 @@ class Person(models.Model):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self):
-        area = self.area
-        return f"/area/{area.area_type.code}/{area.name}"
+    def party(self):
+        return PersonData.objects.get(
+            person=self, data_type=DataType.objects.get(name="party")
+        ).value()
 
     class Meta:
         unique_together = ("external_id", "id_type")

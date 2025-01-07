@@ -24,7 +24,7 @@ mapit_types = {
     "MTD": "STC",
     "NMD": "DIS",
     "DIS": "DIS",
-    "WMC": "WMC",
+    "WMC": "WMC23",
     "WMCF": "WMC23",
 }
 
@@ -166,12 +166,16 @@ class BaseLatLonGeneratorCommand(BaseCommand):
             "-i", "--ignore", action="store_true", help="Ignore existing data file"
         )
 
+    def _setup(self, *args, **kwargs):
+        pass
+
     def handle(self, quiet=False, ignore=False, *args, **options):
         self._quiet = quiet
 
         if not self._quiet:
             self.stdout.write(self.message)
         self._ignore = ignore
+        self._setup(*args, **options)
         df = self.get_dataframe()
         out_df = self.process_data(df)
         self.save_data(out_df)

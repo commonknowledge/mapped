@@ -94,6 +94,11 @@ class Command(BaseCommand):
     def handle(self, quiet=False, *args, **options):
         self._quiet = quiet
         df = self.get_dataframe()
+        if df is None:
+            self.stdout.write(
+                "Failed to import air quality data. Please ensure that the gridcode_lookup file is available."
+            )
+            return
         self.data_types = self.create_data_types(df)
         self.delete_data()
         self.import_data(df)
@@ -150,6 +155,10 @@ class Command(BaseCommand):
         AreaData.objects.filter(data_type__in=self.data_types).delete()
 
     def get_dataframe(self):
+
+        if not self.gridcode_lookup_file.exists():
+            return None
+
         dfs = []
         print("Importing separate csvs")
         for label, metadata in tqdm(self.in_files.items(), disable=self._quiet):
@@ -183,4 +192,6 @@ class Command(BaseCommand):
 
         # Prepare the df for useful importing
         df = df.drop(columns=["gridcode"]).groupby("gss").mean()
+        if df.empty:
+            return None
         return df

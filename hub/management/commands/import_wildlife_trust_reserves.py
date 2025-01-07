@@ -39,7 +39,7 @@ class Command(MultipleAreaTypesMixin, BaseConstituencyGroupListImportCommand):
     count_defaults = {
         "label": "Number of Wildlife Trusts Reserves",
         "data_type": "integer",
-        "category": "place",
+        "category": "movement",
         "release_date": str(date.today()),
         "source_label": "Data from the Wildlife Trusts.",
         "source": "https://www.wildlifetrusts.org/",
@@ -76,6 +76,10 @@ class Command(MultipleAreaTypesMixin, BaseConstituencyGroupListImportCommand):
     }
 
     def get_df(self):
+
+        if self.data_file.exists() is False:
+            return None
+
         return pd.read_csv(
             self.data_file,
             names=["group_name", "trust", "url", "postcode", "gss", *self.area_types],

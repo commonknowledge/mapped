@@ -23,8 +23,14 @@ class Command(MultipleAreaTypesMixin, BaseImportFromDataFrameCommand):
     area_types = ["WMC", "WMC23"]
 
     mapit_types = {
-        "WMC": ["WMC"],
-        "WMC23": ["WMCF"],
+        "WMC": {
+            "mapit_types": ["WMC"],
+            "mapit_generation": 54,
+        },
+        "WMC23": {
+            "mapit_types": ["WMC"],
+            "mapit_generation": None,
+        },
     }
 
     options = [
@@ -56,7 +62,10 @@ class Command(MultipleAreaTypesMixin, BaseImportFromDataFrameCommand):
 
     def get_dataframe(self):
         mapit_client = MapIt()
-        areas = mapit_client.areas_of_type(self.mapit_types[self.area_type])
+        areas = mapit_client.areas_of_type(
+            self.mapit_types[self.area_type]["mapit_types"],
+            generation=self.mapit_types[self.area_type]["mapit_generation"],
+        )
         types = []
         for area in areas:
             types.append(

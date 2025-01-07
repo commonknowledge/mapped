@@ -7,8 +7,8 @@ from hub.models import Area
 from utils.mapit import MapIt
 
 
-def mock_areas_of_type(types):
-    if "WMC" in types:
+def mock_areas_of_type(types, generation=None):
+    if "WMC" in types and generation is None:
         return [
             {
                 "id": 1,
@@ -154,6 +154,17 @@ class ImportAreasTestCase(TestCase):
         mapit_areas.side_effect = mock_areas_of_type
 
         call_command("import_areas", quiet=self.quiet_parameter)
+
+        expected_calls = [
+            mock.call(["WMC"], generation=54),  # pre-2024 constituencies
+            mock.call(["WMC"], generation=None),  # 2025 constituencies
+            mock.call(
+                ["LBO", "UTA", "COI", "LGD", "CTY", "MTD"], generation=None
+            ),  # Single Tier councils
+            mock.call(["DIS", "NMD"], generation=None),  # District councils
+            mock.call(["COI", "CPW", "DIW", "LBW", "LGW", "MTW", "UTE", "UTW"], generation=None),  # Wards
+        ]
+        self.assertEqual(mapit_areas.call_args_list, expected_calls)
 
         areas = Area.objects.all()
         self.assertEqual(areas.count(), 2)

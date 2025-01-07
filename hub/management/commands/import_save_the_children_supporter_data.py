@@ -44,8 +44,9 @@ class Command(BaseImportFromDataFrameCommand):
     }
 
     def get_dataframe(self):
-        df = pd.read_csv(self.data_file)
-        return df
+        if self.data_file.exists() is False:
+            return None
+        return pd.read_csv(self.data_file)
 
     def delete_data(self):
         for data_type in self.data_types.values():

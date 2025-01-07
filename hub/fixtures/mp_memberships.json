@@ -3,7 +3,7 @@
     "model": "hub.dataset",
     "pk": 10,
     "fields": {
-      "table": "person__persondata",
+      "table": "people__persondata",
       "name": "mp_appg_membership",
       "label": "APPG membership",
       "last_update": "2022-10-10T13:20:30+00:00",

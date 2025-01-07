@@ -45,6 +45,10 @@ class Command(BaseImportFromDataFrameCommand):
         ).delete()
 
     def get_dataframe(self):
+
+        if self.data_file.exists() is False:
+            return None
+
         data_col = self.data_sets["efpc_constituency_fuel_poverty"]["col"]
 
         df = pd.read_excel(self.data_file, sheet_name="Constituency", skiprows=2)

@@ -155,6 +155,11 @@ $osm-sea-blue: rgb(168, 212, 243);
     .table {
         width: 20em;
         margin: 0.25rem 0 0 0;
+        white-space: normal;
+
+        &:empty {
+            display: none;
+        }
 
         tr:last-child > * {
             border-bottom: none;

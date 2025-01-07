@@ -1,0 +1,47 @@
+{% extends "hub/base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<div class="py-4 py-lg-5">
+    <div class="container">
+        <div class="readable">
+            <h1>Tools</h1>
+            <p>Handy tools for data wrangling, from our friends elsewhere on the web.</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-7 d-flex flex-column mt-4">
+                <div class="text-bg-blue-100 rounded-4 p-4 p-lg-5 position-relative flex-grow-1 d-flex flex-column align-items-start">
+                    <h2 class="h3 mb-lg-3"><a href="https://pages.mysociety.org/2025-constituencies/postcode-converter" class="stretched-link text-decoration-none text-reset">Postcodes to constituencies</a></h2>
+                    <p class="fs-5 mb-4 mb-lg-5 mw-30rem">Need to quickly find out which new constituencies your members or supporters live in? Paste a column of postcodes into this completely offline tool from mySociety, and get the answers in a flash.</p>
+                    <img src="{% static 'img/screenshot-2025-constituencies.jpg' %}" width="800" height="400" class="mt-auto mb-n4 mb-lg-n5 mw-100 h-auto rounded-top" style="width: 400px">
+                </div>
+            </div>
+            <div class="col-md-5 d-flex flex-column mt-4">
+                <div class="text-bg-yellow-100 rounded-4 p-4 p-lg-5 position-relative flex-grow-1 d-flex flex-column align-items-start">
+                    <h2 class="h3 mb-lg-3"><a href="https://mapped.commonknowledge.coop/" class="stretched-link text-decoration-none text-reset">Mapped, from Common Knowledge</a></h2>
+                    <p class="fs-5 mb-4 mb-lg-5 mw-30rem">Built with Local Intelligence Hub data, this tool for campaigners helps you understand more about where your people are.</p>
+                    <img src="{% static 'img/screenshot-mapped.jpg' %}" width="800" height="400" class="mt-auto mb-n4 mb-lg-n5 mw-100 h-auto rounded-top" style="width: 400px">
+                </div>
+            </div>
+            <div class="col-md-5 d-flex flex-column mt-4">
+                <div class="text-bg-teal-100 rounded-4 p-4 p-lg-5 position-relative flex-grow-1 d-flex flex-column align-items-start">
+                    <h2 class="h3 mb-lg-3"><a href="https://mapit.mysociety.org/" class="stretched-link text-decoration-none text-reset">MapIt</a></h2>
+                    <p class="fs-5 mb-4 mb-lg-5 mw-30rem">A powerful developer tool that makes it easy to find out which administrative or electoral boundaries cover a given location.</p>
+                    <img src="{% static 'img/screenshot-mapit.jpg' %}" width="800" height="400" class="mt-auto mb-n4 mb-lg-n5 mw-100 h-auto rounded-top" style="width: 400px">
+                </div>
+            </div>
+            <div class="col-md-7 d-flex flex-column mt-4">
+                <div class="text-bg-green-100 rounded-4 p-4 p-lg-5 position-relative flex-grow-1 d-flex flex-column align-items-start">
+                    <h2 class="h3 mb-lg-3"><a href="https://www.theyworkforyou.com/alert/" class="stretched-link text-decoration-none text-reset">TheyWorkForYou email alerts</a></h2>
+                    <p class="fs-5 mb-4 mb-lg-5 mw-30rem">Find our when your MP—or any member of Parliament—mentions a topic that matters to you or your organisation.</p>
+                    <img src="{% static 'img/screenshot-twfy-alerts.jpg' %}" width="800" height="400" class="mt-auto mb-n4 mb-lg-n5 mw-100 h-auto rounded-top" style="width: 400px">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

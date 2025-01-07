@@ -1,0 +1,152 @@
+[
+  {
+    "model": "hub.person",
+    "pk": 1,
+    "fields": {
+      "name": "James Madeupname",
+      "external_id": "1",
+      "person_type": "MP",
+      "id_type": "parlid"
+    }
+  },
+  {
+    "model": "hub.person",
+    "pk": 2,
+    "fields": {
+      "name": "Juliet Madeupname",
+      "external_id": "2",
+      "person_type": "MP",
+      "id_type": "parlid"
+    }
+  },
+  {
+    "model": "hub.person",
+    "pk": 3,
+    "fields": {
+      "name": "Andrew Madeupname",
+      "external_id": "3",
+      "person_type": "MP",
+      "id_type": "parlid"
+    }
+  },
+  {
+    "model": "hub.personarea",
+    "pk": 1,
+    "fields": {
+      "person": 1,
+      "area": 5,
+      "person_type": "MP"
+    }
+  },
+  {
+    "model": "hub.personarea",
+    "pk": 2,
+    "fields": {
+      "person": 2,
+      "area": 4,
+      "person_type": "MP"
+    }
+  },
+  {
+    "model": "hub.personarea",
+    "pk": 3,
+    "fields": {
+      "person": 1,
+      "area": 1,
+      "person_type": "MP"
+    }
+  },
+  {
+    "model": "hub.personarea",
+    "pk": 4,
+    "fields": {
+      "person": 2,
+      "area": 2,
+      "person_type": "MP"
+    }
+  },
+  {
+    "model": "hub.personarea",
+    "pk": 5,
+    "fields": {
+      "person": 3,
+      "area": 6,
+      "person_type": "MP"
+    }
+  },
+  {
+    "model": "hub.dataset",
+    "pk": 1,
+    "fields": {
+      "table": "people__persondata",
+      "name": "parlid",
+      "label": "ParlId",
+      "data_type": "profileid",
+      "last_update": "2022-10-10T13:20:30+00:00",
+      "source": "https://wikipedia.org",
+      "areas_available": [1,2]
+    }
+  },
+  {
+    "model": "hub.datatype",
+    "pk": 1,
+    "fields": {
+      "data_set": 1,
+      "name": "parlid",
+      "data_type": "profileid",
+      "last_update": "2022-10-10T13:20:30+00:00"
+    }
+  },
+  {
+    "model": "hub.dataset",
+    "pk": 11,
+    "fields": {
+      "name": "party",
+      "data_type": "text",
+      "last_update": "2022-10-10T13:20:30+00:00",
+      "options": [
+        { "title": "blue party", "shader": "#0000ff" },
+        { "title": "red party", "shader": "#ff0000" }
+      ],
+      "areas_available": [1]
+    }
+  },
+  {
+    "model": "hub.datatype",
+    "pk": 11,
+    "fields": {
+      "data_set": 11,
+      "name": "party",
+      "data_type": "text",
+      "last_update": "2022-10-10T13:20:30+00:00"
+    }
+  },
+  {
+    "model": "hub.persondata",
+    "pk": 1,
+    "fields": {
+      "person": 1,
+      "data_type": 1,
+      "data": 1
+    }
+  },
+  {
+    "model": "hub.persondata",
+    "pk": 100,
+    "fields": {
+      "person": 1,
+      "data_type": 11,
+      "data": "blue party"
+    }
+  },
+  {
+    "model": "hub.persondata",
+    "pk": 101,
+    "fields": {
+      "person": 2,
+      "data_type": 11,
+      "data": "red party"
+    }
+  }
+]
+

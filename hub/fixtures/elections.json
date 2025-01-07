@@ -4,11 +4,12 @@
     "pk": 2,
     "fields": {
       "name": "mp_election_majority",
+      "label": "MP Majority",
       "data_type": "integer",
       "last_update": "2022-10-10T13:20:30+00:00",
       "source": "https://wikipedia.org",
-      "areas_available": [1],
-      "table": "person__persondata",
+      "areas_available": [1, 2],
+      "table": "people__persondata",
       "is_public": "True"
     }
   },
@@ -21,7 +22,7 @@
       "last_update": "2022-10-10T13:20:30+00:00",
       "source": "https://wikipedia.org",
       "areas_available": [1],
-      "table": "person__persondata"
+      "table": "people__persondata"
     }
   },
   {
@@ -33,7 +34,7 @@
       "last_update": "2022-10-10T13:20:30+00:00",
       "source": "https://wikipedia.org",
       "areas_available": [1],
-      "table": "person__persondata"
+      "table": "people__persondata"
     }
   },
   {
@@ -43,7 +44,8 @@
       "data_set": 2,
       "name": "mp_election_majority",
       "data_type": "integer",
-      "last_update": "2022-10-10T13:20:30+00:00"
+      "last_update": "2022-10-10T13:20:30+00:00",
+      "area_type": 1
     }
   },
   {
@@ -64,6 +66,17 @@
       "name": "mp_last_elected",
       "data_type": "date",
       "last_update": "2022-10-10T13:20:30+00:00"
+    }
+  },
+  {
+    "model": "hub.datatype",
+    "pk": 20,
+    "fields": {
+      "data_set": 2,
+      "name": "mp_election_majority",
+      "data_type": "integer",
+      "last_update": "2022-10-10T13:20:30+00:00",
+      "area_type": 2
     }
   },
   {
@@ -103,6 +116,16 @@
       "person": 2,
       "data_type": 4,
       "data": 1234,
+      "date": "2017-06-08T00:00:00+00:00"
+    }
+  },
+  {
+    "model": "hub.persondata",
+    "pk": 6,
+    "fields": {
+      "person": 1,
+      "data_type": 20,
+      "data": 1001,
       "date": "2017-06-08T00:00:00+00:00"
     }
   }

@@ -7,6 +7,7 @@
 {% block bodyclass %}js-area-page{% endblock %}
 
 {% block script %}
+    <script type="module" src="{% static 'js/home-out-esm.js' %}"></script>
     <script type="module" src="{% static 'js/area-out-esm.js' %}"></script>
 {% endblock %}
 
@@ -18,9 +19,10 @@
             <div>
                 <h1 class="mb-2" id="area_name">{{ area.name }}</h1>
                 {% if area_type == "WMC" %}
-                <p class="mb-0 text-muted">Current parliamentary constituency</p>
+                <p class="mb-0 text-muted">Old parliamentary constituency</p>
+                <p class="text-danger">This constituency no longer exists. Please select one of the replacement constituencies below</p>
                 {% elif area_type == "WMC23" %}
-                <p class="mb-0 text-muted">Future parliamentary constituency</p>
+                <p class="mb-0 text-muted">New parliamentary constituency</p>
                 {% endif %}
             </div>
 
@@ -61,12 +63,12 @@
       {% if area_type == "WMC" and area.overlaps %}
         <div style="max-width: 48rem;" class="mt-4 pt-lg-2">
           {% if overlap_constituencies|length > 1 %}
-            <p class="text-muted">At the next election, this constituency will be divided into <b>{{ overlap_constituencies|length|apnumber }} new constituenc{% if overlap_constituencies|length_is:1 %}y{% else %}ies{% endif %}:</b></p>
+            <p class="text-muted">In June 2024, this constituency was replaced by <b>{{ overlap_constituencies|length|apnumber }} new constituenc{% if overlap_constituencies|length_is:1 %}y{% else %}ies{% endif %}:</b></p>
           {% else %}
             {% if overlap_unchanged %}
-            <p class="text-muted">Looking for data on Prospective Parliamentary Candidates at the next general election?{% with overlap_constituencies|first as cons %} See the <a href="{% url 'area' area_type=cons.new_area.area_type.code name=cons.new_area.name %}">future constituency</a>.{% endwith %}</p>
+            <p class="text-muted">Looking for data on Prospective Parliamentary Candidates at the July general election?{% with overlap_constituencies|first as cons %} See the <a href="{% url 'area' area_type=cons.new_area.area_type.code name=cons.new_area.name %}">new constituency</a>.{% endwith %}</p>
             {% else %}
-            <p class="text-muted">At the next election, this constituency will be replaced with:</p>
+            <p class="text-muted">In June 2024, this constituency was replaced with:</p>
             {% endif %}
           {% endif %}
           {% if not overlap_unchanged %}
@@ -74,7 +76,7 @@
               {% for overlap_constituency in overlap_constituencies %}
                 <div>
                     <h3 class="h5"><a href="{% url 'area' area_type=overlap_constituency.new_area.area_type.code name=overlap_constituency.new_area.name %}" class="text-decoration-none">{{ overlap_constituency.new_area }}</a></h3>
-                    <p class="fs-7 text-muted mb-0">Will cover approximately {{ overlap_constituency.pop_overlap }}% of this constituency’s population, and {{ overlap_constituency.area_overlap }}% of this constituency’s area.</p>
+                    <p class="fs-7 text-muted mb-0">Covers approximately {{ overlap_constituency.pop_overlap }}% of this old constituency’s population, and {{ overlap_constituency.area_overlap }}% of this old constituency’s area.</p>
                 </div>
               {% endfor %}
             </div>
@@ -83,12 +85,12 @@
       {% elif area_type == "WMC23" and area.overlaps %}
         <div style="max-width: 48rem;" class="mt-4 pt-lg-2">
           {% if overlap_constituencies|length > 1 %}
-            <p class="text-muted">This constituency will only exist at the next election, and replaces the previous <b>{{ overlap_constituencies|length|apnumber }} constituenc{% if overlap_constituencies|length_is:1 %}y{% else %}ies{% endif %}:</b></p>
+            <p class="text-muted">This constituency is new at the July general election, and replaces the previous <b>{{ overlap_constituencies|length|apnumber }} constituenc{% if overlap_constituencies|length_is:1 %}y{% else %}ies{% endif %}:</b></p>
           {% else %}
             {% if overlap_unchanged %}
-            <p class="text-muted">Looking for data on this constituency’s current MP? {% with overlap_constituencies|first as cons %} See the <a href="{% url 'area' area_type=cons.old_area.area_type.code name=cons.old_area.name %}">current constituency</a>.{% endwith %}</p>
+            <p class="text-muted">Looking for data on this constituency’s former MP? {% with overlap_constituencies|first as cons %} See the <a href="{% url 'area' area_type=cons.old_area.area_type.code name=cons.old_area.name %}">old constituency</a>.{% endwith %}</p>
             {% else %}
-            <p class="text-muted">This constituency will only exist at the next election, and replaces:</p>
+            <p class="text-muted">This constituency is new at the July general election, and replaces:</p>
             {% endif %}
           {% endif %}
           {% if not overlap_unchanged %}
@@ -96,7 +98,7 @@
               {% for overlap_constituency in overlap_constituencies %}
                 <div>
                     <h3 class="h5"><a href="{% url 'area' area_type=overlap_constituency.old_area.area_type.code name=overlap_constituency.old_area.name %}" class="text-decoration-none">{{ overlap_constituency.old_area }}</a></h3>
-                    <p class="fs-7 text-muted mb-0">Will cover approximately {{ overlap_constituency.pop_overlap }}% of this constituency’s population, and {{ overlap_constituency.area_overlap }}% of this constituency’s area.</p>
+                    <p class="fs-7 text-muted mb-0">Covered approximately {{ overlap_constituency.pop_overlap }}% of this new constituency’s population, and {{ overlap_constituency.area_overlap }}% of this new constituency’s area.</p>
                 </div>
               {% endfor %}
             </div>
@@ -122,7 +124,7 @@
           {% endif %}
             {% if is_westminster_cons %}
               <li class="nav-item">
-                  <a class="nav-link" href="#mp">{% if area_type == "WMC23" %}PPCs{% else %}MP{% endif %}</a>
+                  <a class="nav-link" href="#mp">MP</a>
               </li>
             {% endif %}
             <li class="nav-item">
@@ -148,7 +150,6 @@
 
         {% if is_westminster_cons %}
         <section class="mb-5 mb-lg-6 area-section" id="mp">
-            {% if area_type == "WMC" %}
             {% if no_mp %}
               <h2 class="text-primary">This constituency has no MP right now</h2>
               <p style="max-width: 37em;" class="mb-4">
@@ -176,8 +177,8 @@
                             </div>
                             <div class="flex-grow-1 ms-3">
                                 <h3 class="h4 mb-0 text-primary" id="mp_name">{{ mp.person.name }}</h3>
-                            {% if mp.party %}
-                                <p class="mb-0 text-muted">{{ mp.party }}</p>
+                            {% if mp.person.party %}
+                                <p class="mb-0 text-muted">{{ mp.person.party }}</p>
                             {% endif %}
                             </div>
                         </div>
@@ -222,15 +223,16 @@
                     <div class="card-header">
                         <h3 class="h5">Positions and memberships</h3>
                     </div>
+                  {% if mp.job_titles or mp.cen_member or mp.nzsg_member or mp.select_committee_memberships or mp.appg_memberships %}
                     <div class="card-body">
                       {% if mp.job_titles %}
                         <h4 class="visually-hidden">Positions</h4>
                         <ul class="mb-3 mt-n2 list-unstyled lh-sm">
-                      {% with mp.job_titles|splitlines as positions %}
-                      {% for position in positions %}
-                          <li class="mt-2">{{ position }}</li>
-                      {% endfor %}
-                      {% endwith %}
+                          {% with mp.job_titles|splitlines as positions %}
+                          {% for position in positions %}
+                            <li class="mt-2">{{ position }}</li>
+                          {% endfor %}
+                          {% endwith %}
                         </ul>
                       {% endif %}
                       {% if mp.mp_standing_down_2024 == 'Standing Down' %}
@@ -265,8 +267,18 @@
                       {% endif %}
                     </div>
                     <div class="card-footer">
-                        <p class="card-text">Data from <a href="https://www.parliament.uk/about/mps-and-lords/members/">UK Parliament</a>{% if mp.job_titles %} and <a href="https://green-alliance.org.uk/">Green Alliance</a>{% endif %}.</p>
+                        <p class="card-text">Data from <a href="https://www.parliament.uk/about/mps-and-lords/members/">UK Parliament</a>{% if mp.job_titles %} and <a href="http://www.mysociety.org">mySociety</a>{% endif %}.</p>
                     </div>
+                    <div class="card-footer bg-yellow-100 fs-7 py-3">
+                        <p class="mb-2">We’re currently working on collecting updated data on MP memberships.</p>
+                        <p class="mb-0">You can <a href="#signup">sign up to be notified when we add it</a>.</p>
+                    </div>
+                  {% else %}
+                    <div class="card-body text-muted fs-7">
+                        <p class="mb-2">We’re currently working on collecting updated data on MP memberships.</p>
+                        <p class="mb-0">You can <a href="#signup">sign up to be notified when we add it</a>.</p>
+                    </div>
+                  {% endif %}
                 </div>
 
                 <div class="card dataset-card area-data--md area-data--featured">
@@ -306,6 +318,42 @@
                         </p>
                    </div>
                 </div>
+
+                {% if mp.wrans %}
+                <div class="card dataset-card area-data--md area-data--featured">
+                    <div class="card-header">
+                        <h3 class="h5">Written Answers</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Department</th>
+                                    <th scope="col">Topic</th>
+                                    <th scope="col">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                              {% for wran in mp.wrans %}
+                                <tr>
+                                    <td>{{ wran.department }}</td>
+                                    <td>{{ wran.area }}</td>
+                                    <td><a href="{{ wran.link }}">{{ wran.date }}</a></td>
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                        </table>
+                   </div>
+                   <div class="card-footer">
+                       <p class="card-text">
+                          Data from TheyWorkForYou. Recent Written Answers to questions submitted by the MP to departments relevant to climate and nature.
+                        {% if mp.twfyid %}
+                          <a href="https://www.theyworkforyou.com/mp/{{ mp.twfyid }}">See this MP’s full record on TheyWorkForYou.</a>
+                        {% endif %}
+                        </p>
+                   </div>
+                </div>
+                {% endif %}
               {% endif %}
 
                 <div class="card dataset-card area-data--sm {% comment %} TODO: dataset-card--favourite? {% endcomment %} area-data--featured">
@@ -360,31 +408,6 @@
                     {% include "hub/includes/icons/chevron-right.html" %}
                 </a>
             </div>
-            {% elif area_type == "WMC23" %}
-            <h2 class="text-primary">Prospective Parliamentary Candidates</h2>
-            <p style="max-width: 37em;" class="mb-4">Not all the candidates for the next UK general election have been selected yet. We will be adding more information when it becomes available.</p>
-            <div class="area-data-grid">
-            {% for row in PPCs %}
-              <div class="card dataset-card area-data--sm area-data--featured">
-                  <div class="card-body">
-                      <div class="d-flex align-items-center">
-                          <div class="flex-shrink-0">
-                              {% include 'hub/includes/person-photo.html' with person=row.person %}
-                          </div>
-                          <div class="flex-grow-1 ms-3">
-                              <h3 class="h4 mb-0 text-primary">{{ row.person }}</h3>
-                          {% if row.party %}
-                              <p class="mb-0 text-muted">{{ row.party }}</p>
-                          {% endif %}
-                          </div>
-                      </div>
-                  </div>
-                  <div class="card-footer">
-                      <p class="card-text"><a href="https://whocanivotefor.co.uk/ppcs/">Data from Democracy Club.</a></p>
-                  </div>
-              </div>
-            {% endfor %}
-            {% endif %}
         </section>
         {% endif %}
 
@@ -593,7 +616,7 @@
                         <p class="card-text mb-3 display-6 lh-1 text-primary">{{ dataset.data.value|intcomma }}</p>
                         <ul class="tag-cloud">
                             {% if dataset.related_category.subcategory == "groups" %}
-                              {% for data in dataset.related_category.data.value %} 
+                              {% for data in dataset.related_category.data.sorted_groups %} 
                                 {% if data.url %}
                                   <li><a href="{{ data.url }}" class="tag" title="{{ data.label }}">{{ data.group_name }}</a></li>
                                 {% else %}
@@ -601,7 +624,7 @@
                                 {% endif %}
                               {% endfor %}
                             {% else %}
-                              {% for data in dataset.related_category.data.value %} 
+                              {% for data in dataset.related_category.data.sorted_json %} 
                                 {% if data.url %}
                                   <li><a href="{{ data.url }}" class="tag" title="{{ data.label }}">{{ data.name }}</a></li>
                                 {% else %}
@@ -672,7 +695,7 @@
     </div>
 </div>
 
-<aside class="py-4 py-lg-5 bg-yellow-100 border-top d-print-none">
+<aside class="py-4 py-lg-5 bg-yellow-100 border-top d-print-none" id="signup">
     <div class="container">
         <div class="row">
           {% if not user.is_authenticated %}
@@ -692,5 +715,7 @@
         </div>
     </div>
 </aside>
+
+{% include 'hub/includes/feedback-modal.html' %}
 
 {% endblock %}

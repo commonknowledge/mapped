@@ -39,6 +39,10 @@ class Command(BaseImportFromDataFrameCommand):
     }
 
     def get_dataframe(self):
+
+        if not self.data_file.exists():
+            return None
+
         df = pd.read_excel(
             self.data_file,
             sheet_name=1,

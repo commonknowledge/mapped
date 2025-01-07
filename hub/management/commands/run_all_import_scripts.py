@@ -8,6 +8,19 @@ from django.core.management.base import BaseCommand
 class Command(BaseCommand):
     help = "Run all of the import scripts"
 
+    priority_imports = [
+        "import_regions",
+        "import_areas",
+        "import_mps",
+        "import_mps_election_results",
+    ]
+    skip_imports = [
+        "import_2024_ppcs",  # no longer relevant post-election
+        "import_mps_appg_data",  # hasn't been updated for Autumn 2024 APPGs
+        "import_mps_relevant_votes",  # hasn't been updated for a while (and we import EDMs separately now)
+        "import_mps_standing_down_2024",  # no longer relevant post-election
+    ]
+
     def get_scripts(self, *args, **options):
         path = "hub/management/commands"
         files = [f for f in listdir(path) if isfile(join(path, f))]
@@ -19,10 +32,10 @@ class Command(BaseCommand):
         ]
         generators = []
         importers = []
-        for script in scripts:
+        for script in sorted(scripts):
             if "generate_" in script:
                 generators.append(script)
-            else:
+            elif script not in self.skip_imports:
                 importers.append(script)
 
         return {"generators": generators, "importers": importers}
@@ -56,13 +69,7 @@ class Command(BaseCommand):
         total = str(len(imports))
         i = 1
         failed_imports = {}
-        priority_imports = [
-            "import_regions",
-            "import_areas",
-            "import_mps",
-            "import_mps_election_results",
-        ]
-        for importer in priority_imports:
+        for importer in self.priority_imports:
             imports.remove(importer)
             print(f"Running command: {importer} ({str(i)}/{total})")
             try:

@@ -74,15 +74,18 @@ class Command(BaseImportFromDataFrameCommand):
     }
 
     def get_dataframe(self):
-        df_activists = pd.read_csv(
-            settings.BASE_DIR / "data" / "cafod_activists.csv", thousands=","
-        )
-        df_parishes = pd.read_csv(
-            settings.BASE_DIR / "data" / "cafod_parishes.csv", thousands=","
-        )
-        df_schools = pd.read_csv(
-            settings.BASE_DIR / "data" / "cafod_schools.csv", thousands=","
-        )
+        try:
+            df_activists = pd.read_csv(
+                settings.BASE_DIR / "data" / "cafod_activists.csv", thousands=","
+            )
+            df_parishes = pd.read_csv(
+                settings.BASE_DIR / "data" / "cafod_parishes.csv", thousands=","
+            )
+            df_schools = pd.read_csv(
+                settings.BASE_DIR / "data" / "cafod_schools.csv", thousands=","
+            )
+        except FileNotFoundError:
+            return None
 
         # combine the three dataframes into one, matched on the Constituency column
         df = reduce(

@@ -222,17 +222,7 @@ class TestCommonData(TestCase):
 
 
 class TestPerson(TestCase):
-    fixtures = ["areas.json"]
-
-    def setUp(self):
-        self.area = Area.objects.get(gss="E10000001")
-
     def test_string_rep(self):
-        p = Person.objects.create(area=self.area, name="A Person")
+        p = Person.objects.create(name="A Person")
 
         self.assertEqual(str(p), "A Person")
-
-    def test_url(self):
-        p = Person.objects.create(area=self.area, name="A Person")
-
-        self.assertEqual(p.get_absolute_url(), "/area/WMC/South Borsetshire")

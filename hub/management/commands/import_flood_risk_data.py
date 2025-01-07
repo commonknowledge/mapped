@@ -41,6 +41,12 @@ class Command(BaseCommand):
     def handle(self, quiet=False, *args, **options):
         self._quiet = quiet
         df = self.get_dataframe()
+        if df is None:
+            if not self._quiet:
+                self.stdout.write(
+                    f"Data file {self.data_file} not found or contains no data"
+                )
+            return
         self.data_types = self.create_data_types(df)
         self.delete_data()
         self.import_data(df)
@@ -94,7 +100,11 @@ class Command(BaseCommand):
         AreaData.objects.filter(data_type__in=self.data_types).delete()
 
     def get_dataframe(self):
+        if self.data_file.exists() is False:
+            return None
         df = pd.read_csv(self.data_file)
+        if df.empty:
+            return None
         totals = (
             df.dropna()[["gss", "prob_4band"]]
             .groupby("gss")
@@ -111,4 +121,6 @@ class Command(BaseCommand):
         )
         df["percentage"] = df.value / df.total * 100
         df = df.pivot(columns="prob_4band", values="percentage", index="gss").fillna(0)
+        if df.empty:
+            return None
         return df

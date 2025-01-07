@@ -3,8 +3,7 @@
 # check that we are in the expected directory
 cd `dirname $0`/..
 
-./manage.py import_areas
-./manage.py import_mps
+script/dev-command ./manage.py run_all_import_scripts $@
 
 COMMANDS=$(find hub/management/commands/ -name 'import_*' -printf '%f\n' | sed 's#[.]py##')
 

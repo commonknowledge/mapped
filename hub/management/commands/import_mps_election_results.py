@@ -6,19 +6,29 @@ import requests
 from dateutil.parser import isoparse
 from tqdm import tqdm
 
-from hub.models import DataSet, DataType, Person, PersonData
+from hub.models import AreaType, DataSet, DataType, Person, PersonData
 
 
 class Command(BaseCommand):
     help = "Import election results for UK Members of Parliament"
+
+    area_type = "WMC23"
 
     def add_arguments(self, parser):
         parser.add_argument(
             "-q", "--quiet", action="store_true", help="Silence progress bars."
         )
 
+        parser.add_argument(
+            "--area_type", action="store", help="Set area type code, default is WMC23"
+        )
+
     def handle(self, quiet=False, *args, **options):
         self._quiet = quiet
+
+        if options.get("area_type") is not None:
+            self.area_type = options["area_type"]
+
         self.import_results()
 
     def get_results(self):
@@ -48,6 +58,9 @@ class Command(BaseCommand):
                     mp_id.person.end_date = end_date.date().isoformat()
                     mp_id.person.save()
                     continue
+                else:
+                    mp_id.person.end_date = None
+                    mp_id.person.save()
 
                 results[mp_id.person.id] = {
                     "first_elected": membership["membershipStartDate"]
@@ -76,6 +89,7 @@ class Command(BaseCommand):
     def create_data_types(self):
         if not self._quiet:
             self.stdout.write("Creating data sets and types")
+        area_type = AreaType.objects.get(code=self.area_type)
         majority_ds, created = DataSet.objects.update_or_create(
             name="mp_election_majority",
             defaults={
@@ -86,13 +100,15 @@ class Command(BaseCommand):
                 "source": "https://members-api.parliament.uk/",
                 "source_label": "Data from UK Parliament.",
                 "comparators": DataSet.numerical_comparators()[::-1],
-                "table": "person__persondata",
+                "table": "people__persondata",
                 "default_value": 1000,
             },
         )
+        majority_ds.areas_available.add(area_type)
         majority, created = DataType.objects.update_or_create(
             data_set=majority_ds,
             name="mp_election_majority",
+            area_type=area_type,
             defaults={"label": "MP majority", "data_type": "integer"},
         )
 
@@ -105,14 +121,16 @@ class Command(BaseCommand):
                 "source": "https://members-api.parliament.uk/",
                 "release_date": str(date.today()),
                 "source_label": "Data from UK Parliament.",
-                "table": "person__persondata",
+                "table": "people__persondata",
                 "comparators": DataSet.year_comparators(),
-                "default_value": 2019,
+                "default_value": 2024,
             },
         )
+        last_elected_ds.areas_available.add(area_type)
         last_elected, created = DataType.objects.update_or_create(
             data_set=last_elected_ds,
             name="mp_last_elected",
+            area_type=area_type,
             defaults={"label": "Date MP last elected", "data_type": "date"},
         )
 
@@ -125,14 +143,16 @@ class Command(BaseCommand):
                 "release_date": str(date.today()),
                 "source": "https://members-api.parliament.uk/",
                 "source_label": "Data from UK Parliament.",
-                "table": "person__persondata",
+                "table": "people__persondata",
                 "comparators": DataSet.year_comparators(),
-                "default_value": 2019,
+                "default_value": 2024,
             },
         )
+        first_elected_ds.areas_available.add(area_type)
         first_elected, created = DataType.objects.update_or_create(
             data_set=first_elected_ds,
             name="mp_first_elected",
+            area_type=area_type,
             defaults={"label": "Date MP first elected", "data_type": "date"},
         )
 
@@ -149,11 +169,12 @@ class Command(BaseCommand):
             person = Person.objects.get(id=mp_id)
 
             for key, data_type in data_types.items():
-                data, created = PersonData.objects.update_or_create(
-                    person=person,
-                    data_type=data_type,
-                    defaults={"data": result[key]},
-                )
+                if result.get(key) is not None:
+                    data, created = PersonData.objects.update_or_create(
+                        person=person,
+                        data_type=data_type,
+                        defaults={"data": result[key]},
+                    )
 
     def import_results(self):
         data_types = self.create_data_types()

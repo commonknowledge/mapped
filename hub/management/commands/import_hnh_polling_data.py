@@ -347,10 +347,18 @@ class Command(BaseImportFromDataFrameCommand):
             self.stdout.write(message)
 
     def extract_and_save_data(self):
+
         self.log(self.message)
 
         area_type = self.get_area_type()
         for file in self.files:
+
+            file_loc = settings.BASE_DIR / "data" / file["source_filename"]
+
+            if not file_loc.exists():
+                self.log(f"File {file_loc} not found")
+                continue
+
             self.log(file["defaults"]["label"])
 
             data_set, created = DataSet.objects.update_or_create(
@@ -378,7 +386,7 @@ class Command(BaseImportFromDataFrameCommand):
                     )
                     data_types[col["slug"]] = data_type
 
-            df = pd.read_csv(settings.BASE_DIR / "data" / file["source_filename"])
+            df = pd.read_csv(file_loc)
 
             # Give the dataframe nice slugified columns from here on
             df.columns = [col["slug"] for col in file["source_cols"]]
@@ -427,6 +435,13 @@ class Command(BaseImportFromDataFrameCommand):
     def update_averages(self):
         self.log("Calculating averages for DataTypes:")
         for file in self.files:
+
+            file_loc = settings.BASE_DIR / "data" / file["source_filename"]
+
+            if not file_loc.exists():
+                self.log(f"File {file_loc} not found - not calculating average")
+                continue
+
             for col in file["source_cols"]:
                 if col["label"] is not None:
                     data_type_slug = self.get_data_type_slug(
@@ -454,6 +469,13 @@ class Command(BaseImportFromDataFrameCommand):
     def update_max_min(self):
         self.log("Calculating min/max values for DataTypes:")
         for file in self.files:
+
+            file_loc = settings.BASE_DIR / "data" / file["source_filename"]
+
+            if not file_loc.exists():
+                self.log(f"File {file_loc} not found - not calculating average")
+                continue
+
             for col in file["source_cols"]:
                 if col["label"] is not None:
                     data_type_slug = self.get_data_type_slug(

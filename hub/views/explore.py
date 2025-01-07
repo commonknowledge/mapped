@@ -60,7 +60,7 @@ class ExploreDatasetsJSON(TemplateView):
         is_non_member = self.request.user.is_anonymous
 
         datasets = []
-        for d in DataSet.objects.all():
+        for d in DataSet.objects.filter(visible=True):
             try:
                 options = list(map(itemgetter("title"), d.options))
             # catch bad options and ignore them for now
@@ -135,8 +135,8 @@ class ExploreDatasetsJSON(TemplateView):
                 "category": "mp",
                 "name": "mp_name",
                 "title": "MP Name",
-                "source_label": "Data from Wikipedia.",
-                "areas_available": ["WMC"],
+                "source_label": "Data from mySociety.",
+                "areas_available": ["WMC", "WMC23"],
             }
         )
 
@@ -236,9 +236,7 @@ class ExploreGeometryCachedJSON(ExploreGeometryJSON):
 class ExploreJSON(FilterMixin, TemplateView):
     def render_to_response(self, context, **response_kwargs):
         geom = []
-        mp_name = True
-        if self.area_type().area_type != "Westminster Constituency":
-            mp_name = False
+        mp_name = self.area_type().code in ["WMC", "WMC23"]
         areas = self.data(as_dict=True, mp_name=mp_name)
         shader_areas = [a["area"] for a in areas.values()]
         shader = self.shader()
@@ -289,6 +287,7 @@ class ExploreCSV(FilterMixin, TemplateView):
     def render_to_response(self, context, **response_kwargs):
         response = HttpResponse(content_type="text/csv")
         writer = csv.writer(response)
-        for row in self.data():
+        d = self.data()
+        for row in d:  # self.data():
             writer.writerow(row)
         return response

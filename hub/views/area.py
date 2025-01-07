@@ -1,6 +1,7 @@
 from collections import defaultdict
 
-from django.db.models import Count
+from django.conf import settings
+from django.db.models import Count, Q
 from django.http import Http404, HttpResponsePermanentRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.text import slugify
@@ -130,7 +131,9 @@ class BaseAreaView(TitleMixin, DetailView):
         }
         if data_set.is_range:
             data["is_range"] = True
-            data_range = base_qs.select_related("data_type").order_by("data_type__name")
+            data_range = base_qs.select_related("data_type").order_by(
+                "data_type__order", "data_type__name"
+            )
 
             d = data_range.all()
             if len(d) == 0:
@@ -217,26 +220,28 @@ class AreaView(BaseAreaView):
         context["slug"] = slugify(self.object.name)
 
         if context["area_type"] == "WMC23":
-            context["PPCs"] = [
-                {
-                    "person": p,
-                    "party": PersonData.objects.get(
-                        person=p, data_type=DataType.objects.get(name="party")
-                    ).value(),
-                }
-                for p in Person.objects.filter(area=self.object, person_type="PPC")
-            ]
+            context["PPCs"] = Person.objects.filter(
+                areas=self.object, person_type="PPC"
+            )
         try:
             context["mp"] = {
                 "person": Person.objects.get(
-                    area=self.object, person_type="MP", end_date__isnull=True
+                    areas=self.object,
+                    personarea__person_type="MP",
+                    personarea__end_date__isnull=True,
                 )
             }
 
             context["no_mp"] = False
             data = PersonData.objects.filter(
-                person=context["mp"]["person"]
+                data_type__data_set__visible=True, person=context["mp"]["person"]
             ).select_related("data_type")
+
+            area_type_q = Q(data_type__area_type=area_type) | Q(
+                data_type__area_type__isnull=True
+            )
+
+            data = data.filter(area_type_q)
             if is_non_member:
                 data = data.exclude(data_type__data_set__is_public=False)
             for item in data.all():
@@ -287,12 +292,17 @@ class AreaView(BaseAreaView):
                 }
                 for item in support
             ]
+            wrans = data.filter(data_type__name="mp_wrans")
+            if wrans.count() > 0:
+                context["mp"]["wrans"] = wrans.first().value()
 
         except Person.DoesNotExist:
             context["no_mp"] = True
             context["mp"] = {
                 "person": Person.objects.filter(
-                    area=self.object, person_type="MP", end_date__isnull=False
+                    areas=self.object,
+                    personarea__person_type="MP",
+                    personarea__end_date__isnull=False,
                 )
                 .order_by("-end_date")
                 .first()
@@ -322,7 +332,7 @@ class AreaView(BaseAreaView):
         favs = self.get_user_favourite_datasets()
         auto_converted = self.get_auto_convered_datasets()
         data_sets = DataSet.objects.order_by("order", "label").filter(
-            areas_available=self.object.area_type
+            areas_available=self.object.area_type, visible=True
         )
 
         if is_non_member:
@@ -350,6 +360,8 @@ class AreaView(BaseAreaView):
             "constituency_foe_group_count": "constituency_foe_groups",
             "power_postcodes_count": "power_postcodes",
             "tcc_open_letter_signatories_count": "tcc_open_letter_signatories",
+            "wildlife_trusts_reserves_count": "wildlife_trusts_reserves",
+            "rspb_reserves_count": "rspb_reserves",
             "council_net_zero_date": "council_net_zero_details",
             "council_action_scorecard_total": "council_action_scorecard_sections",
         }
@@ -381,7 +393,8 @@ class AreaView(BaseAreaView):
 
         for category_name, items in categories_to_remove.items():
             for item in items:
-                categories[category_name].remove(item)
+                if item in categories[category_name]:
+                    categories[category_name].remove(item)
 
         context["categories"] = categories
         context["indexed_categories"] = indexed_categories
@@ -411,7 +424,9 @@ class AreaSearchView(TemplateView):
             elif kwargs.get("pc"):
                 gss_codes = mapit.postcode_point_to_gss_codes(kwargs["pc"])
 
-            areas = Area.objects.filter(gss__in=gss_codes)
+            areas = Area.objects.filter(
+                gss__in=gss_codes, area_type__code__in=settings.AREA_SEARCH_AREA_CODES
+            )
             areas = list(areas)
         except (
             NotFoundException,
@@ -450,12 +465,18 @@ class AreaSearchView(TemplateView):
                 "Please enter a postcode, or the name of a constituency, MP, or local authority"
             )
         else:
-            areas_raw = Area.objects.filter(name__icontains=search)
+            areas_raw = Area.objects.filter(
+                name__icontains=search,
+                area_type__code__in=settings.AREA_SEARCH_AREA_CODES,
+            )
             people_raw = Person.objects.filter(name__icontains=search)
 
             context["areas"] = list(areas_raw)
             for person in people_raw:
-                context["areas"].append(person.area)
+                # XXX
+                context["areas"].extend(
+                    [a for a in person.areas.filter(personarea__person_type="MP")]
+                )
 
             if len(context["areas"]) == 0:
                 context["error"] = (
@@ -470,14 +491,17 @@ class AreaSearchView(TemplateView):
             for area in context["areas"]:
                 try:
                     area.mp = Person.objects.get(
-                        area=area, end_date__isnull=True, person_type="MP"
+                        areas=area,
+                        end_date__isnull=True,
+                        personarea__person_type="MP",
+                        personarea__end_date__isnull=True,
                     )
                 except Person.DoesNotExist:
                     pass
 
                 try:
                     area.ppcs = Person.objects.filter(
-                        area=area, end_date__isnull=True, person_type="PPC"
+                        areas=area, end_date__isnull=True, person_type="PPC"
                     )
                 except Person.DoesNotExist:
                     pass
@@ -486,25 +510,19 @@ class AreaSearchView(TemplateView):
             context["areas"].sort(key=lambda area: area.name)
             context["areas_by_type"] = [
                 {
-                    "type": "current-constituencies",
+                    "type": "WMC23",
                     "areas": [],
                 },
                 {
-                    "type": "future-constituencies",
-                    "areas": [],
-                },
-                {
-                    "type": "local-authorities",
+                    "type": "LA",
                     "areas": [],
                 },
             ]
             for area in context["areas"]:
-                if area.area_type.code == "WMC":
+                if area.area_type.code == "WMC23":
                     context["areas_by_type"][0]["areas"].append(area)
-                elif area.area_type.code == "WMC23":
+                elif area.area_type.code != "WMC":
                     context["areas_by_type"][1]["areas"].append(area)
-                else:
-                    context["areas_by_type"][2]["areas"].append(area)
 
         return context
 

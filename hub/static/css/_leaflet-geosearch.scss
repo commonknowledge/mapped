@@ -1,0 +1,216 @@
+// Customised version of
+// https://github.com/smeijer/leaflet-geosearch/blob/v3.6.1/assets/css/leaflet.css
+// to match our Bootstrap styling
+
+.leaflet-control-geosearch {
+  *,
+  *:before,
+  *:after {
+    box-sizing: border-box;
+  }
+
+  .leaflet-bar-part {
+    border-radius: 4px;
+    border-bottom: none;
+  }
+
+  a.leaflet-bar-part:before,
+  a.leaflet-bar-part:after {
+    position: absolute;
+    display: block;
+    content: '';
+  }
+
+  a.leaflet-bar-part:before {
+    top: 17px;
+    left: 15px;
+    width: 7px;
+    border-top: 2px solid black;
+    transform: rotateZ(45deg);
+  }
+
+  a.leaflet-bar-part:after {
+    top: 8px;
+    left: 8px;
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    border: 2px solid black;
+  }
+
+  &.error a.leaflet-bar-part:before,
+  &.pending a.leaflet-bar-part:before {
+    display: none;
+  }
+
+  &.error a.leaflet-bar-part:after,
+  &.pending a.leaflet-bar-part:after {
+    left: 50%;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    margin: -9px 0 0 -9px;
+    border-radius: 50%;
+  }
+
+  &.pending a.leaflet-bar-part:after {
+    content: '';
+    border: 2px solid black;
+    border-top: 2px solid #f3f3f3;
+    animation: spin 1s linear infinite;
+  }
+
+  &.error a.leaflet-bar-part:after {
+    content: '!';
+    line-height: initial;
+    font-weight: 600;
+    font-size: 18px;
+    border: none;
+  }
+
+  form {
+    display: none;
+    position: absolute;
+    top: -2px;
+    left: 30px;
+    border-radius: 0 4px 4px 0;
+    background-color: #fff;
+    background-clip: padding-box;
+    z-index: -1;
+    height: auto;
+    margin: 0;
+    padding: 0 8px;
+    border: 2px solid rgba(0,0,0,0.2);
+
+    font-family: var(--bs-body-font-family);
+    font-size: 0.875rem;
+
+    .leaflet-right & {
+      right: 28px;
+      left: initial;
+      border-radius: 4px 0 0 4px;
+      border-left: inherit;
+      border-right: none;
+    }
+
+    &.open {
+      border-radius: 0 4px 4px 4px;
+    }
+
+    input {
+      min-width: 200px;
+      width: 100%;
+      outline: none;
+      border: none;
+      margin: 0;
+      padding: 0;
+      font-size: 1em;
+      height: 30px;
+      border: none;
+      border-radius: 0 4px 4px 0;
+    }
+  }
+
+  &.active form {
+    display: block;
+  }
+
+  .results {
+    background: #fff;
+
+    &.active {
+      padding: 8px 0;
+      border-top: 1px solid #c6c6c6;
+    }
+
+    & > * {
+      padding: 6px 12px;
+      border-radius: 0.25rem;
+    
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    & > .active,
+    & > :hover {
+      background-color: $dropdown-link-hover-bg;
+      cursor: pointer;
+    }
+  }
+
+  button.reset {
+    color: black;
+    font-weight: bold;
+    position: absolute;
+    line-height: 30px;
+    padding: 0 10px;
+    right: 0;
+    top: 0;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    background-color: #fff;
+    border-radius: 0 4px 4px 0;
+
+    &:hover {
+      background: #f5f5f5;
+    }
+  }
+}
+
+.leaflet-geosearch-button {
+  &.active {
+    .leaflet-bar-part {
+      border-radius: 4px 0 0 4px !important;
+      width: 30px;
+    }
+  }
+
+  form {
+    max-width: 350px;
+  }
+}
+
+// animations
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.leaflet-geosearch-bar {
+  position: relative;
+  display: block;
+  height: auto;
+  width: 400px;
+  max-width: calc(100% - 120px);
+  margin: 10px auto 0;
+  cursor: auto;
+  z-index: 1000;
+
+  .leaflet-top &,
+  .leaflet-bottom & {
+    display: none;
+  }
+
+  form {
+    position: relative;
+    top: 0;
+    left: 0;
+    display: block;
+    border-radius: 4px;
+
+    input {
+      min-width: 100%;
+      width: 100%;
+    }
+  }
+
+  .results.active:after {
+    opacity: .2;
+  }
+}
+
+.leaflet-bar-notfound {
+  font-style: italic;
+}

@@ -6,8 +6,7 @@
       "name": "James Madeupname",
       "external_id": "1",
       "person_type": "MP",
-      "id_type": "parlid",
-      "area": 1
+      "id_type": "parlid"
     }
   },
   {
@@ -17,8 +16,25 @@
       "name": "Juliet Madeupname",
       "external_id": "2",
       "person_type": "MP",
-      "id_type": "parlid",
-      "area": 2
+      "id_type": "parlid"
+    }
+  },
+  {
+    "model": "hub.personarea",
+    "pk": 1,
+    "fields": {
+      "person": 1,
+      "area": 1,
+      "person_type": "MP"
+    }
+  },
+  {
+    "model": "hub.personarea",
+    "pk": 2,
+    "fields": {
+      "person": 2,
+      "area": 2,
+      "person_type": "MP"
     }
   },
   {

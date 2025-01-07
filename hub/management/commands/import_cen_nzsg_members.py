@@ -1,9 +1,11 @@
+from pathlib import Path
+
 from django.core.management.base import BaseCommand
 
 import pandas as pd
 from tqdm import tqdm
 
-from hub.models import DataSet, DataType, Person, PersonData
+from hub.models import AreaType, DataSet, DataType, Person, PersonData
 
 
 class Command(BaseCommand):
@@ -14,7 +16,12 @@ class Command(BaseCommand):
         self.import_results()
 
     def get_df(self):
-        df = pd.read_csv("data/cen_nzsg_members.csv", true_values=["CEN", "NZSG"])
+
+        file_loc = Path("data", "cen_nzsg_members.csv")
+        if not file_loc.exists():
+            return None
+
+        df = pd.read_csv(file_loc, true_values=["CEN", "NZSG"])
         df.columns = ["mp_name", "cen", "nzsg"]
 
         return df
@@ -33,7 +40,7 @@ class Command(BaseCommand):
                 "source_label": "Data from CEN, collated by mySociety.",
                 "release_date": "January 2023",
                 "source": "https://www.cen.uk.com/our-caucus",
-                "table": "person__persondata",
+                "table": "people__persondata",
                 "options": options,
                 "comparators": DataSet.comparators_default(),
             },
@@ -47,11 +54,15 @@ class Command(BaseCommand):
                 "source_label": "Data from public sources, collated by DeSmog.",
                 "release_date": "January 2023",
                 "source": "https://www.desmog.com/net-zero-scrutiny-group/",
-                "table": "person__persondata",
+                "table": "people__persondata",
                 "options": options,
                 "comparators": DataSet.comparators_default(),
             },
         )
+
+        for at in AreaType.objects.filter(code__in=["WMC", "WMC23"]):
+            nzsg_ds.areas_available.add(at)
+            cen_ds.areas_available.add(at)
 
         cen, created = DataType.objects.update_or_create(
             data_set=cen_ds,
@@ -69,6 +80,8 @@ class Command(BaseCommand):
     def get_results(self):
         mps = Person.objects.filter(person_type="MP")
         df = self.get_df()
+        if df is None or df.empty:
+            return {}
         results = {}
         print("Name matching MPs")
         for index, row in df.iterrows():

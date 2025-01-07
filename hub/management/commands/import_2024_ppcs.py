@@ -11,24 +11,7 @@ from tqdm import tqdm
 
 from hub.models import Area, DataSet, DataType, Person, PersonData
 
-logger = logging.getLogger(__name__)
-
-party_shades = {
-    "Alba Party": "#005EB8",
-    "Alliance Party of Northern Ireland": "#F6CB2F",
-    "Conservative Party": "#0087DC",
-    "Democratic Unionist Party": "#D46A4C",
-    "Green Party": "#6AB023",
-    "Labour Co-operative": "#E4003B",
-    "Labour Party": "#E4003B",
-    "Liberal Democrats": "#FAA61A",
-    "Plaid Cymru": "#005B54",
-    "Scottish National Party": "#FDF38E",
-    "Sinn Féin": "#326760",
-    "Social Democratic and Labour Party": "#2AA82C",
-    "Speaker of the House of Commons": "#DCDCDC",
-    "independent politician": "#DCDCDC",
-}
+from .base_importers import party_shades
 
 
 class Command(BaseCommand):
@@ -42,11 +25,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, quiet: bool = False, *args, **options):
+        self.stderr.write("No longer in use after 2024 election date")
+        return
         self._quiet = quiet
-        self.import_ppcs()
+        # self.import_ppcs()
 
     def get_ppc_data(self):
-        csv = "https://candidates.democracyclub.org.uk/data/export_csv/?election_date=&ballot_paper_id=&election_id=parl.2024-07-04&party_id=&cancelled=&extra_fields=gss&extra_fields=image&extra_fields=email&format=csv"
+        csv = "https://candidates.democracyclub.org.uk/data/export_csv/?election_date=&ballot_paper_id=&election_id=parl.2024-07-04&party_id=&cancelled=&extra_fields=gss&format=csv"
         df = pd.read_csv(csv)
         # make sure this is an int as sometimes it thinks it's a float and you
         # end up with duplicates
@@ -65,12 +50,13 @@ class Command(BaseCommand):
         if not self._quiet:
             print("Importing PPCs")
 
+        imported_ids = []
         for _, ppc in tqdm(df.iterrows(), disable=self._quiet, total=df.shape[0]):
             area = Area.get_by_gss(ppc["gss"], area_type=self.area_type)
             if area is None:  # pragma: no cover
                 area = Area.get_by_name(ppc["post_label"], area_type=self.area_type)
                 if area is None:  # pragma: no cover
-                    logger.error(
+                    print(
                         f"Failed to add PPC {ppc['person_name']} as area {ppc['gss']}/{ppc['post_label']} does not exist"
                     )
                     continue
@@ -89,6 +75,7 @@ class Command(BaseCommand):
                     self.import_ppc_image(person, ppc["image"])
 
             if person:
+                imported_ids.append(person.external_id)
                 if not pd.isna(ppc["party_name"]):
                     try:
                         PersonData.objects.get_or_create(
@@ -120,6 +107,16 @@ class Command(BaseCommand):
                         PersonData.objects.create(
                             person=person, data_type=email_dt, data=email
                         )
+
+        # with merging etc the DC ids sometimes change so delete persons in the DB
+        # that aren't in the list from DC
+        ids = Person.objects.filter(person_type="PPC").values_list(
+            "external_id", flat=True
+        )
+
+        extra_ids = set(ids) - set(imported_ids)
+
+        Person.objects.filter(external_id__in=extra_ids).delete()
 
         dataset = DataSet.objects.filter(name="party", options=list())
         if dataset:

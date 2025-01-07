@@ -17,16 +17,17 @@ class Command(BaseImportFromDataFrameCommand):
         "foe_cons_report_links": {
             "defaults": {
                 "label": "Friends of the Earth ‘State of the Environment’ report",
-                "description": "These reports—still under active development—highlight key environmental issues impacting people in this constituency, as well as proposed solutions.",
+                "description": "These reports highlight key environmental issues impacting people in this constituency, as well as proposed solutions.",
                 "data_type": "url",
                 "category": "place",
                 "source_label": "From Friends of the Earth.",
                 "source": "https://policy.friendsoftheearth.uk/constituency-reports/state-of-the-environment?utm_medium=referral&utm_source=partner&utm_campaign=climate-coalition&utm_content=local-intelligence-hub",
-                "release_date": "December 2023",
+                "release_date": "August 2023",
                 "source_type": "csv",
                 "table": "areadata",
                 "is_filterable": False,
                 "no_comparators": True,
+                "is_public": True,
             },
             "col": "url",
         }
@@ -39,6 +40,10 @@ class Command(BaseImportFromDataFrameCommand):
         }
 
     def get_dataframe(self):
+
+        if self.data_file.exists() is False:
+            return None
+
         df = pd.read_csv(
             self.data_file,
             usecols=[1, 4],

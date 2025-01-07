@@ -57,6 +57,8 @@ class Command(BaseConstituencyGroupListImportCommand):
     count_data_type = "constituency_foe_groups_count"
 
     def get_df(self):
+        if not self.data_file.exists():
+            return None
         df = pd.read_csv(self.data_file)
         df.columns = ["group_name", "postcode", "constituency", "source", "type"]
         return df

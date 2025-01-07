@@ -78,6 +78,10 @@ class Command(MultipleAreaTypesMixin, BaseConstituencyGroupListImportCommand):
     count_data_type = "constituency_wi_group_count"
 
     def get_df(self):
+
+        if self.data_file.exists() is False:
+            return None
+
         df = pd.read_csv(self.data_file)
         df.group_name = df.group_name.apply(
             lambda x: x.split(" | ")[0] if isinstance(x, str) else x

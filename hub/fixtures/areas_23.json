@@ -1,0 +1,36 @@
+[
+  {
+    "model": "hub.area",
+    "pk": 4,
+    "fields": {
+      "gss": "E10000004",
+      "mapit_id": "2",
+      "name": "New Borsetshire West",
+      "area_type_id": 2,
+      "geometry": "{\"name\": \"New Borsetshire West\", \"properties\": {}}"
+    }
+  },
+  {
+    "model": "hub.area",
+    "pk": 5,
+    "fields": {
+      "gss": "E10000005",
+      "mapit_id": "1",
+      "name": "New South Borsetshire",
+      "area_type_id": 2,
+      "geometry": "{\"name\": \"New South Borsetshire\", \"properties\": {}}"
+    }
+  },
+  {
+    "model": "hub.area",
+    "pk": 6,
+    "fields": {
+      "gss": "E10000006",
+      "mapit_id": "1",
+      "name": "New Mid Borsetshire",
+      "area_type_id": 2,
+      "geometry": "{\"name\": \"New Mid Borsetshire\", \"properties\": {}}"
+    }
+  }
+]
+

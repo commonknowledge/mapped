@@ -1,0 +1,78 @@
+{% load static %}
+
+<aside class="modal feedback-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="GET" action="https://docs.google.com/forms/d/e/1FAIpQLSfqsrl3ILYrhxtFkobFJHfRdSS0sNI60JR-kg43Azl12GDwNQ/formResponse">
+            <div class="modal-header">
+                <h2 class="modal-title">Hello!</h2>
+                <button type="button" class="close" data-bs-dismiss="modal">Skip</button>
+            </div>
+            <div class="modal-body">
+                <div class="team-avatars">
+                    <div class="team-avatars__person" title="Alice">
+                        <img src="{% static 'img/avatar-alice.jpg' %}" width="100" height="100" alt="Alice">
+                    </div>
+                    <div class="team-avatars__person" title="Julia">
+                        <img src="{% static 'img/avatar-julia.jpg' %}" width="100" height="100" alt="Julia">
+                    </div>
+                    <div class="team-avatars__person" title="Struan">
+                        <img src="{% static 'img/avatar-struan.jpg' %}" width="100" height="100" alt="Struan">
+                    </div>
+                    <div class="team-avatars__person" title="Zarino">
+                        <img src="{% static 'img/avatar-zarino.jpg' %}" width="100" height="100" alt="Zarino">
+                    </div>
+                </div>
+                <p>We’re the team behind this site. We hope you find it useful! One thing we struggle with is knowing who’s using our site.</p>
+                <fieldset class="mb-3" id="feedback-who">
+                    <legend>Could you do us a massive favour and tell us <strong>what brought you here today?</strong></legend>
+                    <div class="form-check">
+                        <input class="form-check-input" id="feedback-who-tcc" type="checkbox" name="entry.1900542345" value="I work for a national climate/nature organisation">
+                        <label class="form-check-label" for="feedback-who-tcc">I work for a national climate/nature organisation</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" id="feedback-who-activist" type="checkbox" name="entry.1900542345" value="I’m part of a local climate/nature action group">
+                        <label class="form-check-label" for="feedback-who-activist">I’m part of a local climate/nature action group</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" id="feedback-who-political" type="checkbox" name="entry.1900542345" value="I’m a council officer, councillor, or politician">
+                        <label class="form-check-label" for="feedback-who-political">I’m a council officer, councillor, or politician</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" id="feedback-who-researcher" type="checkbox" name="entry.1900542345" value="I’m a journalist or researcher">
+                        <label class="form-check-label" for="feedback-who-researcher">I’m a journalist or researcher</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" id="feedback-who-resident" type="checkbox" name="entry.1900542345" value="I’m just finding out about the place I live in">
+                        <label class="form-check-label" for="feedback-who-resident">I’m just finding out about the place I live in</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" id="feedback-who-none" type="checkbox" name="entry.1900542345" value="None of the above">
+                        <label class="form-check-label" for="feedback-who-none">None of the above</label>
+                    </div>
+                </fieldset>
+                <fieldset class="mb-3">
+                    <legend>Would it be ok if we <strong>send you a short survey in a few days’ time</strong>, asking you about your experience of the site?</legend>
+                    <div class="form-check">
+                        <input class="form-check-input" id="feedback-followup-yes" name="entry.1885267011" type="radio" value="Yes">
+                        <label class="mb-0 ml-2" for="feedback-followup-yes">Yes</label>
+                    </div>
+                    <div class="conditional-fields collapse">
+                        <div class="form-group">
+                            <label class="form-label" for="feedback-email">Your email address</label>
+                            <input class="form-control" aria-describedby="feedback-email-hint" id="feedback-email" name="entry.1085990992" type="email">
+                            <small class="form-text d-block" id="feedback-email-hint">We’ll use this to send you one survey email.</small>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" id="feedback-followup-no" name="entry.1885267011" type="radio" value="No">
+                        <label class="mb-0 ml-2" for="feedback-followup-no">No</label>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+                <input type="hidden" name="submit" value="Submit">
+                <button type="submit" class="btn btn-primary">Save answers</button>
+            </div>
+        </form>
+    </div>
+</aside>

@@ -22,7 +22,7 @@ if [ "$INSIDE_DOCKER" == 1 ] ; then
 elif [ "$DEVENV" == "docker" ] ; then
     # not inside container but should be :-(
     # run the command inside the container
-    PREFIX="docker-compose exec web"
+    PREFIX="docker compose exec web"
 else
     # not inside container and don’t need to be :-)
     # run command in virtualenv with poetry

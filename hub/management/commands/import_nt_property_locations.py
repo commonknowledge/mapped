@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.conf import settings
 
 import pandas as pd
@@ -72,8 +74,14 @@ class Command(MultipleAreaTypesMixin, BaseAreaImportCommand):
         for data_type in self.data_types.values():
             AreaData.objects.filter(data_type=data_type).delete()
 
-    def process_data(self):
-        df = pd.read_csv(self.data_file)
+    def get_df(self) -> Optional[pd.DataFrame]:
+        if not self.data_file.exists():
+            return None
+
+        return pd.read_csv(self.data_file)
+
+    def process_data(self, df: pd.DataFrame):
+
         # df.group_name = df.group_name.apply(
         # lambda x: x.split(" | ")[0] if type(x) == str else x
         # )

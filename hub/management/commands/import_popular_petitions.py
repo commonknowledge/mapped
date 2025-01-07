@@ -59,6 +59,10 @@ class Command(BaseAreaImportCommand):
 
     def handle(self, quiet=False, *args, **kwargs):
         self._quiet = quiet
+        if not self.data_file.exists():
+            if not self._quiet:
+                self.stdout.write(f"Data file {self.data_file} not found")
+            return
         self.add_data_sets()
         self.delete_data()
         self.process_data()

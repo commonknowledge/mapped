@@ -43,13 +43,23 @@
                       {% if area.mp %}
                         <div class="d-flex align-items-center">
                             {% include 'hub/includes/person-photo.html' with person=area.mp width="32" height="32" %}
-                            <p class="mb-0 ms-2 text-muted">{{ area.mp.name|highlight:search }}, MP</p>
+                            <p class="mb-0 ms-2 text-muted">
+                                {{ area.mp.name|highlight:search }}
+                              {% if area.mp.party %}
+                                ({{ area.mp.party }})
+                              {% endif %}
+                            </p>
                         </div>
                       {% elif area.ppcs %}
                         {% for ppc in area.ppcs %}
                         <div class="d-flex align-items-center mt-2">
                             {% include 'hub/includes/person-photo.html' with person=ppc width="32" height="32" %}
-                            <p class="mb-0 ms-2 text-muted">{{ ppc.name|highlight:search }} (PPC)</p>
+                            <p class="mb-0 ms-2 text-muted">
+                                {{ ppc.name|highlight:search }}
+                              {% if ppc.party %}
+                                ({{ ppc.party }})
+                              {% endif %}
+                            </p>
                         </div>
                         {% endfor %}
                       {% endif %}

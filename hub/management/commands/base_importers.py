@@ -1,8 +1,10 @@
 from time import sleep
+from typing import Optional
 
 from django.core.management.base import BaseCommand
 
 import pandas as pd
+import requests
 from tqdm import tqdm
 
 from hub.models import Area, AreaData, AreaType, DataSet, DataType
@@ -16,6 +18,38 @@ from utils.mapit import (
     RateLimitException,
 )
 
+party_shades = {
+    "Alba Party": "#005EB8",
+    "Alliance Party of Northern Ireland": "#F6CB2F",
+    "Conservative Party": "#0087DC",
+    "Democratic Unionist Party": "#D46A4C",
+    "Green Party": "#6AB023",
+    "Labour Co-operative": "#E4003B",
+    "Labour Party": "#E4003B",
+    "Liberal Democrats": "#FAA61A",
+    "Plaid Cymru": "#005B54",
+    "Scottish National Party": "#FDF38E",
+    "Sinn Féin": "#326760",
+    "Social Democratic and Labour Party": "#2AA82C",
+    "Reclaim": "#101122",
+    "Reform UK": "#3DBBE2",
+    "No overall control": "#EEE",
+    "Independents": "#DCDCDC",
+}
+
+TWFY_CONSTITUENCIES_DATA_URL = (
+    "https://raw.githubusercontent.com/mysociety/parlparse/master/members/people.json"
+)
+# common constituency name mismatches
+HARD_CODED_CONSTITUENCY_LOOKUP = {
+    "Cotswolds The": "The Cotswolds",
+    "Basildon South and East Thurrock": "South Basildon and East Thurrock",
+    "Na h-Eileanan An Iar (Western Isles)": "Na h-Eileanan an Iar",
+    "Ynys M¶n": "Ynys Môn",
+    "Ynys Mon": "Ynys Môn",
+    "Montgomeryshire and Glyndwr": "Montgomeryshire and Glyndŵr",
+}
+
 
 class MultipleAreaTypesMixin:
     def handle(self, *args, **options):
@@ -27,10 +61,12 @@ class MultipleAreaTypesMixin:
 class BaseAreaImportCommand(BaseCommand):
     area_type = "WMC"
     uses_gss = False
+    skip_delete = False
 
     def __init__(self):
         super().__init__()
 
+        self.cons_map = HARD_CODED_CONSTITUENCY_LOOKUP
         self.data_types = {}
 
     def add_arguments(self, parser):
@@ -44,10 +80,49 @@ class BaseAreaImportCommand(BaseCommand):
             help="do not auto convert to new constituency data",
         )
 
+    def add_to_dict(self, df):
+        names = df.area.tolist()
+        # Add a version of the main name, without any commas
+        names.append(names[0].replace(",", ""))
+        # The first name listed is the ideal form
+        name = names.pop(0)
+        return {alt_name.replace(",", ""): name for alt_name in names}
+
+    def build_constituency_name_lookup(self, old_cons=False):
+        # Grab the TWFY data, and ignore any constituencies that no longer exist
+        # We're only interested in the names, so keep them, and explode the column.
+        # Then group by (arbitrary) index, and build the dictionary from these groups
+
+        cons_filter = "end_date.isna()"
+        if old_cons:
+            cons_filter = "end_date == '2024-07-03'"
+
+        response = requests.get(TWFY_CONSTITUENCIES_DATA_URL)
+        df = pd.DataFrame.from_records(response.json()["posts"])
+        df = df.query(cons_filter)["area"].reset_index()
+        df = (
+            df["area"]
+            .map(lambda a: [a["name"]] + [o for o in a.get("other_names", [])])
+            .reset_index()
+        )
+        df = df.explode("area", ignore_index=True)
+
+        # Start with hard-coded lookup
+        names_lookup_dict = HARD_CODED_CONSTITUENCY_LOOKUP.copy()
+        for i, names_df in df.groupby("index"):
+            new_dict = self.add_to_dict(names_df)
+            if new_dict:
+                names_lookup_dict.update(new_dict)
+
+        return names_lookup_dict
+
     def get_label(self, config):
         return config["defaults"]["label"]
 
     def delete_data(self):
+        if self.skip_delete:
+            return
+
         for data_type in self.data_types.values():
             AreaData.objects.filter(
                 data_type=data_type, area__area_type__code=self.area_type
@@ -65,6 +140,15 @@ class BaseAreaImportCommand(BaseCommand):
     def add_data_sets(self, df=None):
         for name, config in self.data_sets.items():
             label = self.get_label(config)
+            data_set_name = name
+            if config["defaults"].get("data_set_name"):
+                data_set_name = config["defaults"]["data_set_name"]
+                del config["defaults"]["data_set_name"]
+
+            data_set_label = label
+            if config["defaults"].get("data_set_label"):
+                data_set_label = config["defaults"]["data_set_label"]
+                del config["defaults"]["data_set_label"]
 
             if config["defaults"].get("is_filterable", None) is None:
                 if config["defaults"].get("table", None) is None:
@@ -89,14 +173,17 @@ class BaseAreaImportCommand(BaseCommand):
                 )
 
             data_set, created = DataSet.objects.update_or_create(
-                name=name,
+                name=data_set_name,
                 defaults={
-                    "label": label,
                     **config["defaults"],
+                    "label": data_set_label,
                 },
             )
             data_set.areas_available.add(self.get_area_type())
 
+            type_defaults = {}
+            if config["defaults"].get("order"):
+                type_defaults["order"] = config["defaults"]["order"]
             data_type, created = DataType.objects.update_or_create(
                 data_set=data_set,
                 name=name,
@@ -104,6 +191,7 @@ class BaseAreaImportCommand(BaseCommand):
                 defaults={
                     "data_type": config["defaults"]["data_type"],
                     "label": label,
+                    **type_defaults,
                 },
             )
 
@@ -111,6 +199,7 @@ class BaseAreaImportCommand(BaseCommand):
 
     def _fill_empty_entries(self):
         for data_type in self.data_types.values():
+            datum_example = AreaData.objects.filter(data_type=data_type).first()
             if (
                 data_type.data_type
                 in [
@@ -120,8 +209,8 @@ class BaseAreaImportCommand(BaseCommand):
                 ]
                 and data_type.data_set.table == "areadata"
                 and data_type.data_set.fill_blanks
+                and datum_example is not None
             ):
-                datum_example = AreaData.objects.filter(data_type=data_type).first()
                 if datum_example.float:
                     key = "float"
                 elif datum_example.int:
@@ -180,11 +269,20 @@ class BaseAreaImportCommand(BaseCommand):
                     data_type, delete_old=True, quiet=self._quiet
                 )
 
+    def get_df(self) -> Optional[pd.DataFrame]:
+        raise NotImplementedError()
+
+    def process_data(self, df: pd.DataFrame):
+        raise NotImplementedError()
+
     def handle(self, quiet=False, *args, **kwargs):
         self._quiet = quiet
+        df = self.get_df()
+        if df is None or df.empty:
+            return
         self.add_data_sets()
         self.delete_data()
-        self.process_data()
+        self.process_data(df)
         self.update_averages()
         self.update_max_min()
         self.convert_to_new_con()
@@ -201,13 +299,17 @@ class BaseImportFromDataFrameCommand(BaseAreaImportCommand):
             self.stdout.write(self.message)
 
         for index, row in tqdm(df.iterrows(), disable=self._quiet, total=df.shape[0]):
-            cons = row[self.cons_row]
+            if type(self.cons_row) is int:
+                cons = row.iloc[self.cons_row]
+            else:
+                cons = row[self.cons_row]
 
             if not pd.isna(cons):
                 if self.uses_gss:
                     area = Area.get_by_gss(cons, area_type=self.area_type)
                 else:
                     cons = cons.replace(" & ", " and ")
+                    cons = self.cons_map.get(cons, cons)
                     area = Area.get_by_name(cons, area_type=self.area_type)
 
             if area is None:
@@ -224,7 +326,7 @@ class BaseImportFromDataFrameCommand(BaseAreaImportCommand):
                     else:
                         defaults = {"data": self.get_row_data(row, conf)}
 
-                    area_data, created = AreaData.objects.get_or_create(
+                    area_data, created = AreaData.objects.update_or_create(
                         data_type=self.data_types[name],
                         area=area,
                         defaults=defaults,
@@ -233,11 +335,18 @@ class BaseImportFromDataFrameCommand(BaseAreaImportCommand):
                 print(f"issue with {cons}: {e}")
                 break
 
+    def get_dataframe(self) -> Optional[pd.DataFrame]:
+        raise NotImplementedError()
+
     def handle(self, quiet=False, skip_new_areatype_conversion=False, *args, **options):
         self._quiet = quiet
         if not hasattr(self, "do_not_convert"):
             self.do_not_convert = skip_new_areatype_conversion
         df = self.get_dataframe()
+        if df is None or df.empty:
+            if not self._quiet:
+                self.stdout.write(f"missing data for {self.message} ({self.area_type})")
+            return
         self.add_data_sets(df)
         self.delete_data()
         self.process_data(df)
@@ -294,8 +403,7 @@ class BaseLatLongImportCommand(BaseAreaImportCommand):
 class BaseConstituencyGroupListImportCommand(BaseAreaImportCommand):
     do_not_convert = True
 
-    def process_data(self):
-        df = self.get_df()
+    def process_data(self, df: pd.DataFrame):
 
         if not self._quiet:
             self.stdout.write(f"{self.message} ({self.area_type})")
@@ -337,9 +445,14 @@ class BaseConstituencyGroupListImportCommand(BaseAreaImportCommand):
 
     def handle(self, quiet=False, *args, **kwargs):
         self._quiet = quiet
+        df = self.get_df()
+        if df is None or df.empty:
+            if not self._quiet:
+                self.stdout.write(f"missing data for {self.message} ({self.area_type})")
+            return
         self.add_data_sets()
         self.delete_data()
-        self.process_data()
+        self.process_data(df)
         self.update_averages()
         self.update_max_min()
 
@@ -351,6 +464,10 @@ class BaseConstituencyCountImportCommand(BaseAreaImportCommand):
         self.data_type = list(self.data_types.values())[0]
 
     def get_dataframe(self):
+
+        if not self.data_file.exists():
+            return None
+
         df = pd.read_csv(self.data_file)
         df = df.astype({self.get_cons_col(): "str"})
         return df
@@ -384,6 +501,10 @@ class BaseConstituencyCountImportCommand(BaseAreaImportCommand):
     def handle(self, quiet=False, *args, **options):
         self._quiet = quiet
         df = self.get_dataframe()
+        if df is None or df.empty:
+            if not self._quiet:
+                self.stdout.write(f"missing data for {self.message} ({self.area_type})")
+            return
         self.add_data_sets(df)
         self.set_data_type()
         self.delete_data()

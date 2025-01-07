@@ -3,6 +3,7 @@ from datetime import date
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.utils.text import slugify
 
 import numpy as np
 import pandas as pd
@@ -12,16 +13,14 @@ from tqdm import tqdm
 
 from hub.models import Area, AreaData, AreaType, DataSet, DataType
 
-
-def format_key(value):
-    return value.replace(" ", "_").lower()
+from .base_importers import party_shades
 
 
 class Command(BaseCommand):
     help = "Import data from the last election"
     source_url = "https://commonslibrary.parliament.uk/tag/elections-data/"
 
-    # Machine queries return 403 forbidden
+    # https://researchbriefings.files.parliament.uk/documents/CBP-10009/HoC-GE2024-results-by-constituency.csv
     # https://commonslibrary.parliament.uk/research-briefings/cbp-8749/
     # https://researchbriefings.files.parliament.uk/documents/CBP-8749/HoC-GE2019-results-by-constituency.csv
     general_election_source_file = (
@@ -42,7 +41,7 @@ class Command(BaseCommand):
         "Conservative Party": "con",
         "Labour Party": "lab",
         "Green Party": "green",
-        "Reform UK": "brexit",
+        "Reform UK": "ruk",
         "SNP": "snp",
         "Other": "all_other_candidates",
     }
@@ -51,14 +50,15 @@ class Command(BaseCommand):
         "lab": "Labour Party",
         "snp": "Scottish National Party",
         "ld": "Liberal Democrats",
-        "ind": "independent politician",
+        "ind": "Independents",
         "alliance": "Alliance Party of Northern Ireland",
         "sdlp": "Social Democratic and Labour Party",
         "pc": "Plaid Cymru",
         "sf": "Sinn Féin",
         "spk": "Speaker of the House of Commons",
         "brexit": "Reform UK",
-        "all_other_candidates": "Other",
+        "ruk": "Reform UK",
+        "other": "Other",
         "dup": "Democratic Unionist Party",
         "uup": "Ulster Unionist Party",
         "con": "Conservative Party",
@@ -66,36 +66,15 @@ class Command(BaseCommand):
         "pbpa": "People Before Profit Alliance",
     }
 
-    def up(self, value):
-        return self.party_translate_up_dict.get(value.lower(), value)
-
-    party_options = [
-        {"title": "Alba Party", "shader": "#005EB8"},
-        {"title": "Alliance Party of Northern Ireland", "shader": "#F6CB2F"},
-        {"title": "Conservative Party", "shader": "#0087DC"},
-        {"title": "Democratic Unionist Party", "shader": "#D46A4C"},
-        {"title": "Green Party", "shader": "#6AB023"},
-        {"title": "Labour Co-operative", "shader": "#E4003B"},
-        {"title": "Labour Party", "shader": "#E4003B"},
-        {"title": "Liberal Democrats", "shader": "#FAA61A"},
-        {"title": "Plaid Cymru", "shader": "#005B54"},
-        {"title": "Scottish National Party", "shader": "#FDF38E"},
-        {"title": "Sinn Féin", "shader": "#326760"},
-        {"title": "Social Democratic and Labour Party", "shader": "#2AA82C"},
-        {"title": "Speaker of the House of Commons", "shader": "#DCDCDC"},
-        {"title": "independent politician", "shader": "#DCDCDC"},
-    ]
-
     def handle(self, quiet=False, *args, **options):
         self._quiet = quiet
         print("Deleting existing data")
         self.delete_data()
         print("Getting last election dataframe")
         df = self.get_last_election_df()
-        print("Creating data types")
-        self.data_types = self.create_data_types()
-        print("Importing data")
-        self.import_results(df)
+        if df is not None:
+            self.data_types = self.create_data_types()
+            self.import_results(df)
 
     def get_area_type(self):
         return AreaType.objects.get(code=self.area_type)
@@ -130,24 +109,36 @@ class Command(BaseCommand):
     stats_columns = list(map(format_key, unformatted_stats_columns))
 
     def get_general_election_data(self):
-        df = pd.read_csv(self.general_election_source_file).set_flags(
-            allows_duplicate_labels=False
+
+        df = pd.read_csv(
+            self.general_election_source_file,
         )
-        df["date"] = "2024-07-04"
-        party_keys = [
-            col
-            for col in df.columns
-            if col not in self.unformatted_str_columns
-            and col not in self.unformatted_stats_columns
-        ]
-        df = df.rename(
-            columns=lambda column: (
-                format_key(column) if column not in party_keys else self.up(column)
-            )
+        df.columns = df.columns.str.lower()
+        df.columns = [slugify(col).replace("-", "_") for col in df.columns]
+        df["date"] = "2024-04-04"
+        df["spk"] = df.of_which_other_winner
+        df["other"] = df.all_other_candidates - df.spk
+        df = df.drop(
+            columns=[
+                "of_which_other_winner",
+                "ons_region_id",
+                "constituency_name",
+                "county_name",
+                "region_name",
+                "country_name",
+                "constituency_type",
+                "declaration_time",
+                "member_first_name",
+                "member_surname",
+                "member_gender",
+                "result",
+                "electorate",
+                "valid_votes",
+                "invalid_votes",
+                "majority",
+                "all_other_candidates",
+            ]
         )
-        # df["spk"] = df["Of which other winner"]
-        # df["All other candidates"] = df["All other candidates"] - df.spk
-        # df = df.drop(columns="Of which other winner")
         df = df.set_index("ons_id")
         return df
 
@@ -234,7 +225,8 @@ class Command(BaseCommand):
         return df
 
     def get_last_election_df(self):
-        print("Getting general election data")
+        if self.general_election_source_file.exists() is False:
+            return None
         df = self.get_general_election_data()
         print("Getting by elections data")
         be_df = self.get_by_elections_data()
@@ -245,12 +237,16 @@ class Command(BaseCommand):
         # Patch in the by-election results where null values have been found
         df = df.combine_first(be_df)
         df = df.fillna(0)
-        # cols = [col for col in df.columns if "party" not in col and "date" not in col]
-        int_cols = [col for col in df.columns if col not in self.str_columns]
-        df[int_cols] = df[int_cols].astype(int)
-        df.first_party = df.first_party.apply(lambda party: self.up(party))
-        df.second_party = df.second_party.apply(lambda party: self.up(party))
-        df = df.rename(columns=lambda party: self.up(party))
+        cols = [col for col in df.columns if "party" not in col and "date" not in col]
+        df[cols] = df[cols].astype(int)
+        df.second_party = df.second_party.apply(
+            lambda party: self.party_translate_up_dict.get(party.lower(), party)
+        )
+        df = df.rename(
+            columns=lambda party: self.party_translate_up_dict.get(party.lower(), party)
+        )
+        if df.empty:
+            return None
         return df
 
     def create_data_types(self):
@@ -265,7 +261,10 @@ class Command(BaseCommand):
                 "source_label": "Data from UK Parliament.",
                 "source": "https://parliament.uk/",
                 "table": "areadata",
-                "options": self.party_options,
+                "options": [
+                    {"title": party, "shader": shade}
+                    for party, shade in party_shades.items()
+                ],
                 "is_filterable": True,
                 "comparators": DataSet.in_comparators(),
             },
@@ -275,6 +274,7 @@ class Command(BaseCommand):
         second_party, created = DataType.objects.update_or_create(
             data_set=second_party_ds,
             name="second_party",
+            area_type=self.get_area_type(),
             defaults={"data_type": "text"},
         )
 
@@ -298,6 +298,7 @@ class Command(BaseCommand):
         last_election, created = DataType.objects.update_or_create(
             data_set=last_election_ds,
             name="last_election",
+            area_type=self.get_area_type(),
             defaults={"data_type": "json"},
         )
 

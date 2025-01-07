@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 import pandas as pd
 from tqdm import tqdm
 
-from hub.models import DataSet, DataType, PersonData
+from hub.models import AreaType, DataSet, DataType, PersonData
 
 
 class Command(BaseCommand):
@@ -15,6 +15,12 @@ class Command(BaseCommand):
         self._quiet = quiet
         self.data_types = self.create_data_types()
         df = self.get_df()
+        if df is None or df.empty:
+            if not self._quiet:
+                self.stdout.write(
+                    f"Data file {self.data_file} not found or contains no data"
+                )
+            return
         self.import_results(df)
 
     def get_person_from_id(self, id):
@@ -25,6 +31,8 @@ class Command(BaseCommand):
             return None
 
     def get_df(self):
+        if not self.data_file.exists():
+            return None
         df = pd.read_csv(self.data_file)
         df["mp"] = df.id_parlid.apply(lambda parlid: self.get_person_from_id(parlid))
         return df[["mp", "letter"]]
@@ -41,12 +49,16 @@ class Command(BaseCommand):
                 "source_label": "Data from The Climate Coalition.",
                 "release_date": "June 2019",
                 "source": "https://www.theclimatecoalition.org/joint-letter-2019",
-                "table": "person__persondata",
+                "table": "people__persondata",
                 "options": options,
                 "subcategory": "sector_engagement",
                 "comparators": DataSet.comparators_default(),
             },
         )
+
+        for at in AreaType.objects.filter(code__in=["WMC", "WMC23"]):
+            ds.areas_available.add(at)
+
         data_type, created = DataType.objects.update_or_create(
             data_set=ds,
             name="net_zero_target",
@@ -62,12 +74,16 @@ class Command(BaseCommand):
                 "source_label": "Data from Possible.",
                 "release_date": "October 2019",
                 "source": "https://www.wearepossible.org/onshore-wind/latest/open-letter-from-mps-to-the-prime-minister",
-                "table": "person__persondata",
+                "table": "people__persondata",
                 "options": options,
                 "subcategory": "sector_engagement",
                 "comparators": DataSet.comparators_default(),
             },
         )
+
+        for at in AreaType.objects.filter(code__in=["WMC", "WMC23"]):
+            ds.areas_available.add(at)
+
         data_type, created = DataType.objects.update_or_create(
             data_set=ds,
             name="onshore_wind_energy",

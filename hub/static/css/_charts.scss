@@ -16,6 +16,7 @@ table.js-chart {
 
     .chartwrapper + & {
         @include visually-hidden;
+        display: block; // visually-hidden mixin doesn’t work on display:table elements!
     }
 }
 

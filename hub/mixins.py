@@ -1,6 +1,8 @@
 from collections import defaultdict
 from functools import cache
 
+from django.db.models import Q
+
 from hub.models import Area, AreaData, AreaType, DataSet, DataType, Person, PersonData
 
 
@@ -40,7 +42,9 @@ class FilterMixin:
                 value = value.split(",")
 
             try:
-                dataset = DataSet.objects.get(name=name, areas_available=area_type)
+                dataset = DataSet.objects.get(
+                    name=name, areas_available=area_type, visible=True
+                )
                 if is_non_member and not dataset.is_public:
                     continue
                 filters.append(
@@ -55,7 +59,9 @@ class FilterMixin:
                 )
             except DataSet.DoesNotExist:  # pragma: nocover
                 try:
-                    datatype = DataType.objects.get(name=name, area_type=area_type)
+                    datatype = DataType.objects.get(
+                        name=name, area_type=area_type, data_set__visible=True
+                    )
                     filters.append(
                         {
                             "dataset": datatype.data_set,
@@ -90,7 +96,9 @@ class FilterMixin:
                 continue
 
             try:
-                dataset = DataSet.objects.get(name=col, areas_available=area_type)
+                dataset = DataSet.objects.get(
+                    name=col, areas_available=area_type, visible=True
+                )
                 if is_non_member and not dataset.is_public:
                     continue
                 columns.append(
@@ -104,7 +112,9 @@ class FilterMixin:
                 )
             except DataSet.DoesNotExist:
                 try:
-                    datatype = DataType.objects.get(name=col, area_type=area_type)
+                    datatype = DataType.objects.get(
+                        name=col, area_type=area_type, data_set__visible=True
+                    )
                     columns.append(
                         {
                             "dataset": datatype.data_set,
@@ -178,6 +188,7 @@ class FilterMixin:
         area_ids = self.query().values_list("pk", flat=True)
         cols = self.filters().copy()
         cols.extend(self.columns(mp_name=mp_name))
+        area_type = self.area_type()
 
         """
         shortcut if no filters/columns were requested: just return a single
@@ -185,7 +196,6 @@ class FilterMixin:
         """
         if not cols or len(cols) == 0:
             areas = Area.objects
-            area_type = self.area_type()
             if area_type is not None:
                 areas = areas.filter(area_type=area_type)
             for area in areas.order_by("name"):
@@ -197,6 +207,14 @@ class FilterMixin:
             return data
 
         """
+        Mostly person data is area agnostic but the odd thing, e.g. majority is area
+        type specific so only get data that is for the area type or does not have an
+        area type.
+        """
+        person_area_type_filter = Q(data_type__area_type=area_type) | Q(
+            data_type__area_type__isnull=True
+        )
+        """
         first for each column we want gather the data and store it against the
         area
         """
@@ -204,10 +222,13 @@ class FilterMixin:
             if col["name"] == "mp_name":
                 has_mp = []
                 for row in Person.objects.filter(
-                    person_type="MP", area_id__in=area_ids, end_date__isnull=True
-                ).select_related("area"):
-                    has_mp.append(row.area_id)
-                    area_data[row.area.name]["MP Name"].append(row.name)
+                    personarea__person_type="MP",
+                    areas__in=area_ids,
+                    personarea__end_date__isnull=True,
+                ):
+                    has_mp.extend([a.id for a in row.areas.filter(area_type=area_type)])
+                    for area in row.areas.filter(area_type=area_type):
+                        area_data[area.name]["MP Name"].append(row.name)
 
                 if len(has_mp) < len(area_ids):
                     missing_areas = set(area_ids).difference(has_mp)
@@ -240,17 +261,21 @@ class FilterMixin:
                         value = self.format_value(row.data_type.data_type, row.value())
                     area_data[row.area.name][col["label"]].append(str(value))
             else:
-                for row in (
-                    PersonData.objects.filter(
-                        person__area_id__in=area_ids, data_type__name=col["name"]
-                    )
-                    .order_by(col["value_col"])
-                    .select_related("person__area", "data_type")
-                ):
+                filter = {
+                    "person__personarea__area_id__in": area_ids,
+                    "data_type__name": col["name"],
+                }
+                if dataset.person_type is not None:
+                    filter["person__personarea__person_type"] = "MP"
+                pd = PersonData.objects.filter(**filter)
+                pd = pd.filter(person_area_type_filter)
+
+                for row in pd.order_by(col["value_col"]).select_related("data_type"):
                     value = row.value()
                     if as_dict:
                         value = self.format_value(row.data_type.data_type, row.value())
-                    area_data[row.person.area.name][col["label"]].append(str(value))
+                    for area in row.person.areas.filter(area_type=area_type):
+                        area_data[area.name][col["label"]].append(str(value))
 
         if as_dict:
             for area in Area.objects.filter(id__in=area_ids):
@@ -272,9 +297,13 @@ class FilterMixin:
         name = self.request.GET.get("shader")
         area_type = self.area_type()
         try:
-            return DataSet.objects.get(name=name, areas_available=area_type)
+            return DataSet.objects.get(
+                name=name, areas_available=area_type, visible=True
+            )
         except DataSet.DoesNotExist:
             try:
-                return DataType.objects.get(name=name, area_type=area_type)
+                return DataType.objects.get(
+                    name=name, area_type=area_type, data_set__visible=True
+                )
             except DataType.DoesNotExist:
                 return None
