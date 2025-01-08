@@ -1,7 +1,8 @@
 'use client'
 
 import { BACKEND_URL } from '@/env'
-import { selectedSourceMarkerAtom, useLoadedMap } from '@/lib/map'
+import { layerColour, selectedSourceMarkerAtom, useLoadedMap } from '@/lib/map'
+import { Point } from 'geojson'
 import { useAtom } from 'jotai'
 import { MapMouseEvent } from 'mapbox-gl'
 import { useEffect } from 'react'
@@ -43,8 +44,16 @@ export function MembersListPointMarkers({
 
       const handleClick = (event: MapMouseEvent) => {
         const feature = event.features?.[0]
-        if (feature?.properties?.id) {
-          setSelectedSourceMarker(feature)
+        if (feature?.properties?.id && feature.geometry.type === 'Point') {
+          const pointGeometry = feature.geometry as Point
+          const [longitude, latitude] = pointGeometry.coordinates
+          if (longitude !== undefined && latitude !== undefined) {
+            setSelectedSourceMarker(feature)
+            map.flyTo({
+              center: [longitude, latitude],
+              zoom: 16,
+            })
+          }
         }
       }
 

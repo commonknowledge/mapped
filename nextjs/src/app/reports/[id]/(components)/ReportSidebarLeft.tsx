@@ -14,9 +14,11 @@ import { ReportDataSources } from './ReportDataSources'
 import { NAVBAR_HEIGHT } from './ReportNavbar'
 import { useReport } from './ReportProvider'
 
-const classes = {
+export const TabTriggerClasses = {
+  tabsList:
+    'w-full justify-start text-white rounded-none px-4 border border-b-meepGray-800 pt-4 pb-0 h-fit flex gap-6 overflow-x-auto scroll',
   tabsTrigger:
-    'pb-2 bg-transparent px-0 data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b border-white rounded-none',
+    'pb-2 bg-transparent px-0 data-[state=active]:bg-transparent  text-meepGray-400 border-b border-b-meepGray-600 data-[state=active]:text-white data-[state=active]:border-b-meepGray-200 hover:border-b hover:border-meepGray-400 rounded-none',
 }
 
 export function ReportSidebarLeft() {
@@ -30,7 +32,7 @@ export function ReportSidebarLeft() {
       style={{
         top: NAVBAR_HEIGHT + 'px',
       }}
-      className="border border-r-meepGray-800"
+      className="border border-r-meepGray-800 "
     >
       <SidebarContent className="bg-meepGray-600">
         <Tabs
@@ -38,13 +40,10 @@ export function ReportSidebarLeft() {
           className="w-full"
           onValueChange={setSelectedTab}
         >
-          <TabsList
-            className="w-full justify-start text-white rounded-none px-4
-          border border-b-meepGray-800 pt-4 pb-0 h-fit flex gap-4"
-          >
+          <TabsList className={TabTriggerClasses.tabsList}>
             <TabsTrigger
               value="data-sources"
-              className={classes.tabsTrigger}
+              className={TabTriggerClasses.tabsTrigger}
               disabled={dataLoading}
             >
               Data Sources {}
@@ -62,7 +61,7 @@ export function ReportSidebarLeft() {
               <HoverCardTrigger>
                 <TabsTrigger
                   value="configuration"
-                  className={classes.tabsTrigger}
+                  className={TabTriggerClasses.tabsTrigger}
                   disabled={dataLoading}
                 >
                   Configuration

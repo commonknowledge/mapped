@@ -29,6 +29,6 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"
-  ],
+, "src/app/reports/[id]/dashboard/UK Constituencies 2024.hexjson"  ],
   "exclude": ["node_modules", ".next"]
 }
