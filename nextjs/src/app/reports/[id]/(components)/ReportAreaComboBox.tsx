@@ -24,7 +24,7 @@ import { useEffect } from 'react'
 import { useAreasList } from '../useAreasList'
 import { useReport } from './ReportProvider'
 
-export default function ReportDashboardConsSelector() {
+export default function ReportAreaComboBox() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = React.useState('')

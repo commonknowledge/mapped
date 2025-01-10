@@ -4,10 +4,11 @@ import { useReport } from '@/app/reports/[id]/(components)/ReportProvider'
 import { contentEditableMutation } from '@/lib/html'
 import { useExplorerState, useSidebarLeftState } from '@/lib/map'
 import { atom, useAtomValue } from 'jotai'
-import { PanelLeft, PanelRight } from 'lucide-react'
+import { PanelLeft, PanelRight, Search } from 'lucide-react'
 import Link from 'next/link'
 import { MappedIcon } from '../../../../components/icons/MappedIcon'
-import ReportComboBox from './ReportComboBox'
+import ReportAreaComboBox from './ReportAreaComboBox'
+import ReportRecordsComboBox from './ReportRecordMembersComboBox'
 
 // You can set the title & href of the top left icon link based on route & context
 export const navbarTitleAtom = atom('')
@@ -42,7 +43,16 @@ export default function ReportNavbar() {
             className="text-meepGray-400 w-4 h-4 cursor-pointer"
           />{' '}
           <div className="flex flex-row items-center gap-2 ml-auto">
-            <ReportComboBox />
+            <div className="flex flex-row items-center gap-0 border border-meepGray-800 rounded-md p-2 mr-2">
+              <div className="flex flex-row items-center mr-2">
+                <Search className="w-4 h-4 text-meepGray-800 mr-1" />
+                <p className="text-sm text-mono uppercase text-meepGray-800">
+                  Search
+                </p>
+              </div>
+              <ReportRecordsComboBox />
+              <ReportAreaComboBox />
+            </div>
             {!!explorer.id && !!explorer.entity && (
               <PanelRight
                 onClick={rightSidebarToggle}
