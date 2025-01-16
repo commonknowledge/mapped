@@ -6,6 +6,7 @@ import { DataSourceIcon } from '@/components/DataSourceIcon'
 import { Button } from '@/components/ui/button'
 import { SidebarContent, SidebarHeader } from '@/components/ui/sidebar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { dataTypeIcons } from '@/lib/data'
 import {
   ExplorerState,
   StarredState,
@@ -20,6 +21,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { useReport } from '../ReportProvider'
 import { PropertiesDisplay } from '../dashboard/PropertiesDisplay'
+import { AreaExplorer } from './AreaExplorer'
 import { exploreArea } from './utils'
 
 export function RecordExplorer({ id }: { id: string }) {
@@ -110,125 +112,141 @@ export function RecordExplorer({ id }: { id: string }) {
     }
   }
 
+  const dataType = record?.dataType.dataSet.externalDataSource.dataType
+  const IconComponent = dataType ? dataTypeIcons[dataType]?.icon : null
+
   return (
-    <SidebarContent className="bg-meepGray-600 overflow-x-hidden">
-      <SidebarHeader className="!text-white p-4 mb-0">
-        <>
-          <div className="text-xs labels-condensed text-meepGray-400 uppercase">
-            {record?.dataType.dataSet.externalDataSource.dataType
-              ? pluralize(
-                  record?.dataType.dataSet.externalDataSource.dataType,
-                  1
-                )
-              : 'Record'}
-          </div>
-          <div className="text-hMd flex flex-row gap-2 w-full items-center">
-            {data.loading ? (
-              <span className="text-meepGray-400">Loading...</span>
-            ) : data.error || !record ? (
-              <span className="text-meepGray-400">???</span>
-            ) : (
-              <div className="w-full">
-                <div className="flex flex-row gap-2 w-full items-center">
-                  <span className="mr-auto">
-                    {record.title ||
-                      record.fullName ||
-                      `${record.firstName} ${record.lastName}`}
-                  </span>
-                  <div className="flex flex-row gap-2 items-center">
-                    <Star
-                      onClick={toggleStarred}
-                      className={`ml-auto text-meepGray-400 cursor-pointer ${
-                        isStarred
-                          ? 'fill-meepGray-400 hover:text-meepGray-200 hover:fill-meepGray-600'
-                          : 'fill-transparent hover:text-white hover:fill-white'
-                      }`}
-                      size={16}
-                    />
-                    <LucideLink
-                      onClick={copyUrl}
-                      className="ml-auto text-meepGray-400 hover:text-meepGray-200 cursor-pointer"
-                      size={16}
-                    />
-                  </div>
-                </div>
-                {record.postcodeData && (
-                  <div className="mt-2 text-base text-meepGray-400">
-                    in{' '}
-                    <span className="text-meepGray-300">
-                      <span
-                        className="cursor-pointer hover:underline"
-                        onClick={() =>
-                          exploreArea(record.postcodeData?.codes.adminWard!)
-                        }
-                      >
-                        {record.postcodeData.adminWard}
-                      </span>
-                      ,{' '}
-                      <span
-                        className="cursor-pointer hover:underline"
-                        onClick={() =>
-                          exploreArea(record.postcodeData?.codes.adminDistrict!)
-                        }
-                      >
-                        {record.postcodeData.adminDistrict}
-                      </span>
-                      ,{' '}
-                      <span>{record.postcodeData.europeanElectoralRegion}</span>
+    <div className="flex gap-2">
+      <SidebarContent className="bg-meepGray-800 overflow-x-hidden absolute w-[360px] -left-[360px] top-0 h-full">
+        <SidebarHeader className="!text-white p-4 mb-0">
+          <>
+            <div className="text-xs labels-condensed text-meepGray-400 uppercase flex flex-row gap-2 items-center">
+              {IconComponent && (
+                <IconComponent className="w-4 h-4 text-meepGray-400" />
+              )}
+              {record?.dataType.dataSet.externalDataSource.dataType
+                ? pluralize(
+                    record?.dataType.dataSet.externalDataSource.dataType,
+                    1
+                  )
+                : 'Record'}
+            </div>
+            <div className="text-hMd flex flex-row gap-2 w-full items-center">
+              {data.loading ? (
+                <span className="text-meepGray-400">Loading...</span>
+              ) : data.error || !record ? (
+                <span className="text-meepGray-400">???</span>
+              ) : (
+                <div className="w-full">
+                  <div className="flex flex-row gap-2 w-full items-center">
+                    <span className="mr-auto">
+                      {record.title ||
+                        record.fullName ||
+                        `${record.firstName} ${record.lastName}`}
                     </span>
+                    <div className="flex flex-row gap-2 items-center">
+                      <Star
+                        onClick={toggleStarred}
+                        className={`ml-auto text-meepGray-400 cursor-pointer ${
+                          isStarred
+                            ? 'fill-meepGray-400 hover:text-meepGray-200 hover:fill-meepGray-600'
+                            : 'fill-transparent hover:text-white hover:fill-white'
+                        }`}
+                        size={16}
+                      />
+                      <LucideLink
+                        onClick={copyUrl}
+                        className="ml-auto text-meepGray-400 hover:text-meepGray-200 cursor-pointer"
+                        size={16}
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
+                  {record.postcodeData && (
+                    <div className="mt-2 text-base text-meepGray-400">
+                      in{' '}
+                      <span className="text-meepGray-300">
+                        <span
+                          className="cursor-pointer hover:underline"
+                          onClick={() =>
+                            exploreArea(record.postcodeData?.codes.adminWard!)
+                          }
+                        >
+                          {record.postcodeData.adminWard}
+                        </span>
+                        ,{' '}
+                        <span
+                          className="cursor-pointer hover:underline"
+                          onClick={() =>
+                            exploreArea(
+                              record.postcodeData?.codes.adminDistrict!
+                            )
+                          }
+                        >
+                          {record.postcodeData.adminDistrict}
+                        </span>
+                        ,{' '}
+                        <span>
+                          {record.postcodeData.europeanElectoralRegion}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        </SidebarHeader>
+        <Tabs
+          defaultValue="summary"
+          className="w-full"
+          onValueChange={setSelectedTab}
+          value={selectedTab}
+        >
+          <TabsList
+            className="w-full justify-start text-white rounded-none px-4
+        border-b border-b-meepGray-600 pt-4 pb-0 h-fit flex gap-4 bg-meepGray-800"
+          >
+            <TabsTrigger
+              value="summary"
+              className={`${classes.tabsTrigger} bg-meepGray-800`}
+            >
+              Summary
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent
+            value="summary"
+            className="pb-24 divide-y divide-meepGray-800"
+          >
+            {/* Contact deets */}
+            {!!contactOptions.length && (
+              <section className="flex flex-col gap-2 px-4 py-4">
+                <div className="text-hSm text-white">Contact</div>
+                <div className="flex flex-col gap-2">
+                  {contactOptions.map((contact, i) => (
+                    <Button
+                      key={i}
+                      onClick={contact.onClick}
+                      className="text-white"
+                    >
+                      {contact.label}
+                    </Button>
+                  ))}
+                </div>
+              </section>
             )}
-          </div>
-        </>
-      </SidebarHeader>
-      <Tabs
-        defaultValue="summary"
-        className="w-full"
-        onValueChange={setSelectedTab}
-        value={selectedTab}
-      >
-        <TabsList
-          className="w-full justify-start text-white rounded-none px-4
-        border border-b-meepGray-800 pt-4 pb-0 h-fit flex gap-4"
-        >
-          <TabsTrigger value="summary" className={classes.tabsTrigger}>
-            Summary
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent
-          value="summary"
-          className="pb-24 divide-y divide-meepGray-800"
-        >
-          {/* Contact deets */}
-          {!!contactOptions.length && (
+
+            {/* Raw data */}
             <section className="flex flex-col gap-2 px-4 py-4">
-              <div className="text-hSm text-white">Contact</div>
+              <div className="text-hSm text-white">Info</div>
               <div className="flex flex-col gap-2">
-                {contactOptions.map((contact, i) => (
-                  <Button
-                    key={i}
-                    onClick={contact.onClick}
-                    className="text-white"
-                  >
-                    {contact.label}
-                  </Button>
-                ))}
+                <PropertiesDisplay data={record?.json} />
               </div>
             </section>
-          )}
-
-          {/* Raw data */}
-          <section className="flex flex-col gap-2 px-4 py-4">
-            <div className="text-hSm text-white">Info</div>
-            <div className="flex flex-col gap-2">
-              <PropertiesDisplay data={record?.json} />
-            </div>
-          </section>
-        </TabsContent>
-      </Tabs>
-    </SidebarContent>
+          </TabsContent>
+        </Tabs>
+      </SidebarContent>
+      <AreaExplorer gss={record?.postcodeData?.codes.adminWard!} />
+    </div>
   )
 
   function copyUrl() {

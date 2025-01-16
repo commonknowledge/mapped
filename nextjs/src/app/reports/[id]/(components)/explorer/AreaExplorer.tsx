@@ -82,7 +82,7 @@ export function AreaExplorer({ gss }: { gss: string }) {
   }
 
   return (
-    <SidebarContent className="bg-meepGray-600 overflow-x-hidden">
+    <SidebarContent className="bg-meepGray-600 overflow-x-hidden h-full">
       <SidebarHeader className="!text-white p-4 mb-0">
         <>
           <AreaExplorerBreadcrumbs area={areaData.data?.area} />
@@ -271,8 +271,9 @@ function AreaLayerData({
             />
           ) : (
             <ListDisplay
-              data={data.data?.points.map((p) => p.json)}
+              data={data.data?.points}
               config={layer.inspectorConfig}
+              dataType={layer.sourceData.dataType}
             />
           )}
         </div>
@@ -298,7 +299,15 @@ const AREA_LAYER_DATA = gql`
     ) {
       json
       id
+      startTime
       postcode
+      date
+      description
+      fullName
+      lastName
+      firstName
+      title
+      publicUrl
     }
     # rolled up area data up to this GSS code
     summary: genericDataSummaryFromSourceAboutArea(
@@ -478,15 +487,96 @@ function BigNumberDisplay({
 function ListDisplay({
   data,
   config,
+  dataType,
 }: {
   data: AreaLayerDataQuery['points']
   config: {
     columns: string[]
   }
+  dataType: DataSourceType
 }) {
+  function getListValuesBasedOnDataType(item: any) {
+    type ListValues = {
+      primary: string[]
+      secondary: string[]
+    }
+
+    switch (dataType) {
+      case DataSourceType.Member:
+        return {
+          primary: [item.firstName || item.lastName || item.fullName],
+          secondary: [item.postcode],
+        } satisfies ListValues
+      case DataSourceType.Event: {
+        return {
+          primary: [item.title],
+          secondary: [item.startTime || item.date || item.postcode],
+        } satisfies ListValues
+      }
+      case DataSourceType.Group: {
+        return {
+          primary: [item.name],
+          secondary: [item.date],
+        } satisfies ListValues
+      }
+      case DataSourceType.AreaStats: {
+        return {
+          primary: [item.name],
+          secondary: [item.date],
+        } satisfies ListValues
+      }
+      case DataSourceType.Location: {
+        return {
+          primary: [item.name],
+          secondary: [item.date],
+        } satisfies ListValues
+      }
+      case DataSourceType.Other: {
+        return {
+          primary: [item.name],
+          secondary: [item.date],
+        } satisfies ListValues
+      }
+      case DataSourceType.Story: {
+        return {
+          primary: [item.name],
+          secondary: [item.date],
+        } satisfies ListValues
+      }
+    }
+  }
+
+  const [explorerState, setExplorerState] = useExplorerState()
+
   return (
-    // Display a simple table of the data using ShadCDN
-    null
+    <div className="bg-meepGray-700 rounded-md max-h-[30vh] overflow-y-auto">
+      {data?.map((item: any) => {
+        const { primary, secondary } = getListValuesBasedOnDataType(item)
+        const isActive =
+          explorerState.entity === 'record' && explorerState.id === item.id
+
+        return (
+          <div
+            key={item.id}
+            className={`text-meepGray-200 justify-between flex font-mono text-sm hover:bg-meepGray-800 p-2 cursor-pointer border-b border-meepGray-800 ${
+              isActive ? 'bg-white text-meepGray-800 hover:bg-white' : ''
+            }`}
+            onClick={() => {
+              setExplorerState({
+                entity: 'record',
+                id: item.id,
+                showExplorer: true,
+              })
+            }}
+          >
+            <div className="flex flex-col gap-1">{primary}</div>
+            <div className="flex flex-col gap-1 text-meepGray-400">
+              {secondary}
+            </div>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
@@ -567,31 +657,30 @@ function AreaExplorerBreadcrumbs({
 
   return (
     <Breadcrumb>
-      <BreadcrumbList className="text-meepGray-400">
-        {activeBreadcrumbs.map(
-          (crumb, index) =>
-            crumb.value && (
-              <Fragment key={index}>
-                <BreadcrumbItem>
-                  <BreadcrumbLink
-                    className="max-w-28 truncate cursor-pointer"
-                    onClick={() =>
-                      handleBreadcrumbClick({
-                        value: crumb.value,
-                        code: crumb.code || '',
-                        type: crumb.type,
-                      })
-                    }
-                  >
-                    {crumb.value}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-              </Fragment>
-            )
-        )}
-        <div className="text-xs labels-condensed text-meepGray-200 uppercase">
-          {selectedAreaType ? pluralize(selectedAreaType, 1) : 'Area'}
+      <BreadcrumbList className="flex gap-2 text-meepGray-400 overflow-x-auto whitespace-nowrap max-w-[320px] no-scrollbar">
+        <div className="flex gap-2 items-center">
+          {activeBreadcrumbs.map((crumb, index) => (
+            <Fragment key={index}>
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  className="max-w-28 truncate cursor-pointer"
+                  onClick={() =>
+                    handleBreadcrumbClick({
+                      value: crumb.value,
+                      code: crumb.code || '',
+                      type: crumb.type,
+                    })
+                  }
+                >
+                  {crumb.value}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+            </Fragment>
+          ))}
+          <div className="text-xs labels-condensed text-meepGray-200 uppercase">
+            {selectedAreaType ? pluralize(selectedAreaType, 1) : 'Area'}
+          </div>
         </div>
       </BreadcrumbList>
     </Breadcrumb>
