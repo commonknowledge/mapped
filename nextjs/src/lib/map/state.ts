@@ -1,4 +1,4 @@
-import { DataSourceType } from '@/__generated__/graphql'
+import { AnalyticalAreaType, DataSourceType } from '@/__generated__/graphql'
 import { atom, useAtom } from 'jotai'
 import { MapboxGeoJSONFeature } from 'mapbox-gl'
 import { parseAsString, useQueryState, useQueryStates } from 'nuqs'
@@ -45,6 +45,12 @@ export function useExplorerState() {
 export type ExplorerSuite = ReturnType<typeof useExplorerState>
 
 export type ExplorerState = ReturnType<typeof useExplorerState>[0]
+
+export type ExplorerAreaBreadCrumbMapping = {
+  value: string | undefined
+  code: string | undefined
+  type: AnalyticalAreaType
+}
 
 export const starredStateResolver = explorerStateResolver.extend({
   name: z.string().optional(),

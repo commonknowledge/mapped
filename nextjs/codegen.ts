@@ -1,7 +1,7 @@
 import { CodegenConfig } from '@graphql-codegen/cli'
 
 const config: CodegenConfig = {
-  schema: 'http://127.0.0.1:8000/graphql',
+  schema: 'https://api.mapped.commonknowledge.coop/graphql',
   documents: [
     'src/components/**/*.{ts,tsx}',
     'src/app/**/*.{ts,tsx}',

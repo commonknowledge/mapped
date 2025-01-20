@@ -1,4 +1,5 @@
 import {
+  AnalyticalAreaType,
   AreaExplorerSummaryQuery,
   AreaExplorerSummaryQueryVariables,
   AreaLayerDataQuery,
@@ -8,17 +9,30 @@ import {
   MapLayer,
 } from '@/__generated__/graphql'
 import { DataSourceIcon } from '@/components/DataSourceIcon'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import { LoadingIcon } from '@/components/ui/loadingIcon'
 import { SidebarContent, SidebarHeader } from '@/components/ui/sidebar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ExplorerState, StarredState, useLoadedMap } from '@/lib/map'
+import {
+  ExplorerAreaBreadCrumbMapping,
+  ExplorerState,
+  StarredState,
+  useExplorerState,
+  useLoadedMap,
+} from '@/lib/map'
 import { gql, useQuery } from '@apollo/client'
 import { format } from 'd3-format'
 import { sum } from 'lodash'
 import { LucideLink, Star } from 'lucide-react'
 import pluralize from 'pluralize'
 import queryString from 'query-string'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import trigramSimilarity from 'trigram-similarity'
 import CollapsibleSection from '../CollapsibleSection'
@@ -36,8 +50,6 @@ export function AreaExplorer({ gss }: { gss: string }) {
     variables: { gss },
     skip: !gss,
   })
-
-  console.log(areaData.data)
 
   const mapbox = useLoadedMap()
 
@@ -69,19 +81,11 @@ export function AreaExplorer({ gss }: { gss: string }) {
     }
   }
 
-  const politicalBoundaries =
-    report.report.displayOptions.dataVisualisation?.boundaryType
-
   return (
-    <SidebarContent className="bg-meepGray-600 overflow-x-hidden">
+    <SidebarContent className="bg-meepGray-600 overflow-x-hidden h-full">
       <SidebarHeader className="!text-white p-4 mb-0">
         <>
-          <div className="text-xs labels-condensed text-meepGray-400 uppercase">
-            {areaData.data?.area?.areaType.name
-              ? pluralize(areaData.data?.area?.areaType.name, 1)
-              : 'Area'}
-          </div>
-
+          <AreaExplorerBreadcrumbs area={areaData.data?.area} />
           <div className="text-hMd flex flex-row gap-2 w-full items-center">
             {areaData.loading ? (
               <span className="text-meepGray-400">Loading...</span>
@@ -131,7 +135,11 @@ export function AreaExplorer({ gss }: { gss: string }) {
         >
           {report.report.layers?.map((layer) => (
             <div key={layer.id} className="my-4 px-4">
-              <AreaLayerData layer={layer} gss={gss} />
+              <AreaLayerData
+                layer={layer}
+                gss={gss}
+                areaName={areaData.data?.area?.name || ''}
+              />
             </div>
           )) || (
             <div className="text-xl text-meepGray-400 text-center py-12 px-2">
@@ -177,23 +185,30 @@ const AREA_EXPLORER_SUMMARY = gql`
         name
         description
       }
+      samplePostcode {
+        parliamentaryConstituency2024
+        adminWard
+        adminDistrict
+        europeanElectoralRegion
+        codes {
+          adminWard
+          adminDistrict
+          parliamentaryConstituency2024
+        }
+      }
     }
   }
 `
 
-// const AREA_HEIRARCHY = gql`
-//   query genericDataFromSourceAboutArea
-//   ($gss: String!, $sourceId: String!) {
-//     postcodeData {
-//       adminWard
-//       adminDistrict
-//       europeanElectoralRegion
-//       parliamentaryConstituency2024
-
-//   }
-// `
-
-function AreaLayerData({ layer, gss }: { layer: MapLayer; gss: string }) {
+function AreaLayerData({
+  layer,
+  gss,
+  areaName,
+}: {
+  layer: MapLayer
+  gss: string
+  areaName: string
+}) {
   const data = useQuery<AreaLayerDataQuery, AreaLayerDataQueryVariables>(
     AREA_LAYER_DATA,
     {
@@ -201,8 +216,6 @@ function AreaLayerData({ layer, gss }: { layer: MapLayer; gss: string }) {
       skip: !layer?.source || !gss,
     }
   )
-
-  console.log(data.data)
 
   return (
     <CollapsibleSection title={layer.name} id={layer.id}>
@@ -243,6 +256,8 @@ function AreaLayerData({ layer, gss }: { layer: MapLayer; gss: string }) {
                   : data.data?.points.map((p) => p.json)
               }
               config={layer.inspectorConfig}
+              title={layer.name}
+              areaName={areaName}
             />
           ) : layer.inspectorType === InspectorDisplayType.ElectionResult ? (
             <ElectionResultsDisplay
@@ -256,8 +271,9 @@ function AreaLayerData({ layer, gss }: { layer: MapLayer; gss: string }) {
             />
           ) : (
             <ListDisplay
-              data={data.data?.points.map((p) => p.json)}
+              data={data.data?.points}
               config={layer.inspectorConfig}
+              dataType={layer.sourceData.dataType}
             />
           )}
         </div>
@@ -282,6 +298,16 @@ const AREA_LAYER_DATA = gql`
       sourceId: $externalDataSource
     ) {
       json
+      id
+      startTime
+      postcode
+      date
+      description
+      fullName
+      lastName
+      firstName
+      title
+      publicUrl
     }
     # rolled up area data up to this GSS code
     summary: genericDataSummaryFromSourceAboutArea(
@@ -461,14 +487,202 @@ function BigNumberDisplay({
 function ListDisplay({
   data,
   config,
+  dataType,
 }: {
   data: AreaLayerDataQuery['points']
   config: {
     columns: string[]
   }
+  dataType: DataSourceType
 }) {
+  function getListValuesBasedOnDataType(item: any) {
+    type ListValues = {
+      primary: string[]
+      secondary: string[]
+    }
+
+    switch (dataType) {
+      case DataSourceType.Member:
+        return {
+          primary: [item.firstName || item.lastName || item.fullName],
+          secondary: [item.postcode],
+        } satisfies ListValues
+      case DataSourceType.Event: {
+        return {
+          primary: [item.title],
+          secondary: [item.startTime || item.date || item.postcode],
+        } satisfies ListValues
+      }
+      case DataSourceType.Group: {
+        return {
+          primary: [item.name],
+          secondary: [item.date],
+        } satisfies ListValues
+      }
+      case DataSourceType.AreaStats: {
+        return {
+          primary: [item.name],
+          secondary: [item.date],
+        } satisfies ListValues
+      }
+      case DataSourceType.Location: {
+        return {
+          primary: [item.name],
+          secondary: [item.date],
+        } satisfies ListValues
+      }
+      case DataSourceType.Other: {
+        return {
+          primary: [item.name],
+          secondary: [item.date],
+        } satisfies ListValues
+      }
+      case DataSourceType.Story: {
+        return {
+          primary: [item.name],
+          secondary: [item.date],
+        } satisfies ListValues
+      }
+    }
+  }
+
+  const [explorerState, setExplorerState] = useExplorerState()
+
   return (
-    // Display a simple table of the data using ShadCDN
-    null
+    <div className="bg-meepGray-700 rounded-md max-h-[30vh] overflow-y-auto">
+      {data?.map((item: any) => {
+        const { primary, secondary } = getListValuesBasedOnDataType(item)
+        const isActive =
+          explorerState.entity === 'record' && explorerState.id === item.id
+
+        return (
+          <div
+            key={item.id}
+            className={`text-meepGray-200 justify-between flex font-mono text-sm hover:bg-meepGray-800 p-2 cursor-pointer border-b border-meepGray-800 ${
+              isActive ? 'bg-white text-meepGray-800 hover:bg-white' : ''
+            }`}
+            onClick={() => {
+              setExplorerState({
+                entity: 'record',
+                id: item.id,
+                showExplorer: true,
+              })
+            }}
+          >
+            <div className="flex flex-col gap-1">{primary}</div>
+            <div className="flex flex-col gap-1 text-meepGray-400">
+              {secondary}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function AreaExplorerBreadcrumbs({
+  area,
+}: {
+  area: AreaExplorerSummaryQuery['area']
+}) {
+  const [explorerState, setExplorerState] = useExplorerState()
+
+  const { updateReport } = useReport()
+
+  const {
+    europeanElectoralRegion,
+    parliamentaryConstituency2024,
+    adminDistrict,
+    adminWard,
+    codes,
+  } = area?.samplePostcode || {}
+
+  const selectedAreaType = area?.areaType?.name
+
+  const ExplorerAreaBreadCrumbMapping: Record<
+    string,
+    ExplorerAreaBreadCrumbMapping
+  > = {
+    europeanElectoralRegion: {
+      value: europeanElectoralRegion,
+      code: undefined,
+      type: AnalyticalAreaType.EuropeanElectoralRegion,
+    },
+    adminDistrict: {
+      value: adminDistrict,
+      code: codes?.adminDistrict,
+      type: AnalyticalAreaType.AdminDistrict,
+    },
+    parliamentaryConstituency2024: {
+      value: parliamentaryConstituency2024,
+      code: codes?.parliamentaryConstituency2024,
+      type: AnalyticalAreaType.ParliamentaryConstituency_2024,
+    },
+  }
+
+  // Define breadcrumb hierarchies for different area types
+  const breadcrumbConfigs = {
+    'Single Tier Councils': [
+      ExplorerAreaBreadCrumbMapping.europeanElectoralRegion,
+    ],
+    '2023 Parliamentary Constituency': [
+      ExplorerAreaBreadCrumbMapping.europeanElectoralRegion,
+      ExplorerAreaBreadCrumbMapping.adminDistrict,
+    ],
+    Wards: [
+      ExplorerAreaBreadCrumbMapping.europeanElectoralRegion,
+      ExplorerAreaBreadCrumbMapping.adminDistrict,
+      ExplorerAreaBreadCrumbMapping.parliamentaryConstituency2024,
+    ],
+  }
+
+  const activeBreadcrumbs =
+    breadcrumbConfigs[selectedAreaType as keyof typeof breadcrumbConfigs] || []
+
+  function handleBreadcrumbClick(crumb: {
+    value: any
+    code: string
+    type: AnalyticalAreaType
+  }) {
+    setExplorerState({
+      id: crumb.code,
+      entity: 'area',
+      showExplorer: true,
+    })
+
+    updateReport((draft) => {
+      draft.displayOptions.dataVisualisation.boundaryType = crumb.type
+    })
+  }
+
+  return (
+    <Breadcrumb>
+      <BreadcrumbList className="flex gap-2 text-meepGray-400 overflow-x-auto whitespace-nowrap max-w-[320px] no-scrollbar">
+        <div className="flex gap-2 items-center">
+          {activeBreadcrumbs.map((crumb, index) => (
+            <Fragment key={index}>
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  className="max-w-28 truncate cursor-pointer"
+                  onClick={() =>
+                    handleBreadcrumbClick({
+                      value: crumb.value,
+                      code: crumb.code || '',
+                      type: crumb.type,
+                    })
+                  }
+                >
+                  {crumb.value}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+            </Fragment>
+          ))}
+          <div className="text-xs labels-condensed text-meepGray-200 uppercase">
+            {selectedAreaType ? pluralize(selectedAreaType, 1) : 'Area'}
+          </div>
+        </div>
+      </BreadcrumbList>
+    </Breadcrumb>
   )
 }
