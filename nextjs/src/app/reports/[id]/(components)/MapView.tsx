@@ -25,7 +25,7 @@ export default function MapView({
     (boundary) => boundary.boundaryType === boundaryType
   )?.tilesets
 
-  const activeTileset = useActiveTileset(boundaryType)
+  const activeTileset = useActiveTileset(boundaryType, mapView)
 
   const { loading, fetchMore } = useDataByBoundary({
     view: mapView,

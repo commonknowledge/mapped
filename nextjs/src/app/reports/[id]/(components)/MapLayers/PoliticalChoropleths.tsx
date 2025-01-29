@@ -53,7 +53,7 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
   >({})
 
   const [, setMapZoom] = useMapZoom()
-  const activeTileset = useActiveTileset(boundaryType)
+  const activeTileset = useActiveTileset(boundaryType, view)
   const { data } = useDataByBoundary({
     view,
     tileset: activeTileset,
@@ -110,126 +110,135 @@ const PoliticalChoropleths: React.FC<PoliticalChoroplethsProps> = ({
     }
   }, [map.loaded, activeTileset, data, view.mapOptions])
 
+  const [zoom, _] = useMapZoom()
+
   if (!map.loaded) return null
   if (!tilesets) return null
 
   return (
     <>
-      {tilesets.map((tileset) => (
-        <Fragment key={tileset.mapboxSourceId}>
-          <Source
-            id={tileset.mapboxSourceId}
-            type="vector"
-            url={`mapbox://${tileset.mapboxSourceId}`}
-            promoteId={tileset.promoteId}
-            minzoom={tileset.minZoom}
-            maxzoom={tileset.maxZoom}
-          >
-            {/* Fill of the boundary */}
-            <Layer
-              beforeId="road-simple"
-              id={`${tileset.mapboxSourceId}-fill`}
-              source={tileset.mapboxSourceId}
-              source-layer={tileset.sourceLayerId}
-              type="fill"
-              paint={fillsByLayer[tileset.mapboxSourceId] || {}}
-              minzoom={tileset.minZoom}
-              maxzoom={tileset.maxZoom}
-            />
-            {/* Border of the boundary */}
-            <Layer
-              beforeId={PLACEHOLDER_LAYER_ID_CHOROPLETH}
-              id={`${tileset.mapboxSourceId}-line`}
-              source={tileset.mapboxSourceId}
-              source-layer={tileset.sourceLayerId}
-              type="line"
-              paint={getChoroplethEdge(borderVisibility === 'visible')}
-              layout={{
-                'line-join': 'round',
-                'line-round-limit': 0.1,
-              }}
-            />
-            {/* Border of the selected boundary  */}
-            <Layer
-              beforeId={PLACEHOLDER_LAYER_ID_CHOROPLETH}
-              id={`${tileset.mapboxSourceId}-selected`}
-              source={tileset.mapboxSourceId}
-              source-layer={tileset.sourceLayerId}
-              type="line"
-              paint={getSelectedChoroplethEdge()}
-              filter={[
-                '==',
-                ['get', tileset.promoteId],
-                explorer.state.entity === 'area'
-                  ? explorer.state.id
-                  : 'sOmE iMpOsSiBle iD tHaT wIlL uPdAtE mApBoX',
-              ]}
-              layout={{
-                visibility: areasVisible,
-                'line-join': 'round',
-                'line-round-limit': 0.1,
-              }}
-            />
-          </Source>
-          <Source
-            id={`${tileset.mapboxSourceId}-area-count`}
-            type="geojson"
-            data={getAreaGeoJSON(dataByBoundary)}
-            minzoom={tileset.minZoom}
-            maxzoom={tileset.maxZoom}
-          >
-            <Layer
+      {tilesets.map((tileset) => {
+        const isActiveTileset =
+          activeTileset.analyticalAreaType === tileset.analyticalAreaType
+        return (
+          <Fragment key={tileset.mapboxSourceId}>
+            <Source
+              id={tileset.mapboxSourceId}
+              type="vector"
+              url={`mapbox://${tileset.mapboxSourceId}`}
+              promoteId={tileset.promoteId}
+              // minzoom={tileset.minZoom}
+              // maxzoom={tileset.maxZoom}
+            >
+              {/* Fill of the boundary */}
+              <Layer
+                beforeId="road-simple"
+                id={`${tileset.mapboxSourceId}-fill`}
+                source={tileset.mapboxSourceId}
+                source-layer={tileset.sourceLayerId}
+                type="fill"
+                paint={fillsByLayer[tileset.mapboxSourceId] || {}}
+                // minzoom={tileset.minZoom}
+                // maxzoom={tileset.maxZoom}
+              />
+              {/* Border of the boundary */}
+              <Layer
+                beforeId={PLACEHOLDER_LAYER_ID_CHOROPLETH}
+                id={`${tileset.mapboxSourceId}-line`}
+                source={tileset.mapboxSourceId}
+                source-layer={tileset.sourceLayerId}
+                type="line"
+                paint={getChoroplethEdge(
+                  borderVisibility === 'visible',
+                  isActiveTileset
+                )}
+                layout={{
+                  'line-join': 'round',
+                  'line-round-limit': 0.1,
+                }}
+              />
+              {/* Border of the selected boundary  */}
+              <Layer
+                beforeId={PLACEHOLDER_LAYER_ID_CHOROPLETH}
+                id={`${tileset.mapboxSourceId}-selected`}
+                source={tileset.mapboxSourceId}
+                source-layer={tileset.sourceLayerId}
+                type="line"
+                paint={getSelectedChoroplethEdge()}
+                filter={[
+                  '==',
+                  ['get', tileset.promoteId],
+                  explorer.state.entity === 'area'
+                    ? explorer.state.id
+                    : 'sOmE iMpOsSiBle iD tHaT wIlL uPdAtE mApBoX',
+                ]}
+                layout={{
+                  visibility: areasVisible,
+                  'line-join': 'round',
+                  'line-round-limit': 0.1,
+                }}
+              />
+            </Source>
+            <Source
               id={`${tileset.mapboxSourceId}-area-count`}
-              type="symbol"
-              layout={{
-                ...getAreaCountLayout(dataByBoundary),
-                visibility: boundaryNameVisibility,
-              }}
-              paint={{
-                'text-opacity': [
-                  'interpolate',
-                  ['exponential', 1],
-                  ['zoom'],
-                  7.5,
-                  0,
-                  7.8,
-                  1,
-                ],
-                'text-color': 'white',
-                'text-halo-color': '#24262b',
-                'text-halo-width': 1.5,
-              }}
-              minzoom={tileset.minZoom}
-              maxzoom={tileset.maxZoom}
-            />
+              type="geojson"
+              data={getAreaGeoJSON(dataByBoundary)}
+              // minzoom={tileset.minZoom}
+              // maxzoom={tileset.maxZoom}
+            >
+              <Layer
+                id={`${tileset.mapboxSourceId}-area-count`}
+                type="symbol"
+                layout={{
+                  ...getAreaCountLayout(dataByBoundary),
+                  visibility: boundaryNameVisibility,
+                }}
+                paint={{
+                  'text-opacity': [
+                    'interpolate',
+                    ['exponential', 1],
+                    ['zoom'],
+                    7.5,
+                    0,
+                    7.8,
+                    1,
+                  ],
+                  'text-color': 'white',
+                  'text-halo-color': '#24262b',
+                  'text-halo-width': 1.5,
+                }}
+                // minzoom={tileset.minZoom}
+                // maxzoom={tileset.maxZoom}
+              />
 
-            <Layer
-              id={`${tileset.mapboxSourceId}-area-label`}
-              type="symbol"
-              layout={{
-                ...getAreaLabelLayout(dataByBoundary),
-                visibility: boundaryNameVisibility,
-              }}
-              paint={{
-                'text-color': 'white',
-                'text-opacity': [
-                  'interpolate',
-                  ['exponential', 1],
-                  ['zoom'],
-                  7.5,
-                  0,
-                  7.8,
-                  1,
-                ],
-                'text-halo-color': '#24262b',
-                'text-halo-width': 1.5,
-              }}
-              minzoom={tileset.minZoom}
-              maxzoom={tileset.maxZoom}
-            />
-          </Source>
-        </Fragment>
-      ))}
+              <Layer
+                id={`${tileset.mapboxSourceId}-area-label`}
+                type="symbol"
+                layout={{
+                  ...getAreaLabelLayout(dataByBoundary),
+                  visibility: boundaryNameVisibility,
+                }}
+                paint={{
+                  'text-color': 'white',
+                  'text-opacity': [
+                    'interpolate',
+                    ['exponential', 1],
+                    ['zoom'],
+                    7.5,
+                    0,
+                    7.8,
+                    1,
+                  ],
+                  'text-halo-color': '#24262b',
+                  'text-halo-width': 1.5,
+                }}
+                // minzoom={tileset.minZoom}
+                // maxzoom={tileset.maxZoom}
+              />
+            </Source>
+          </Fragment>
+        )
+      })}
     </>
   )
 }

@@ -42,43 +42,9 @@ export type PoliticalTileset = {
   tilesets: Tileset[]
 }
 
-const MAX_VALID_ZOOM = 24
+export const MAX_VALID_ZOOM = 24
 
 const uk: PoliticalTileset[] = [
-  {
-    label: 'Parliamentary Constituencies',
-    boundaryType: BoundaryType.PARLIAMENTARY_CONSTITUENCIES,
-    tilesets: [
-      {
-        analyticalAreaType: AnalyticalAreaType.ParliamentaryConstituency_2024,
-        name: 'Constituencies',
-        singular: 'constituency',
-        mapboxSourceId: 'commonknowledge.bhg1h3hj',
-        sourceLayerId: 'uk_cons_2025',
-        promoteId: 'gss_code',
-        labelId: 'name',
-        minZoom: 0,
-        maxZoom: MAX_VALID_ZOOM,
-      },
-    ],
-  },
-  {
-    label: 'Wards',
-    boundaryType: BoundaryType.WARDS,
-    tilesets: [
-      {
-        analyticalAreaType: AnalyticalAreaType.AdminWard,
-        name: 'Wards',
-        singular: 'ward',
-        mapboxSourceId: 'commonknowledge.3s92t1yc',
-        sourceLayerId: 'converted_uk_wards_2025',
-        promoteId: 'WD24CD',
-        labelId: 'WD24NM',
-        minZoom: 0,
-        maxZoom: MAX_VALID_ZOOM,
-      },
-    ],
-  },
   // {
   //   boundaryType: AnalyticalAreaType.Country,
   //   label: 'Countries',
@@ -109,6 +75,34 @@ const uk: PoliticalTileset[] = [
     ],
   },
   {
+    label: 'Parliamentary Constituencies',
+    boundaryType: BoundaryType.PARLIAMENTARY_CONSTITUENCIES,
+    tilesets: [
+      {
+        analyticalAreaType: AnalyticalAreaType.ParliamentaryConstituency_2024,
+        name: 'Constituencies',
+        singular: 'constituency',
+        mapboxSourceId: 'commonknowledge.bhg1h3hj',
+        sourceLayerId: 'uk_cons_2025',
+        promoteId: 'gss_code',
+        labelId: 'name',
+        minZoom: 0,
+        maxZoom: 10,
+      },
+      {
+        analyticalAreaType: AnalyticalAreaType.AdminWard,
+        name: 'Wards',
+        singular: 'ward',
+        mapboxSourceId: 'commonknowledge.3s92t1yc',
+        sourceLayerId: 'converted_uk_wards_2025',
+        promoteId: 'WD24CD',
+        labelId: 'WD24NM',
+        minZoom: 10,
+        maxZoom: MAX_VALID_ZOOM,
+      },
+    ],
+  },
+  {
     label: 'Local Authority Districts',
     boundaryType: BoundaryType.LOCAL_AUTHORITIES,
     tilesets: [
@@ -121,6 +115,34 @@ const uk: PoliticalTileset[] = [
         promoteId: 'LAD23CD',
         labelId: 'LAD23NM',
         minZoom: 0,
+        maxZoom: 10,
+      },
+      {
+        analyticalAreaType: AnalyticalAreaType.AdminWard,
+        name: 'Wards',
+        singular: 'ward',
+        mapboxSourceId: 'commonknowledge.3s92t1yc',
+        sourceLayerId: 'converted_uk_wards_2025',
+        promoteId: 'WD24CD',
+        labelId: 'WD24NM',
+        minZoom: 10,
+        maxZoom: MAX_VALID_ZOOM,
+      },
+    ],
+  },
+  {
+    label: 'Wards',
+    boundaryType: BoundaryType.WARDS,
+    tilesets: [
+      {
+        analyticalAreaType: AnalyticalAreaType.AdminWard,
+        name: 'Wards',
+        singular: 'ward',
+        mapboxSourceId: 'commonknowledge.3s92t1yc',
+        sourceLayerId: 'converted_uk_wards_2025',
+        promoteId: 'WD24CD',
+        labelId: 'WD24NM',
+        minZoom: 10,
         maxZoom: MAX_VALID_ZOOM,
       },
     ],
@@ -150,7 +172,7 @@ const uk: PoliticalTileset[] = [
         promoteId: 'LSOA21CD',
         labelId: 'LSOA21NM',
         minZoom: 10,
-        maxZoom: 13,
+        maxZoom: 15,
         useBoundsInDataQuery: true,
       },
       {
@@ -161,7 +183,7 @@ const uk: PoliticalTileset[] = [
         sourceLayerId: 'output_areas_latlng-8qk00p',
         promoteId: 'OA21CD',
         labelId: 'OA21CD',
-        minZoom: 13,
+        minZoom: 15,
         maxZoom: MAX_VALID_ZOOM,
         useBoundsInDataQuery: true,
       },
