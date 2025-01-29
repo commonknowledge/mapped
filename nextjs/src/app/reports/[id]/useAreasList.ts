@@ -1,6 +1,8 @@
 import { useActiveTileset, useLoadedMap } from '@/lib/map'
+import { useView } from '@/lib/map/useView'
 import { useEffect, useState } from 'react'
 import { BoundaryType } from './politicalTilesets'
+import { ViewType } from './reportContext'
 
 interface Area {
   gss: string
@@ -10,7 +12,8 @@ interface Area {
 export function useAreasList(boundaryType: BoundaryType | undefined) {
   const map = useLoadedMap()
   const [areas, setAreas] = useState<Area[]>([])
-  const tileset = useActiveTileset(boundaryType)
+  const view = useView(ViewType.Map)
+  const tileset = useActiveTileset(boundaryType, view.currentViewOfType)
 
   useEffect(() => {
     if (!map.loaded || !tileset || !map.loadedMap) return

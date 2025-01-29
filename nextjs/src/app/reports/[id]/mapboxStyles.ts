@@ -64,7 +64,8 @@ export function getChoroplethFill(
 }
 
 export function getChoroplethEdge(
-  visible?: boolean
+  visible?: boolean,
+  isFocused?: boolean
 ): LineLayerSpecification['paint'] {
   return {
     'line-color': 'white',
@@ -76,10 +77,10 @@ export function getChoroplethEdge(
           ['zoom'],
           //
           8,
-          0.3,
+          isFocused ? 0.3 : 0.1,
           //
           12,
-          1,
+          isFocused ? 1 : 0.5,
         ]
       : 0,
     'line-width': [
@@ -88,10 +89,10 @@ export function getChoroplethEdge(
       ['zoom'],
       //
       8,
-      0.3,
+      isFocused ? 0.5 : 0.1,
       //
       12,
-      2,
+      isFocused ? 2.5 : 1,
     ],
   }
 }

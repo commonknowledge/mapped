@@ -54,7 +54,8 @@ export default function ReportMapChoroplethLegend() {
   )
 
   const activeTileset = useActiveTileset(
-    viewManager.currentViewOfType?.mapOptions.choropleth.boundaryType
+    viewManager.currentViewOfType?.mapOptions.choropleth.boundaryType,
+    viewManager.currentViewOfType
   )
 
   const { loading, data } = useDataByBoundary({
@@ -316,6 +317,8 @@ export default function ReportMapChoroplethLegend() {
               onChange={(d) => {
                 viewManager.updateView((draft) => {
                   draft.mapOptions.choropleth.boundaryType = d as BoundaryType
+                  // unset the analytical area type
+                  // delete draft.mapOptions.choropleth.lockedOnAnalyticalAreaType
                 })
               }}
             />

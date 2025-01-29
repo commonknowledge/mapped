@@ -14,6 +14,7 @@ import {
   RecordGeometryQuery,
   RecordGeometryQueryVariables,
 } from '@/__generated__/graphql'
+import { SpecificViewConfig, ViewType } from '@/app/reports/[id]/reportContext'
 import { gql, useApolloClient } from '@apollo/client'
 import { useLoadedMap } from '.'
 import { createNuqsParserFromZodResolver } from '../parsers'
@@ -194,12 +195,25 @@ export function useMapZoom() {
   return useAtom(zoomAtom)
 }
 
-export function useActiveTileset(boundaryType: BoundaryType | undefined) {
+export function useActiveTileset(
+  boundaryType: BoundaryType | undefined,
+  view?: SpecificViewConfig<ViewType.Map>
+) {
   const [zoom] = useMapZoom()
 
   const politicalTileset =
     POLITICAL_BOUNDARIES.find((t) => t.boundaryType === boundaryType) ||
     POLITICAL_BOUNDARIES[0]
+
+  if (view?.mapOptions.choropleth.lockedOnAnalyticalAreaType) {
+    return (
+      politicalTileset.tilesets.find(
+        (t) =>
+          t.analyticalAreaType ===
+          view!.mapOptions.choropleth.lockedOnAnalyticalAreaType
+      ) || politicalTileset.tilesets[0]
+    )
+  }
 
   const tileset = politicalTileset.tilesets.filter(
     (t) => zoom >= t.minZoom && zoom <= t.maxZoom

@@ -1,4 +1,5 @@
 import {
+  AnalyticalAreaType,
   AreaQueryMode,
   ChoroplethMode,
   DataSourceType,
@@ -160,7 +161,12 @@ const mapOptionsSchema = z.object({
     .object({
       boundaryType: z
         .nativeEnum(BoundaryType)
-        .default(BoundaryType.PARLIAMENTARY_CONSTITUENCIES),
+        .default(BoundaryType.PARLIAMENTARY_CONSTITUENCIES)
+        .describe('Boundary hierarchy'),
+      lockedOnAnalyticalAreaType: z
+        .nativeEnum(AnalyticalAreaType)
+        .optional()
+        .describe('Specific boundary'),
       palette: z.nativeEnum(Palette).default(Palette.Inferno),
       isPaletteReversed: z.boolean().optional(),
       layerId: z.string().uuid().optional(),
@@ -170,6 +176,22 @@ const mapOptionsSchema = z.object({
     })
     .optional()
     .default({}),
+  // TODO: Validate lockOn
+  // .transform((data) => {
+  //   // Ensure that analyticalAreaType is a valid key for the boundaryType
+  //   const boundaryHierarchy = POLITICAL_BOUNDARIES.find(
+  //     (b) => b.boundaryType === data.boundaryType
+  //   )
+  //   if (
+  //     boundaryHierarchy &&
+  //     !boundaryHierarchy.tilesets.some(
+  //       (t) => t.analyticalAreaType === data.analyticalAreaType
+  //     )
+  //   ) {
+  //     data.analyticalAreaType = undefined
+  //   }
+  //   return data
+  // }),
   display: z
     .object({
       choropleth: z.boolean().default(true),
