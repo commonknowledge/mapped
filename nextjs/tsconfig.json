@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
+    // `strictNullChecks` requested by XState - https://stately.ai/docs/typescript#set-up-your-tsconfigjson-file
+    "strictNullChecks": true,
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,

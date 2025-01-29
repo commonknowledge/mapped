@@ -1,8 +1,5 @@
-import { Metadata } from 'next'
-
 import { requireAuth } from '@/lib/server-auth'
-
-import NewExternalDataSourceWrapper from './NewExternalDataSourceWrapper'
+import { Metadata } from 'next'
 
 export default async function Layout({
   children,
@@ -10,8 +7,7 @@ export default async function Layout({
   children: React.ReactNode
 }) {
   await requireAuth()
-
-  return <NewExternalDataSourceWrapper>{children}</NewExternalDataSourceWrapper>
+  return children
 }
 
 export const metadata: Metadata = {
