@@ -29,7 +29,7 @@ export const externalDataSourceOptions: Record<
     key: CrmType
     modelName: string
     name: string
-    icon?: ({ className }: { className?: string | undefined }) => any
+    icon: ({ className }: { className?: string | undefined }) => any
     logo: ({ className }: { className?: string | undefined }) => any
     screenshot: string
     supported: boolean

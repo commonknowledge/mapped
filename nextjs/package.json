@@ -84,6 +84,7 @@
     "jotai": "^2.7.1",
     "jotai-effect": "^0.6.0",
     "jotai-location": "^0.5.4",
+    "jotai-xstate": "^0.6.1",
     "js-cookie": "^3.0.5",
     "keyboard-key": "^1.1.0",
     "lodash": "^4.17.21",
@@ -121,6 +122,7 @@
     "update": "^0.7.4",
     "uuid": "^11.0.3",
     "vanilla-cookieconsent": "^3.0.1",
+    "xstate": "^5.19.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {
