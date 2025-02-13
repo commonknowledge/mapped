@@ -59,6 +59,7 @@ const makeBackEndClient = (token: string = '') => {
   return new NextSSRApolloClient({
     cache: new NextSSRInMemoryCache(),
     link: ApolloLink.from([authLink, httpLink]),
+    connectToDevTools: true,
   })
 }
 

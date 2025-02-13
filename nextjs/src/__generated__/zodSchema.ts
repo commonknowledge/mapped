@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ActionNetworkSourceInput, AggregationDefinition, AggregationOp, AirtableSourceInput, AnalyticalAreaType, AreaQueryMode, CalculatedColumn, CommonDataLoaderFilter, CreateExternalDataSourceInput, CreateOrganisationInput, CrmType, DataSourceType, DatetimeDatetimeFilterLookup, DatetimeRangeLookup, EditableGoogleSheetsSourceInput, ExternalDataSourceFilter, ExternalDataSourceInput, GeoJsonTypes, GeographyTypes, GroupByColumn, HubPageInput, IdBaseFilterLookup, IdObject, IntComparisonFilterLookup, IntRangeLookup, MailChimpSourceInput, MapBounds, MapLayerInput, MapReportInput, OffsetPaginationInput, OneToManyInput, OperationMessageKind, OrganisationFilters, OrganisationInputPartial, PersonFilter, ProcrastinateJobStatus, QueueFilter, ReportFilter, SharingPermissionCudInput, SharingPermissionInput, StatisticsConfig, StrFilterLookup, TicketTailorSourceInput, UpdateMappingItemInput, WebhookType } from './graphql'
+import { ActionNetworkSourceInput, AggregationDefinition, AggregationOp, AirtableSourceInput, AnalyticalAreaType, AreaFilter, AreaQueryMode, AreaTypeFilter, CalculatedColumn, CommonDataLoaderFilter, CreateExternalDataSourceInput, CreateOrganisationInput, CrmType, DataSourceType, DatetimeDatetimeFilterLookup, DatetimeRangeLookup, EditableGoogleSheetsSourceInput, ExternalDataSourceFilter, ExternalDataSourceInput, GeoJsonTypes, GeographyTypes, GroupByColumn, HubPageInput, IdBaseFilterLookup, IdObject, IntComparisonFilterLookup, IntRangeLookup, MailChimpSourceInput, MapBounds, MapLayerInput, MapReportInput, OffsetPaginationInput, OneToManyInput, OperationMessageKind, OrganisationFilters, OrganisationInputPartial, PersonFilter, ProcrastinateJobStatus, QueueFilter, ReportFilter, SharingPermissionCudInput, SharingPermissionInput, StatisticsConfig, StrFilterLookup, TicketTailorSourceInput, UpdateMappingItemInput, WebhookType } from './graphql'
 
 type Properties<T> = Required<{
   [K in keyof T]: z.ZodType<T[K], any, T[K]>;
@@ -103,6 +103,31 @@ export function AirtableSourceInputSchema(): z.ZodObject<Properties<AirtableSour
     tableId: z.string(),
     titleField: z.string().nullish(),
     updateMapping: z.array(z.lazy(() => UpdateMappingItemInputSchema())).nullish()
+  })
+}
+
+export function AreaFilterSchema(): z.ZodObject<Properties<AreaFilter>> {
+  return z.object({
+    AND: AreaFilterSchema().nullish(),
+    DISTINCT: z.boolean().nullish(),
+    NOT: AreaFilterSchema().nullish(),
+    OR: AreaFilterSchema().nullish(),
+    analyticalAreaType: AnalyticalAreaTypeSchema.nullish(),
+    gss: StrFilterLookupSchema().nullish(),
+    id: IdBaseFilterLookupSchema().nullish(),
+    mapBounds: MapBoundsSchema().nullish(),
+    name: StrFilterLookupSchema().nullish()
+  })
+}
+
+export function AreaTypeFilterSchema(): z.ZodObject<Properties<AreaTypeFilter>> {
+  return z.object({
+    AND: AreaTypeFilterSchema().nullish(),
+    DISTINCT: z.boolean().nullish(),
+    NOT: AreaTypeFilterSchema().nullish(),
+    OR: AreaTypeFilterSchema().nullish(),
+    analyticalAreaType: AnalyticalAreaTypeSchema.nullish(),
+    id: IdBaseFilterLookupSchema().nullish()
   })
 }
 

@@ -12,7 +12,7 @@ export const login = (
   const cookieExpires = new Date(expiresISODate).toUTCString()
   document.cookie = `jwt=${jwt}; path=/; expires=${cookieExpires}`
   window.location.href = new URL(
-    redirect || '/',
+    (redirect.startsWith('/') ? redirect : '/') || '/',
     window.location.href
   ).toString()
 }

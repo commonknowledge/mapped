@@ -98,6 +98,9 @@ class Query(UserQueries):
         resolver=model_types.public_map_report
     )
     area: Optional[model_types.Area] = model_types.area_by_gss
+    areas: List[model_types.Area] = strawberry_django.field()
+    area_type: Optional[model_types.AreaType] = strawberry_django.field()
+    area_types: List[model_types.AreaType] = strawberry_django.field()
     dataSet: Optional[model_types.DataSet] = model_types.dataset_by_name
     mapping_sources: List[model_types.MappingSource] = strawberry_django.field(
         resolver=model_types.mapping_sources,

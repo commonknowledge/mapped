@@ -49,6 +49,16 @@ lih_to_postcodes_io_key_map = {
 }
 
 
+def generate_postcodes_io_key_to_lih_map() -> dict[AnalyticalAreaType, list[str]]:
+    return {
+        v: [k for k, v2 in lih_to_postcodes_io_key_map.items() if v2 == v]
+        for v in AnalyticalAreaType
+    }
+
+
+postcodes_io_key_to_lih_map = generate_postcodes_io_key_to_lih_map()
+
+
 def area_to_postcode_io_key(area: "Area"):
     if area.mapit_type in ["LBO", "UTA", "COI", "LGD", "MTD", "DIS", "NMD"]:
         return AnalyticalAreaType.admin_district

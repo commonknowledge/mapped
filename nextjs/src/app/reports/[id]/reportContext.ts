@@ -275,6 +275,7 @@ const mapOptionsSchema = z.object({
       choroplethValueLabels: z.boolean().default(true),
       boundaryNames: z.boolean().default(true),
       streetDetails: z.boolean().optional(),
+      labelsForAllAreas: z.boolean().default(false),
     })
     .default({}),
   layers: z

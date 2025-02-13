@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 
@@ -29,8 +30,10 @@ from utils.statistics import (
 logger = logging.getLogger(__name__)
 
 
-@strawberry.type
-class AreaTypeFilter:
+@dataclass
+class AreaTypeDjangoFilter:
+    name: Optional[str] = None
+    area_type: Optional[str] = None
     lih_area_type: Optional[str] = None
     mapit_area_types: Optional[list[str]] = None
 
@@ -51,24 +54,30 @@ class AreaTypeFilter:
 # Provides a map from postcodes.io area type to Local Intelligence Hub
 # area types, or mapit types if LIH is misaligned.
 postcodeIOKeyAreaTypeLookup = {
-    AnalyticalAreaType.parliamentary_constituency: AreaTypeFilter(lih_area_type="WMC"),
-    AnalyticalAreaType.parliamentary_constituency_2024: AreaTypeFilter(
+    AnalyticalAreaType.parliamentary_constituency: AreaTypeDjangoFilter(
+        lih_area_type="WMC"
+    ),
+    AnalyticalAreaType.parliamentary_constituency_2024: AreaTypeDjangoFilter(
         lih_area_type="WMC23"
     ),
-    AnalyticalAreaType.admin_district: AreaTypeFilter(
+    AnalyticalAreaType.admin_district: AreaTypeDjangoFilter(
         mapit_area_types=["LBO", "UTA", "COI", "LGD", "MTD", "DIS", "NMD"]
     ),
-    AnalyticalAreaType.admin_county: AreaTypeFilter(mapit_area_types=["CTY"]),
-    AnalyticalAreaType.admin_ward: AreaTypeFilter(lih_area_type="WD23"),
-    AnalyticalAreaType.european_electoral_region: AreaTypeFilter(lih_area_type="EER"),
-    AnalyticalAreaType.european_electoral_region: AreaTypeFilter(lih_area_type="CTRY"),
-    AnalyticalAreaType.msoa: AreaTypeFilter(lih_area_type="MSOA"),
-    AnalyticalAreaType.lsoa: AreaTypeFilter(lih_area_type="LSOA"),
-    AnalyticalAreaType.output_area: AreaTypeFilter(lih_area_type="OA21"),
-    AnalyticalAreaType.postcode: AreaTypeFilter(lih_area_type="PC"),
-    AnalyticalAreaType.postcode_area: AreaTypeFilter(lih_area_type="PCA"),
-    AnalyticalAreaType.postcode_district: AreaTypeFilter(lih_area_type="PCD"),
-    AnalyticalAreaType.postcode_sector: AreaTypeFilter(lih_area_type="PCS"),
+    AnalyticalAreaType.admin_county: AreaTypeDjangoFilter(mapit_area_types=["CTY"]),
+    AnalyticalAreaType.admin_ward: AreaTypeDjangoFilter(lih_area_type="WD23"),
+    AnalyticalAreaType.european_electoral_region: AreaTypeDjangoFilter(
+        lih_area_type="EER"
+    ),
+    AnalyticalAreaType.european_electoral_region: AreaTypeDjangoFilter(
+        lih_area_type="CTRY"
+    ),
+    AnalyticalAreaType.msoa: AreaTypeDjangoFilter(lih_area_type="MSOA"),
+    AnalyticalAreaType.lsoa: AreaTypeDjangoFilter(lih_area_type="LSOA"),
+    AnalyticalAreaType.output_area: AreaTypeDjangoFilter(lih_area_type="OA21"),
+    AnalyticalAreaType.postcode: AreaTypeDjangoFilter(lih_area_type="PC"),
+    AnalyticalAreaType.postcode_area: AreaTypeDjangoFilter(lih_area_type="PCA"),
+    AnalyticalAreaType.postcode_district: AreaTypeDjangoFilter(lih_area_type="PCD"),
+    AnalyticalAreaType.postcode_sector: AreaTypeDjangoFilter(lih_area_type="PCS"),
 }
 
 

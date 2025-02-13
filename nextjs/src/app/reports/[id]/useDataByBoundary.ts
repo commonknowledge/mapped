@@ -146,15 +146,6 @@ export const STATISTICS_QUERY = gql`
       formattedCount
       category
       columns
-      gssArea {
-        point {
-          type
-          geometry {
-            type
-            coordinates
-          }
-        }
-      }
     }
   }
 `
