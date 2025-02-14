@@ -48,6 +48,8 @@ lih_to_postcodes_io_key_map = {
     "PCS": AnalyticalAreaType.postcode_sector,
 }
 
+postcodes_io_key_to_lih_map = {v: k for k, v in lih_to_postcodes_io_key_map.items()}
+
 
 def area_to_postcode_io_key(area: "Area"):
     if area.mapit_type in ["LBO", "UTA", "COI", "LGD", "MTD", "DIS", "NMD"]:

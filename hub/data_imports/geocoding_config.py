@@ -20,6 +20,7 @@ from utils.findthatpostcode import (
     get_postcode_from_coords_ftp,
 )
 from utils.py import are_dicts_equal, ensure_list, find
+from utils.statistics import StatisticalDataType
 
 logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
@@ -56,6 +57,8 @@ class GeocodeResult:
     data_type: "DataType"
     data: str
     json: dict
+    parsed_json: dict
+    column_types: dict[str, StatisticalDataType]
     geocoder: str = None
     geocode_data: dict = None
     postcode_data: dict = None
@@ -159,6 +162,7 @@ async def geocode_record(
 
     id = source.get_record_id(record)
     update_data = get_update_data(source, record)
+
     update_data["geocode_data"] = update_data.get("geocode_data", {})
     update_data["geocode_data"]["config"] = source.geocoding_config
 
@@ -223,17 +227,18 @@ async def geocode_record(
                 update_data["geocode_data"] = generic_data.geocode_data or {}
                 update_data["geocode_data"]["skipped"] = True
                 # Return a complete GeocodeResult to avoid clearing previous data
-                kwargs = {
-                    **update_data,
-                    "data_type": data_type,
-                    "data": id,
-                    "geocoder": generic_data.geocoder,
-                    "geocode_data": update_data["geocode_data"],
-                    "postcode_data": generic_data.postcode_data,
-                    "area": generic_data.area,
-                    "point": generic_data.point,
-                }
-                return GeocodeResult(**kwargs)
+                return GeocodeResult(
+                    data_type=data_type,
+                    data=id,
+                    json=update_data["json"],
+                    parsed_json=update_data["parsed_json"],
+                    column_types=update_data["column_types"],
+                    geocoder=generic_data.geocoder,
+                    geocode_data=generic_data.geocode_data,
+                    postcode_data=generic_data.postcode_data,
+                    area=generic_data.area,
+                    point=generic_data.point,
+                )
     except GenericData.DoesNotExist:
         # logger.debug("Generic Data doesn't exist, no equality check to be done", id)
         pass

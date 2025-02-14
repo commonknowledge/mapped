@@ -1,78 +1,149 @@
 import re
 import unicodedata
+from enum import Enum
+from typing import Any
 
-import numpy as np
-from pandas import Series, to_numeric
+from pandas import Series
 
 currency_symbols = "".join(
     chr(i) for i in range(0xFFFF) if unicodedata.category(chr(i)) == "Sc"
 )
 
 
-def attempt_interpret_series_as_number(series: Series):
-    # cleanup
-    series = series.apply(parse_as_number)
-    return series
+class StatisticalDataType(Enum):
+    BOOL = "bool"
+    INT = "int"
+    FLOAT = "float"
+    PERCENTAGE = "percentage"
+    STRING = "string"
+    UNKNOWN = "string"
+    EMPTY = "empty"
+
+    @classmethod
+    def parse(cls, x: Any) -> tuple[Any, "StatisticalDataType"]:
+        # 1. Simple typing
+        if x is None:
+            return x, cls.EMPTY
+
+        if isinstance(x, bool):
+            return x, cls.BOOL
+
+        if isinstance(x, int):
+            return x, cls.INT
+
+        if isinstance(x, float):
+            return x, cls.FLOAT
+
+        # 2. Empty check
+        x_str = str(x).strip()
+        if not x_str:
+            return x_str, cls.EMPTY
+
+        # 3. Percentage parsing
+        if (
+            x_str[-1] == "%"
+            and (parsed := parse_str_as_number(x_str[0:-1])) is not None
+        ):
+            parsed = parsed / 100
+            return parsed, cls.PERCENTAGE
+
+        # 4. Numeric parsing
+        parsed = parse_str_as_number(x_str)
+        if isinstance(parsed, int):
+            return parsed, cls.INT
+
+        if isinstance(parsed, float):
+            return parsed, cls.FLOAT
+
+        # 5. Check if original value was a non-numeric string
+        if isinstance(x, str):
+            return x.strip(), cls.STRING
+
+        # 6. UNKNOWN base case
+        return x, cls.UNKNOWN
+
+    def get_python_type(self):
+        _PYTHON_TYPES = {
+            self.BOOL: bool,
+            self.INT: int,
+            self.FLOAT: float,
+            self.PERCENTAGE: float,
+            self.STRING: str,
+            self.UNKNOWN: str,
+            self.EMPTY: str,
+        }
+        return _PYTHON_TYPES.get(self, str)
+
+    def get_database_type(self):
+        _DB_TYPES = {
+            self.BOOL: "bool",
+            self.INT: "int",
+            self.FLOAT: "float",
+            self.PERCENTAGE: "float",
+            self.STRING: "varchar",
+            self.UNKNOWN: "varchar",
+            self.EMPTY: "varchar",
+        }
+        return _DB_TYPES.get(self, "varchar")
+
+    def get_statistical_type(self):
+        _STAT_TYPES = {
+            self.BOOL: "boolean",
+            self.INT: "numerical",
+            self.FLOAT: "numerical",
+            self.PERCENTAGE: "percentage",
+            self.STRING: "categorical",
+            self.UNKNOWN: "categorical",
+            self.EMPTY: "empty",
+        }
+        return _STAT_TYPES.get(self, "categorical")
 
 
-def attempt_interpret_series_as_percentage(series: Series):
-    # cleanup
-    series = attempt_interpret_series_as_number(series)
-    # as percentage
-    series = series / 100
-    return series
+def parse_and_type_json(json: dict) -> tuple[dict, dict[str, StatisticalDataType]]:
+    """
+    For all keys in the provided json, if they are numeric or a percentage,
+    parse them into ints or floats. Returns a tuple: the parsed data,
+    and a map of column name to data type.
+    """
+    parsed = {}
+    column_types = {}
+    for key, v in json.items():
+        value, type = StatisticalDataType.parse(v)
+        parsed[key] = value
+        column_types[key] = type
+    return parsed, column_types
 
 
-def check_numeric(x):
+def merge_column_types(
+    target: dict[str, StatisticalDataType], extra: dict[str, StatisticalDataType]
+) -> None:
+    for key in extra.keys():
+        # Record the data type of this key
+        if key not in target:
+            target[key] = extra[key]
+        # If this key has a variable type, mark as "other"
+        elif target[key] != extra[key]:
+            target[key] = StatisticalDataType.UNKNOWN
+
+
+def parse_str_as_number(x: str) -> int | float | None:
+    if not re.search(r"\d", x):
+        return None
+
+    x = re.sub(rf"\s|\t|,|^[{currency_symbols}%]|[{currency_symbols}%]$", "", x)
+
     try:
-        if isinstance(x, (int, float)):
-            return True
-        if x == "" or x is None:
-            return True
-        # check if any numeric values are in the string at all
-        if re.search(r"\d", x):
-            x = parse_as_number(x)
-            return isinstance(x, (int, float, np.int64, np.float64))
-    except Exception:
-        pass
-    return False
-
-
-def check_percentage(x):
-    try:
-        if isinstance(x, (int, float)):
-            return False
-        if x == "" or x is None:
-            # Allow blanks
-            return True
-        if x[-1] == "%":
-            return check_numeric(x)
-    except Exception:
-        pass
-    # If it's not blank and not a percentage...
-    return False
+        return int(x)
+    except ValueError:
+        try:
+            return float(x)
+        except ValueError:
+            pass
+    return None
 
 
 def get_mode(series: Series):
     try:
         return series.mode()[0]
     except KeyError:
-        return None
-
-
-def parse_as_number(value: str | float | int | np.int64 | np.float64):
-    try:
-        initial_value = value
-        if initial_value is None or initial_value == "":
-            return None
-        value = str(value)
-        # Remove all spaces, tabs, commas, currency symbols and %
-        # TODO: make this locale-aware
-        value = re.sub(
-            rf"\s|\t|,|^[{currency_symbols}%]|[{currency_symbols}%]$", "", value
-        )
-        # cast as float or int, depending on if there are any decimals:
-        value = to_numeric(value)
-        return value
-    except Exception:
         return None
