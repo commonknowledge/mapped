@@ -9,8 +9,9 @@ import {
 } from '@apollo/experimental-nextjs-app-support/ssr'
 import createUploadLink from 'apollo-upload-client/createUploadLink.mjs'
 
-import { StatisticsQuery } from '@/__generated__/graphql'
+import { Area, GroupedDataCount } from '@/__generated__/graphql'
 import { GRAPHQL_URL } from '@/env'
+import { mergeArraysByField, resolverKeyWithoutArguments } from '@/lib/apollo'
 import { authenticationHeaders } from '@/lib/auth'
 
 /**
@@ -60,34 +61,21 @@ export function makeFrontEndClient() {
             statisticsForChoropleth: {
               // Use all argument values except mapBounds
               // so results for different areas are merged
-              keyArgs: (_args) => {
-                const args = { ..._args }
-                delete args.mapBounds
-                let fullKey = ''
-                for (const key of Object.keys(args)) {
-                  const value = args[key]
-                  fullKey += `${key}:${JSON.stringify(value)};`
-                }
-                return fullKey
-              },
-              merge(existing = [], incoming = []) {
-                // Deduplicate data
-                const dataByGss: Record<
-                  string,
-                  StatisticsQuery['statisticsForChoropleth'][0]
-                > = {}
-                const allData = [...existing, ...incoming]
-                for (const d of allData) {
-                  dataByGss[d.gss || ''] = d
-                }
-                return Object.values(dataByGss)
-              },
+              keyArgs: resolverKeyWithoutArguments(['mapBounds']),
+              merge: mergeArraysByField<GroupedDataCount>('gss'),
+            },
+            areas: {
+              // Use all argument values except mapBounds
+              // so results for different areas are merged
+              keyArgs: resolverKeyWithoutArguments(['filters.mapBounds']),
+              merge: mergeArraysByField<Area>('gss'),
             },
           },
         },
       },
     }),
     link: ApolloLink.from([authLink, httpLink]),
+    connectToDevTools: true,
   })
 }
 

@@ -16,7 +16,7 @@ import { useReport } from '@/lib/map/useReport'
 import { useView } from '@/lib/map/useView'
 import { WritableDraft } from 'immer'
 import { cloneDeep, isEqual } from 'lodash'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { twMerge } from 'tailwind-merge'
@@ -37,6 +37,9 @@ export function StatisticalQueryEditor({
 }) {
   const reportManager = useReport()
   const statisticalVariables = useStatisticalVariables(value)
+  const [excludeColumnsStr, setExcludeColumnsStr] = useState(
+    value.excludeColumns?.join(', ') || ''
+  )
 
   return (
     <>
@@ -196,6 +199,24 @@ export function StatisticalQueryEditor({
         >
           Add
         </Button>
+      </section>
+      <section className="space-y-5 p-4">
+        <h3 className="text-md font-medium">Excluded columns</h3>
+        <EditorTextInput
+          label="Variable names (comma separated)"
+          className="text-xs h-6"
+          value={excludeColumnsStr}
+          onChange={(e) => setExcludeColumnsStr(e.target.value)}
+          onBlur={() => {
+            onChange((draft) => {
+              if (!draft) return
+              draft.excludeColumns = excludeColumnsStr
+                .split(',')
+                .map((v) => v.trim())
+                .filter(Boolean)
+            })
+          }}
+        />
       </section>
       {allowGroupByArea && (
         <section className="space-y-5 p-4">

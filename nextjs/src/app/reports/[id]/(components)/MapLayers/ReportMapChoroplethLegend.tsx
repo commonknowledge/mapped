@@ -190,7 +190,7 @@ export default function ReportMapChoroplethLegend() {
             )
           )}
 
-          <section className="flex flex-col gap-2 px-4 py-3">
+          <section className={'flex flex-col gap-2 px-4 py-3'}>
             <p
               className={twMerge(
                 'text-sm font-medium flex flex-row items-center justify-between gap-2',
@@ -203,7 +203,7 @@ export default function ReportMapChoroplethLegend() {
               <Button
                 onClick={() => refetchChoropleth()}
                 variant="ghost"
-                className="p-0 bg-transparent ml-auto hover:bg-transparent group"
+                className="p-0 bg-transparent ml-auto hover:bg-transparent group h-1"
                 disabled={loading}
               >
                 <ReloadIcon className="w-4 h-4 text-meepGray-400 group-hover:text-meepGray-200" />
@@ -535,37 +535,54 @@ export default function ReportMapChoroplethLegend() {
                 />
               ))}
 
-            {viewManager.currentViewOfType?.mapOptions?.display.choropleth && (
-              <>
-                <MapToggleField
-                  iconComponent={HashIcon}
-                  label="Value labels"
-                  value={
-                    viewManager.currentViewOfType?.mapOptions?.display
-                      .choroplethValueLabels
-                  }
-                  onChange={(choroplethValueLabels) => {
-                    viewManager.updateView((draft) => {
-                      draft.mapOptions.display.choroplethValueLabels =
-                        !!choroplethValueLabels
-                    })
-                  }}
-                />
-                <MapToggleField
+            <MapToggleField
+              iconComponent={LucideType}
+              label="Place labels"
+              value={
+                viewManager.currentViewOfType?.mapOptions?.display.boundaryNames
+              }
+              onChange={(showBoundaryNames) => {
+                viewManager.updateView((draft) => {
+                  draft.mapOptions.display.boundaryNames = !!showBoundaryNames
+                })
+              }}
+            />
+
+            {viewManager.currentViewOfType?.mapOptions?.display.choropleth &&
+              viewManager.currentViewOfType?.mapOptions?.display
+                .boundaryNames && (
+                <EditorSwitch
                   iconComponent={LucideType}
-                  label="Place labels"
+                  label="... when no data"
+                  className="ml-2"
                   value={
                     viewManager.currentViewOfType?.mapOptions?.display
-                      .boundaryNames
+                      .labelsForAllAreas
                   }
-                  onChange={(showBoundaryNames) => {
+                  onChange={(labelsForAllAreas) => {
                     viewManager.updateView((draft) => {
-                      draft.mapOptions.display.boundaryNames =
-                        !!showBoundaryNames
+                      draft.mapOptions.display.labelsForAllAreas =
+                        labelsForAllAreas
                     })
                   }}
                 />
-              </>
+              )}
+
+            {viewManager.currentViewOfType?.mapOptions?.display.choropleth && (
+              <MapToggleField
+                iconComponent={HashIcon}
+                label="Value labels"
+                value={
+                  viewManager.currentViewOfType?.mapOptions?.display
+                    .choroplethValueLabels
+                }
+                onChange={(choroplethValueLabels) => {
+                  viewManager.updateView((draft) => {
+                    draft.mapOptions.display.choroplethValueLabels =
+                      !!choroplethValueLabels
+                  })
+                }}
+              />
             )}
 
             <MapToggleField

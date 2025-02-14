@@ -1,36 +1,36 @@
+import io
 import logging
+from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 
 from django.contrib.gis.db.models import Union as GisUnion
 from django.contrib.gis.geos import Polygon
+from django.db import connection
 from django.db.models import Q
 
 import numexpr as ne
 import numpy as np
 import pandas as pd
 import strawberry
+from sqlglot import parse_one
 
 from hub import models
 from utils.geo_reference import (
     AnalyticalAreaType,
     area_to_postcode_io_key,
-    lih_to_postcodes_io_key_map,
+    postcodes_io_key_to_lih_map,
 )
 from utils.py import ensure_list
-from utils.statistics import (
-    attempt_interpret_series_as_number,
-    attempt_interpret_series_as_percentage,
-    check_numeric,
-    check_percentage,
-    get_mode,
-)
+from utils.statistics import StatisticalDataType, get_mode, merge_column_types
 
 logger = logging.getLogger(__name__)
 
 
-@strawberry.type
-class AreaTypeFilter:
+@dataclass
+class AreaTypeDjangoFilter:
+    name: Optional[str] = None
+    area_type: Optional[str] = None
     lih_area_type: Optional[str] = None
     mapit_area_types: Optional[list[str]] = None
 
@@ -51,24 +51,30 @@ class AreaTypeFilter:
 # Provides a map from postcodes.io area type to Local Intelligence Hub
 # area types, or mapit types if LIH is misaligned.
 postcodeIOKeyAreaTypeLookup = {
-    AnalyticalAreaType.parliamentary_constituency: AreaTypeFilter(lih_area_type="WMC"),
-    AnalyticalAreaType.parliamentary_constituency_2024: AreaTypeFilter(
+    AnalyticalAreaType.parliamentary_constituency: AreaTypeDjangoFilter(
+        lih_area_type="WMC"
+    ),
+    AnalyticalAreaType.parliamentary_constituency_2024: AreaTypeDjangoFilter(
         lih_area_type="WMC23"
     ),
-    AnalyticalAreaType.admin_district: AreaTypeFilter(
+    AnalyticalAreaType.admin_district: AreaTypeDjangoFilter(
         mapit_area_types=["LBO", "UTA", "COI", "LGD", "MTD", "DIS", "NMD"]
     ),
-    AnalyticalAreaType.admin_county: AreaTypeFilter(mapit_area_types=["CTY"]),
-    AnalyticalAreaType.admin_ward: AreaTypeFilter(lih_area_type="WD23"),
-    AnalyticalAreaType.european_electoral_region: AreaTypeFilter(lih_area_type="EER"),
-    AnalyticalAreaType.european_electoral_region: AreaTypeFilter(lih_area_type="CTRY"),
-    AnalyticalAreaType.msoa: AreaTypeFilter(lih_area_type="MSOA"),
-    AnalyticalAreaType.lsoa: AreaTypeFilter(lih_area_type="LSOA"),
-    AnalyticalAreaType.output_area: AreaTypeFilter(lih_area_type="OA21"),
-    AnalyticalAreaType.postcode: AreaTypeFilter(lih_area_type="PC"),
-    AnalyticalAreaType.postcode_area: AreaTypeFilter(lih_area_type="PCA"),
-    AnalyticalAreaType.postcode_district: AreaTypeFilter(lih_area_type="PCD"),
-    AnalyticalAreaType.postcode_sector: AreaTypeFilter(lih_area_type="PCS"),
+    AnalyticalAreaType.admin_county: AreaTypeDjangoFilter(mapit_area_types=["CTY"]),
+    AnalyticalAreaType.admin_ward: AreaTypeDjangoFilter(lih_area_type="WD23"),
+    AnalyticalAreaType.european_electoral_region: AreaTypeDjangoFilter(
+        lih_area_type="EER"
+    ),
+    AnalyticalAreaType.european_electoral_region: AreaTypeDjangoFilter(
+        lih_area_type="CTRY"
+    ),
+    AnalyticalAreaType.msoa: AreaTypeDjangoFilter(lih_area_type="MSOA"),
+    AnalyticalAreaType.lsoa: AreaTypeDjangoFilter(lih_area_type="LSOA"),
+    AnalyticalAreaType.output_area: AreaTypeDjangoFilter(lih_area_type="OA21"),
+    AnalyticalAreaType.postcode: AreaTypeDjangoFilter(lih_area_type="PC"),
+    AnalyticalAreaType.postcode_area: AreaTypeDjangoFilter(lih_area_type="PCA"),
+    AnalyticalAreaType.postcode_district: AreaTypeDjangoFilter(lih_area_type="PCD"),
+    AnalyticalAreaType.postcode_sector: AreaTypeDjangoFilter(lih_area_type="PCS"),
 }
 
 
@@ -250,25 +256,26 @@ def statistics(
         else []
     )
 
-    # --- Get the required data for the source ---
-    qs = (
-        models.GenericData.objects.filter(
-            data_type__data_set__external_data_source_id__in=conf.source_ids
-        )
-        .select_related("area", "area__area_type")
-        .values(
-            "id",
-            "json",
-            "postcode_data",
-            "area__gss",
-            "area__name",
-            "area__area_type__code",
-        )
+    # --- Get the derived types of the JSON data ---
+    sources: list[models.ExternalDataSource] = models.ExternalDataSource.objects.filter(
+        id__in=conf.source_ids, last_import__isnull=False
     )
 
-    # if group_by_area:
-    #     area_type_filter = postcodeIOKeyAreaTypeLookup[group_by_area]
+    column_types: dict[str, StatisticalDataType] = {}
+    for source in sources:
+        current_column_types = {}
+        for column in source.field_definitions:
+            try:
+                data_type = StatisticalDataType(column["type"])
+            except ValueError:
+                data_type = StatisticalDataType.UNKNOWN
+            current_column_types[column["value"]] = data_type
+            merge_column_types(column_types, current_column_types)
 
+    # --- Build the main data query ---
+
+    # Actual SELECT statement is manually constructed below
+    qs = models.GenericData.objects.values_list("id")
     if map_bounds:
         bbox_coords = (
             (map_bounds.west, map_bounds.north),  # Top left
@@ -300,50 +307,60 @@ def statistics(
             filter_generic_data_using_gss_code(conf.gss_codes, conf.area_query_mode)
         )
 
-    # --- Load the data in to a pandas dataframe ---
-    # TODO: get columns from JSON for returning clean data
-    d = [
-        {
-            **record["json"],
-            "postcode_data": record["postcode_data"],
-            "gss": record.get("area__gss"),
-            "area_type": record.get("area__area_type__code"),
-            "label": record.get("area__name"),
-            "id": str(record["id"]),
-        }
-        for record in qs
-    ]
+    # --- Run the query in export to CSV mode for best performance (of both SQL and Pandas) ---
 
-    df = pd.DataFrame(d)
+    df = None
 
-    if len(df) <= 0:
+    sql, params = qs.query.sql_with_params()
+
+    for source in sources:
+        if (
+            not source.last_materialized
+            or source.last_materialized < source.last_import
+        ):
+            source.refresh_materialized_view(column_types)
+
+        with connection.cursor() as cursor:
+            source_sql = cursor.mogrify(sql, params)
+            source_sql = replace_generic_data_with_materialized_view(
+                source_sql, column_types, conf, source.id
+            )
+            buf = io.BytesIO()
+            with cursor.copy(f"COPY ({source_sql}) TO STDOUT WITH CSV HEADER") as copy:
+                for data in copy:
+                    buf.write(data.tobytes())
+            buf.seek(0)
+            this_df = pd.read_csv(buf, header=0, low_memory=False)
+            if not df:
+                df = this_df
+            else:
+                df = pd.concat([df, this_df])
+
+    if df is None or len(df) <= 0:
+        logger.warning(
+            f"Statistics requested for sources {conf.source_ids} but no imported data found."
+        )
         return None
 
     df = df.set_index("id", drop=False)
 
+    df["area_type"] = postcodes_io_key_to_lih_map.get(conf.group_by_area)
+
     # Format numerics
     DEFAULT_EXCLUDE_KEYS = ["id"]
-    user_exclude_keys = ensure_list(conf.exclude_columns or [])
+    user_exclude_keys = [c.strip("`") for c in ensure_list(conf.exclude_columns or [])]
     exclude_keys = [*DEFAULT_EXCLUDE_KEYS, *user_exclude_keys]
-    numerical_keys = []
-    percentage_keys = []
-    for column in df:
-        if column not in exclude_keys:
-            if all(df[column].apply(check_percentage)):
-                df[column] = attempt_interpret_series_as_percentage(df[column])
-                if column not in percentage_keys:
-                    percentage_keys += [str(column)]
-                if column not in numerical_keys:
-                    numerical_keys += [str(column)]
-            elif all(df[column].apply(check_numeric)):
-                df[column] = attempt_interpret_series_as_number(df[column])
-                if column not in numerical_keys:
-                    numerical_keys += [str(column)]
-    # Review the attempt to interpret data as numeric, and update numerical_keys where there is in fact numeric data
+
     numerical_keys = [
-        d
-        for d in df.select_dtypes(include="number").columns.tolist()
-        if d not in exclude_keys
+        f"data_{k}"
+        for k, t in column_types.items()
+        if t.get_statistical_type() in ("numerical", "percentage")
+        and k not in exclude_keys
+    ]
+    percentage_keys = [
+        f"data_{k}"
+        for k, t in column_types.items()
+        if t.get_statistical_type() == "percentage" and k not in exclude_keys
     ]
 
     if len(numerical_keys) > 0:
@@ -369,44 +386,6 @@ def statistics(
     # --- Group by the groupby keys ---
     # respecting aggregation operations
     if conf.group_by_area:
-
-        def get_group_by_area_properties(row):
-            if row is None:
-                return None, None, None
-
-            # Find the key of `lih_to_postcodes_io_key_map` where the value is `group_by_area`:
-            # TODO: check this for admin_county and admin_district. For some admin_districts,
-            # we will return "DIS" when the correct value is "STC".
-            #
-            # admin_county   => MapIt CTY                     => LIH STC
-            # admin_district => MapIt LBO/UTA/COI/LGD/MTD/NMD => LIH STC
-            #                => MapIt DIS                     => LIH DIS
-            area_type = next(
-                (
-                    k
-                    for k, v in lih_to_postcodes_io_key_map.items()
-                    if v == conf.group_by_area
-                ),
-                None,
-            )
-
-            try:
-                return [
-                    row.get("postcode_data", {})
-                    .get("codes", {})
-                    .get(conf.group_by_area.value, None),
-                    row.get("postcode_data", {}).get(conf.group_by_area.value, None),
-                    area_type,
-                ]
-            except Exception:
-                pass
-
-            return None, None, None
-
-        # First, add labels for the group_by_area as an index
-        df["gss"], df["label"], df["area_type"] = zip(
-            *df.apply(get_group_by_area_properties, axis=1)
-        )
         # Make the code an index
         # df = df.set_index("group_by_code")
 
@@ -569,12 +548,7 @@ def statistics(
             )
             aggop = calculated_column_aggop or simple_asserted_aggop or default_aggop
             agg_dict[col] = aggregation_op_to_agg_func(aggop)
-        df_n = (
-            df[[n for n in numerical_keys if n not in exclude_keys]]
-            .reset_index()
-            .drop(columns=[k for k in exclude_keys if k in df.columns])
-        )
-        df_agg = df_n.agg(agg_dict)
+        df_agg = df.agg(agg_dict)
         d = df_agg.to_dict()
         if conf.format_numeric_keys:
             format_dict = {}
@@ -765,3 +739,46 @@ def filter_generic_data_using_gss_code(
             filters |= Q(area__polygon__contains=search_polygon)
 
     return filters
+
+
+def replace_generic_data_with_materialized_view(
+    sql: str,
+    column_types: dict[str, StatisticalDataType],
+    conf: StatisticsConfig,
+    source_id: str,
+):
+    """
+    Modify the SQL generated by the Django ORM to use the materialized view for the data source,
+    instead of the GenericData table.
+    """
+
+    # Use the GenericData table name as the alias of the materialized view
+    # to avoid breaking any existing expressions
+    table_alias = models.GenericData._meta.db_table
+    parsed_sql = parse_one(sql, dialect="postgres").from_(
+        f'"{source_id}_json" AS {table_alias}'
+    )
+
+    # Add each data column to the SELECT
+    for column in column_types.keys():
+        parsed_sql = parsed_sql.select(f'{table_alias}."data_{column}"', append=True)
+
+    # Add postcode_data columns if necessary
+    if conf.group_by_area:
+        parsed_sql = parsed_sql.select(
+            "postcode_data_label", "postcode_data_gss", append=True
+        )
+
+    # Convert to SQL then fix the postcode_data columns, as sqlglot
+    # mangles the `->` and `->>` operators into slower functions
+    sql = parsed_sql.sql(dialect="postgres")
+    if conf.group_by_area:
+        sql = sql.replace(
+            "postcode_data_label",
+            f"{table_alias}.postcode_data->>'{conf.group_by_area.value}' AS label",
+        ).replace(
+            "postcode_data_gss",
+            f"{table_alias}.postcode_data->'codes'->>'{conf.group_by_area.value}' AS gss",
+        )
+
+    return sql
