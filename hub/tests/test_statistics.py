@@ -183,6 +183,60 @@ class TestStatistics(TestCase):
             "The count should be the unadultered Total EU population",
         )
 
+
+    def test_percent_field_value_by_area(self):
+        query_name = get_function_name(self)
+
+        result = self.graphql_query(
+            """
+            query SourceStatsByBoundary($statsConfig: StatisticsConfig!, $choroplethConfig: ChoroplethConfig!) {
+              statisticsForChoropleth(statsConfig: $statsConfig, choroplethConfig: $choroplethConfig) {
+                gss
+                label
+                count
+                formattedCount
+              }
+            }
+            """,
+            {
+                "statsConfig": {
+                    "queryId": query_name,
+                    "sourceIds": [str(self.source.id)],
+                    "groupByArea": AnalyticalAreaType.admin_district.value,
+                    "aggregationOperation": AggregationOp.Mean.value,
+                },
+                "choroplethConfig": {
+                    "countKey": "Percentage registered",
+                    "isCountKeyPercentage": True,
+                },
+            },
+        )
+
+        self.assertIsNone(result.get("errors", None))
+        self.assertEqual(
+            len(result["data"]["statisticsForChoropleth"]),
+            self.geocodable_council_count,
+        )
+        isle_of_anglesey = next(
+            (
+                r
+                for r in result["data"]["statisticsForChoropleth"]
+                if r["label"] == "Isle of Anglesey Council"
+            ),
+            None,
+        )
+        self.assertIsNotNone(isle_of_anglesey)
+        self.assertEqual(
+            isle_of_anglesey["count"],
+            0.2603,
+            "The count should be the plain numeric representation of the percentage",
+        )
+        self.assertEqual(
+            isle_of_anglesey["formattedCount"],
+            "26.03%",
+            "The formatted count should be the percentage",
+        )
+
     def test_formula_by_area(self):
         query_name = get_function_name(self)
 
