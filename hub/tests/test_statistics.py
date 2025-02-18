@@ -17,7 +17,7 @@ password = "12345"
 
 @override_settings(ALLOWED_HOSTS=["testserver"])
 class TestStatistics(TestCase):
-    fixtures = ["councils"]
+    fixtures = ["councils", "regions"]
 
     def setUp(self) -> None:
         # Load areas
@@ -59,6 +59,7 @@ class TestStatistics(TestCase):
         # which have been merged together in the geocoding
         # (see `duplicate_councils`)
         self.geocodable_council_count = 315
+        self.count_regions = models.Area.objects.filter(area_type__code="EER").count()
 
         # Login user
         self.client.login(username=username, password=password)
@@ -183,6 +184,51 @@ class TestStatistics(TestCase):
             "The count should be the unadultered Total EU population",
         )
 
+    def test_field_aggregation_by_area(self):
+        query_name = get_function_name(self)
+
+        result = self.graphql_query(
+            """
+            query SourceStatsByBoundary($statsConfig: StatisticsConfig!, $choroplethConfig: ChoroplethConfig!) {
+              statisticsForChoropleth(statsConfig: $statsConfig, choroplethConfig: $choroplethConfig) {
+                gss
+                label
+                count
+              }
+            }
+            """,
+            {
+                "statsConfig": {
+                    "queryId": query_name,
+                    "sourceIds": [str(self.source.id)],
+                    "groupByArea": AnalyticalAreaType.european_electoral_region.value,
+                    "aggregationOperation": AggregationOp.Sum.value,
+                },
+                "choroplethConfig": {
+                    "countKey": "EU Citizens - Total electors (includes attainers) 1 December 2022",
+                },
+            },
+        )
+
+        self.assertIsNone(result.get("errors", None))
+        self.assertEqual(
+            len(result["data"]["statisticsForChoropleth"]),
+            11,
+        )
+        london = next(
+            (
+                r
+                for r in result["data"]["statisticsForChoropleth"]
+                if r["label"] == "London"
+            ),
+            None,
+        )
+        self.assertIsNotNone(london)
+        self.assertEqual(
+            london["count"],
+            714378,
+            "The numbers should be summed",
+        )
 
     def test_percent_field_value_by_area(self):
         query_name = get_function_name(self)
@@ -235,6 +281,54 @@ class TestStatistics(TestCase):
             isle_of_anglesey["formattedCount"],
             "26.03%",
             "The formatted count should be the percentage",
+        )
+
+    def test_percent_field_aggregation_by_area(self):
+        query_name = get_function_name(self)
+
+        result = self.graphql_query(
+            """
+            query SourceStatsByBoundary($statsConfig: StatisticsConfig!, $choroplethConfig: ChoroplethConfig!) {
+              statisticsForChoropleth(statsConfig: $statsConfig, choroplethConfig: $choroplethConfig) {
+                gss
+                label
+                count
+              }
+            }
+            """,
+            {
+                "statsConfig": {
+                    "queryId": query_name,
+                    "sourceIds": [str(self.source.id)],
+                    "groupByArea": AnalyticalAreaType.european_electoral_region.value,
+                    "aggregationOperation": AggregationOp.Mean.value,
+                },
+                "choroplethConfig": {
+                    "countKey": "Percentage registered",
+                    "isCountKeyPercentage": True,
+                },
+            },
+        )
+
+        self.assertIsNone(result.get("errors", None))
+        self.assertEqual(
+            len(result["data"]["statisticsForChoropleth"]),
+            11,
+        )
+        london = next(
+            (
+                r
+                for r in result["data"]["statisticsForChoropleth"]
+                if r["label"] == "London"
+            ),
+            None,
+        )
+        self.assertIsNotNone(london)
+        self.assertAlmostEqual(
+            london["count"],
+            0.64,
+            2,
+            "The numbers should be averaged",
         )
 
     def test_formula_by_area(self):
