@@ -265,12 +265,6 @@ def statistics(
 
     sql, params = qs.query.sql_with_params()
 
-    print(
-        "qs.values_list(gss, flat=True)",
-        # qs distinct gss count
-        qs.values_list("area__gss", flat=True).distinct().count(),
-    )
-
     # Create a map from database column name to original column name (for human readability)
     df_rename_map = {
         get_materialized_view_column_name(column): column for column in column_types
@@ -311,9 +305,6 @@ def statistics(
     df["area_type"] = postcodes_io_key_to_lih_map.get(conf.group_by_area)
 
     df = df.rename(columns=df_rename_map)
-
-    # tell me how many gss unique values there are:
-    print("nuniquenuniquenuniquenunique", df["gss"].nunique())
 
     # Format numerics
     DEFAULT_EXCLUDE_KEYS = ["id"]

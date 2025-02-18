@@ -2979,3 +2979,41 @@ eu_population_by_la = [
         "EU Citizens - % Total electors": "13.9%",
     },
 ]
+
+duplicate_councils = [
+    {
+        "gss": "E06000065",
+        "name": "North Yorkshire Council",
+        "count": 7,
+    },
+    {
+        "gss": "E06000063",
+        "name": "Cumberland Council",
+        "count": 3,
+    },
+    {
+        "gss": "E06000064",
+        "name": "Westmorland and Furness Council",
+        "count": 3,
+    },
+    {
+        "gss": "E07000127",
+        "name": "West Lancashire Borough Council",
+        "count": 2,
+    },
+    {
+        "gss": "E07000034",
+        "name": "Somerset Council",
+        "count": 4,
+    },
+    {
+        "gss": "E06000024",
+        "name": "Chesterfield Borough Council",
+        "count": 2,
+    },
+    {
+        "gss": "E06000066",
+        "name": "North Somerset Council",
+        "count": 2,
+    },
+]
