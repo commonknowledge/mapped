@@ -21,3 +21,8 @@ def get_uploaded_file(filename, content_type=None, upload_name=None):
         upload_name or os.path.basename(filename),
         content_type or mimetypes.guess_type(filename)[0],
     )
+
+
+def get_function_name(s):
+    query_name = s.__class__.__name__ + "." + s._testMethodName
+    return query_name

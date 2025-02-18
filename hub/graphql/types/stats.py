@@ -177,76 +177,22 @@ class StatisticsConfig:
     format_numeric_keys: Optional[bool] = False
 
 
-"""
-# Some examples of use
-
-Show me the number of reform votes in each area, grouped by reform votes
-modelling swing from conservative and lab to reform:
-
-query SwingToReformByRegion {
-  statistics(
-    # gssCodes:"E15000005",
-    areaQueryMode: AREA_OR_CHILDREN,
-    # groupByArea: european_electoral_region,
-    groupByColumns: [
-      {
-        column: "reform",
-        aggregationOperation: "count"
-      }
-    ]
-    sourceIds: [
-      "5336849b-dea5-43cd-b973-dc507e5301af",
-      # "711400aa-f9c7-439f-9912-2dbe64c3c1cd"
-    ]
-    preGroupByCalculatedColumns: [
-      {
-        name: "conservative",
-        expression: "conservative - 0.03"
-        aggregationOperation: Mean
-      },
-      {
-        name: "labour",
-        expression: "labour - 0.03"
-        aggregationOperation: Mean
-      },
-      {
-        name: "reform",
-        expression: "reform + 0.06"
-        aggregationOperation: Mean
-      }
-    ]
-    calculatedColumns:[{
-      name:"ref_marginality",
-      expression:"reform / second"
-      # expression:"first"
-      # expression:"reform / labour"
-    }]
-    returnColumns: [
-      "first_label",
-      "second_label",
-      "first",
-      "second",
-      # "labour",
-      "majority",
-      # "reform_swing"
-      "label",
-      "area_type",
-      "gss"]
-    # aggregationOperation: Mean
-  )
-}
-"""
+@strawberry.input
+class ChoroplethConfig:
+    category_key: Optional[str] = None
+    count_key: Optional[str] = None
+    is_count_key_percentage: Optional[bool] = False
+    map_bounds: Optional[MapBounds] = None
 
 
 def statistics(
     conf: StatisticsConfig,
+    choropleth_config: Optional[ChoroplethConfig] = None,
     as_grouped_data: bool = False,
-    category_key: Optional[str] = None,
-    count_key: Optional[str] = None,
     return_numeric_keys_only: Optional[bool] = False,
-    map_bounds: Optional[MapBounds] = None,
-    is_count_key_percentage: Optional[bool] = False,
 ):
+    choropleth_config = choropleth_config or ChoroplethConfig()
+
     if not conf.source_ids or len(conf.source_ids) <= 0:
         raise ValueError("At least one source id is required")
 
@@ -281,7 +227,8 @@ def statistics(
 
     # Actual SELECT statement is manually constructed below
     qs = models.GenericData.objects.values_list("id")
-    if map_bounds:
+    if choropleth_config.map_bounds:
+        map_bounds = choropleth_config.map_bounds
         bbox_coords = (
             (map_bounds.west, map_bounds.north),  # Top left
             (map_bounds.east, map_bounds.north),  # Top right
@@ -411,17 +358,18 @@ def statistics(
         df_mode = df[mode_keys].groupby("gss").agg(get_mode)
 
         # Aggregate the numerical columns
+        no_aggregate_keys = numerical_keys + mode_keys + ["id"]
         string_keys_for_aggregation = (
             []
             if return_numeric_keys_only
-            else [c for c in df.columns if c not in numerical_keys + mode_keys + ["id"]]
+            else [c for c in df.columns if c not in no_aggregate_keys]
         )
         if conf.return_columns and len(conf.return_columns) > 0:
             string_keys_for_aggregation = [
-                c
-                for c in string_keys_for_aggregation
-                if c in conf.return_columns or c == category_key
+                c for c in string_keys_for_aggregation if c in conf.return_columns
             ]
+        if choropleth_config.category_key:
+            string_keys_for_aggregation += [choropleth_config.category_key]
         df_stats = df[
             list(
                 set(
@@ -513,10 +461,17 @@ def statistics(
             # Then recalculate based on the formula, since they may've doctored the values.
             df = add_computed_columns(df, numerical_keys)
 
-    if category_key:
-        df["category"] = df[category_key]
-    if count_key:
-        df["count"] = df[count_key]
+    if choropleth_config.category_key or choropleth_config.count_key:
+        if not conf.return_columns or len(conf.return_columns) == 0:
+            conf.return_columns = []
+        if choropleth_config.category_key:
+            df["category"] = df[choropleth_config.category_key]
+            conf.return_columns.append("category")
+        if choropleth_config.count_key:
+            df["count"] = df[choropleth_config.count_key]
+            conf.return_columns.append("count")
+        # dedupe
+        conf.return_columns = list(set(conf.return_columns))
 
     # For serialisation
     df = df.replace({np.nan: 0})
@@ -615,7 +570,10 @@ def statistics(
         if as_grouped_data:
             from hub.graphql.types.model_types import GroupedDataCount
 
-            is_percentage = (count_key in percentage_keys) or is_count_key_percentage
+            is_percentage = (
+                choropleth_config.count_key in percentage_keys
+                or choropleth_config.is_count_key_percentage
+            )
             return [
                 GroupedDataCount(
                     row=row,

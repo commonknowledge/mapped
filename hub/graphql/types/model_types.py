@@ -1582,23 +1582,40 @@ def statistics_for_choropleth(
     # Pick one or more GenericData sets to blend together.
     # they're gonna all be geo-joined for now.
     stats_config: stats.StatisticsConfig,
-    category_key: Optional[str] = None,
-    count_key: Optional[str] = None,
-    is_count_key_percentage: Optional[bool] = False,
-    map_bounds: Optional[stats.MapBounds] = None,
-):
+    choropleth_config: Optional[stats.ChoroplethConfig] = None,
+) -> List[GroupedDataCount]:
+    choropleth_config = choropleth_config or stats.ChoroplethConfig()
+
     user = get_current_user(info)
     for source in stats_config.source_ids:
         assert check_user_can_view_source(user, source)
 
+    # If one requested count or category or gss, for example, ensure they're in there:
+    fields_requested_by_resolver = info.selected_fields[0].selections
+
+    # Start with fields requested by resolver
+    choropleth_statistics_columns = ["label", "gss", "count", "category"]
+    return_columns = [
+        field.name
+        for field in fields_requested_by_resolver
+        if field.name in choropleth_statistics_columns
+    ]
+
+    # Add any existing return columns
+    if stats_config.return_columns:
+        return_columns.extend(stats_config.return_columns)
+
+    # Remove duplicates
+    stats_config.return_columns = list(set(return_columns))
+
+    if "category" in return_columns and not choropleth_config.category_key:
+        raise ValueError("Category key is required when requesting the category field")
+
     return (
         stats.statistics(
             stats_config,
+            choropleth_config,
             as_grouped_data=True,
-            category_key=category_key,
-            count_key=count_key,
-            map_bounds=map_bounds,
-            is_count_key_percentage=is_count_key_percentage,
         )
         or []
     )  # Convert None to empty list for better front-end integration
