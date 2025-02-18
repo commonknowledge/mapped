@@ -49,14 +49,48 @@ class TestStatistics(TestCase):
         )
         # Ingest data
         async_to_sync(self.source.import_many)(self.source.data)
-        self.assertEqual(len(self.source.get_import_data()), len(eu_population_by_la))
+        self.assertEqual(
+            len(self.source.get_import_data()),
+            331,
+            "Something's gone wrong with data ingestion.",
+        )
+        # count distinct admin_district GSS codes
+        self.geocodable_council_count = len(
+            set(
+                [
+                    d.area.gss
+                    for d in self.source.get_import_data().select_related("area")
+                ]
+            )
+        )
+
+        self.assertEqual(
+            self.geocodable_council_count,
+            len(eu_population_by_la),
+            "Something's gone wrong with council geocoding.",
+        )
+
+        gss_key_list = {}
+        for d in self.source.get_import_data().select_related("area"):
+            if d.area.gss is None:
+                print(d)
+            else:
+                if d.area.gss in gss_key_list:
+                    gss_key_list[d.area.gss] += [d.area.gss]
+                else:
+                    gss_key_list[d.area.gss] = [d.area.gss]
+        # print dupes
+        for k, v in gss_key_list.items():
+            if len(v) > 1:
+                self.fail(f"Area data for {k} has {len(v)} duplicates")
+
         # Login user
         self.client.login(username=username, password=password)
         res = self.client.post(
             reverse("graphql"),
             content_type="application/json",
             data={
-                "variables": {"username": "testuser", "password": "12345"},
+                "variables": {"username": username, "password": password},
                 "query": """
                   mutation Login($username: String!, $password: String!) {
                     tokenAuth(username: $username, password: $password) {
@@ -110,12 +144,12 @@ class TestStatistics(TestCase):
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
             len(result["data"]["statisticsForChoropleth"]),
-            len(eu_population_by_la),
-            "There should be as many results as there are rows of data",
+            self.geocodable_council_count,
+            "As many councils as can be geocoded",
         )
         self.assertEqual(
             [r["count"] for r in result["data"]["statisticsForChoropleth"]],
-            [1] * len(eu_population_by_la),
+            [1] * self.geocodable_council_count,
             "Every council should have a count of 1",
         )
 
@@ -148,7 +182,7 @@ class TestStatistics(TestCase):
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
             len(result["data"]["statisticsForChoropleth"]),
-            len(eu_population_by_la),
+            self.geocodable_council_count,
         )
         isle_of_anglesey = next(
             (
@@ -200,8 +234,8 @@ class TestStatistics(TestCase):
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
             len(result["data"]["statisticsForChoropleth"]),
-            len(eu_population_by_la),
-            "There should be as many results as there are rows of data",
+            self.geocodable_council_count,
+            "As many councils as can be geocoded",
         )
         isle_of_anglesey = next(
             (
@@ -247,14 +281,14 @@ class TestStatistics(TestCase):
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
             len(result["data"]["statisticsForChoropleth"]),
-            len(eu_population_by_la),
-            "There should be as many results as there are rows of data",
+            self.geocodable_council_count,
+            "As many councils as can be geocoded",
         )
         self.assertEqual(
             len(
                 set([r["category"] for r in result["data"]["statisticsForChoropleth"]])
             ),
-            len(eu_population_by_la),
+            self.geocodable_council_count,
             "Every category should appear once only, due to the nature of the data",
         )
         self.assertIn(
@@ -294,7 +328,7 @@ class TestStatistics(TestCase):
         )
         self.assertEqual(
             result["data"]["statistics"][0]["Total EU population"],
-            29674,
+            3643214,
             "The sum should be a sum of all the values",
         )
 
@@ -330,7 +364,7 @@ class TestStatistics(TestCase):
         )
         self.assertAlmostEqual(
             result["data"]["statistics"][0]["Total EU population"],
-            2697.6363636363635,
+            11006.688821752266,
             1,
             "Take an average of all the values",
         )
