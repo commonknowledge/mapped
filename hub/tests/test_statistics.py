@@ -158,7 +158,7 @@ class TestStatistics(TestCase):
                     "aggregationOperation": AggregationOp.Sum.value,
                 },
                 "choroplethConfig": {
-                    "countKey": "Total EU population",
+                    "countKey": "EU Citizens - Total electors (includes attainers) 1 December 2022",
                 },
             },
         )
@@ -179,7 +179,7 @@ class TestStatistics(TestCase):
         self.assertIsNotNone(isle_of_anglesey)
         self.assertEqual(
             isle_of_anglesey["count"],
-            1137,
+            296,
             "The count should be the unadultered Total EU population",
         )
 
