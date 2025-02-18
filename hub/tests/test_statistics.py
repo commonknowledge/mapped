@@ -1,6 +1,3 @@
-import json
-
-from django.contrib.gis.geos import Point
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
@@ -9,7 +6,6 @@ from asgiref.sync import async_to_sync
 from hub import models
 from hub.graphql.types.stats import AggregationOp
 from hub.tests.utils import get_function_name
-from utils import geo
 from utils.geo_reference import AnalyticalAreaType
 
 from .fixtures.statistics import eu_population_by_la
