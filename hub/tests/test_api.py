@@ -1,6 +1,5 @@
 import json
 
-from django.conf import settings
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -26,9 +25,6 @@ class TestPublicAPI(TestCase):
                 name="Mayoral regions custom data layer",
                 data_type=models.AirtableSource.DataSourceType.OTHER,
                 organisation=cls.org,
-                base_id=settings.TEST_AIRTABLE_CUSTOMDATALAYER_BASE_ID,
-                table_id=settings.TEST_AIRTABLE_CUSTOMDATALAYER_TABLE_NAME,
-                api_key=settings.TEST_AIRTABLE_CUSTOMDATALAYER_API_KEY,
                 geography_column="council district",
                 geography_column_type=models.AirtableSource.GeographyTypes.ADMIN_DISTRICT,
             )

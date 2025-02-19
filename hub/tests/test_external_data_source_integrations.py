@@ -11,9 +11,10 @@ from django.core.files import File
 from django.db.utils import IntegrityError
 from django.test import TestCase
 
-from asgiref.sync import sync_to_async
+from asgiref.sync import async_to_sync, sync_to_async
 
 from hub import models
+from hub.tests.fixtures import custom_lookup
 
 
 class TestExternalDataSource:
@@ -34,18 +35,18 @@ class TestExternalDataSource:
             name="Test Organisation", slug="test-organisation"
         )
 
-        self.custom_data_layer: models.AirtableSource = (
-            models.AirtableSource.objects.create(
+        self.custom_data_layer: models.DatabaseJSONSource = (
+            models.DatabaseJSONSource.objects.create(
                 name="Mayoral regions custom data layer",
-                data_type=models.AirtableSource.DataSourceType.OTHER,
+                data_type=models.DatabaseJSONSource.DataSourceType.OTHER,
                 organisation=self.organisation,
-                base_id=settings.TEST_AIRTABLE_CUSTOMDATALAYER_BASE_ID,
-                table_id=settings.TEST_AIRTABLE_CUSTOMDATALAYER_TABLE_NAME,
-                api_key=settings.TEST_AIRTABLE_CUSTOMDATALAYER_API_KEY,
+                id_field="council district",
                 geography_column="council district",
                 geography_column_type=models.AirtableSource.GeographyTypes.ADMIN_DISTRICT,
             )
         )
+        async_to_sync(self.custom_data_layer.import_many)(self.custom_data_layer.data)
+        self.custom_data_layer.get_import_data()
 
         self.source: models.ExternalDataSource = self.create_test_source()
 
@@ -75,14 +76,6 @@ class TestExternalDataSource:
         records = self.source.create_many(records)
         self.records_to_delete += [
             (self.source.get_record_id(record), self.source) for record in records
-        ]
-        return records
-
-    def create_custom_layer_airtable_records(self, records: any):
-        records = self.custom_data_layer.table.batch_create(records)
-        self.records_to_delete += [
-            (self.custom_data_layer.get_record_id(record), self.custom_data_layer)
-            for record in records
         ]
         return records
 
@@ -123,18 +116,6 @@ class TestExternalDataSource:
         original_count = await self.custom_data_layer.get_import_data().acount()
         self.assertEqual(original_count, 0)
         # Add some test data
-        self.create_custom_layer_airtable_records(
-            [
-                {
-                    "council district": "County Durham",
-                    "mayoral region": "North East Mayoral Combined Authority",
-                },
-                {
-                    "council district": "Northumberland",
-                    "mayoral region": "North East Mayoral Combined Authority",
-                },
-            ]
-        )
         records = list(await self.custom_data_layer.fetch_all())
         fetch_count = len(records)
         self.assertGreaterEqual(fetch_count, 2)
@@ -302,19 +283,6 @@ class TestExternalDataSource:
         i.e. to test the pivot table functionality
         that brings custom campaign data back into the CRM, based on geography
         """
-        # Add some test data
-        self.create_custom_layer_airtable_records(
-            [
-                {
-                    "council district": "County Durham",
-                    "mayoral region": "North East Mayoral Combined Authority",
-                },
-                {
-                    "council district": "Northumberland",
-                    "mayoral region": "North East Mayoral Combined Authority",
-                },
-            ]
-        )
         records = await self.custom_data_layer.fetch_all()
         # Check that the import is storing it all
         await self.custom_data_layer.import_many(

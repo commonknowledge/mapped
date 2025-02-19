@@ -279,7 +279,7 @@ class TestStatistics(TestCase):
         )
         self.assertEqual(
             isle_of_anglesey["formattedCount"],
-            "26%",
+            "26.03%",
             "The formatted count should be the percentage",
         )
 
