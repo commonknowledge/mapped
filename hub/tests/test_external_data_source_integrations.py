@@ -142,7 +142,6 @@ class TestExternalDataSource:
         import_count = await import_data.acount()
         self.assertEqual(import_count, fetch_count)
         # assert that 'council district' and 'mayoral region' keys are in the JSON object
-        first_record = await import_data.afirst()
         df = await sync_to_async(self.source.get_imported_dataframe)()
         self.assertEqual(len(df.index), import_count)
 
