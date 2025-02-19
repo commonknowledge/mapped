@@ -58,7 +58,7 @@ class TestStatistics(TestCase):
         # Some of that dataset uses out of date councils,
         # which have been merged together in the geocoding
         # (see `duplicate_councils`)
-        self.geocodable_council_count = 315
+        self.geocodable_council_count = 330
         self.count_regions = models.Area.objects.filter(area_type__code="EER").count()
 
         # Login user
