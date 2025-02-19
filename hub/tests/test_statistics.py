@@ -213,7 +213,7 @@ class TestStatistics(TestCase):
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
             len(result["data"]["statisticsForChoropleth"]),
-            11,
+            10,
         )
         london = next(
             (
@@ -313,7 +313,7 @@ class TestStatistics(TestCase):
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
             len(result["data"]["statisticsForChoropleth"]),
-            11,
+            10,
         )
         london = next(
             (
