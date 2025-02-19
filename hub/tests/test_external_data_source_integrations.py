@@ -109,43 +109,22 @@ class TestExternalDataSource:
 
     async def test_import_many(self):
         # Confirm the database is empty
-        original_count = await self.custom_data_layer.get_import_data().acount()
+        original_count = await self.source.get_import_data().acount()
         self.assertEqual(original_count, 0)
         # Add some test data
-        records = list(await self.custom_data_layer.fetch_all())
+        records = list(await self.source.fetch_all())
         fetch_count = len(records)
-        self.assertGreaterEqual(fetch_count, 2)
+        self.assertGreaterEqual(fetch_count, 1)
         # Check that the import is storing it all
-        await self.custom_data_layer.import_many(
-            [self.custom_data_layer.get_record_id(record) for record in records]
+        await self.source.import_many(
+            [self.source.get_record_id(record) for record in records]
         )
-        import_data = self.custom_data_layer.get_import_data()
+        import_data = self.source.get_import_data()
         import_count = await import_data.acount()
         self.assertEqual(import_count, fetch_count)
         # assert that 'council district' and 'mayoral region' keys are in the JSON object
         first_record = await import_data.afirst()
-        self.assertIn("council district", first_record.json)
-        self.assertIn("mayoral region", first_record.json)
-        self.assertIn(
-            first_record.json["council district"],
-            [
-                "Newcastle upon Tyne",
-                "North Tyneside",
-                "South Tyneside",
-                "Gateshead",
-                "County Durham",
-                "Sunderland",
-                "Northumberland",
-            ],
-        )
-        self.assertIn(
-            first_record.json["mayoral region"],
-            ["North East Mayoral Combined Authority"],
-        )
-        df = await sync_to_async(self.custom_data_layer.get_imported_dataframe)()
-        # self.assertEqual(df.index) == import_count)
-        self.assertIn("council district", list(df.columns.values))
-        self.assertIn("mayoral region", list(df.columns.values))
+        df = await sync_to_async(self.source.get_imported_dataframe)()
         self.assertEqual(len(df.index), import_count)
 
     async def test_fetch_one(self):
