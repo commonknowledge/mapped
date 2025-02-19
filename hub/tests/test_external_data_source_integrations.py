@@ -14,16 +14,11 @@ from django.test import TestCase
 from asgiref.sync import async_to_sync, sync_to_async
 
 from hub import models
-from hub.tests.fixtures import custom_lookup
 
 
 class TestExternalDataSource:
     class Meta:
         abstract = True
-
-    # Implemented by specific source tests
-    # def create_test_source(self):
-    #     raise NotImplementedError()
 
     constituency_field = "constituency"
     mayoral_field = "mayoral region"
