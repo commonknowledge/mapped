@@ -2805,7 +2805,9 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         else:
             member_ids = [self.get_record_id(member) for member in members]
 
-        member_ids_hash = hashlib.md5("".join(sorted(member_ids)).encode()).hexdigest()
+        member_ids_hash = hashlib.md5(
+            "".join(sorted([str(x) for x in member_ids])).encode()
+        ).hexdigest()
         try:
             return await refresh_many.configure(
                 # Dedupe `update_many` jobs for the same config
@@ -2847,7 +2849,9 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         else:
             member_ids = [self.get_record_id(member) for member in members]
 
-        member_ids_hash = hashlib.md5("".join(sorted(member_ids)).encode()).hexdigest()
+        member_ids_hash = hashlib.md5(
+            "".join(sorted([str(x) for x in member_ids])).encode()
+        ).hexdigest()
         try:
             return await import_many.configure(
                 priority=priority,
