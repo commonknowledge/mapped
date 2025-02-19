@@ -31,6 +31,7 @@ class TestExternalDataSource:
             name="Test Organisation", slug="test-organisation"
         )
 
+        # Set up the pivot table
         self.custom_data_layer: models.DatabaseJSONSource = (
             models.DatabaseJSONSource.objects.create(
                 name="Mayoral regions custom data layer",
@@ -41,9 +42,27 @@ class TestExternalDataSource:
                 geography_column_type=models.DatabaseJSONSource.GeographyTypes.ADMIN_DISTRICT,
             )
         )
-        async_to_sync(self.custom_data_layer.import_many)(custom_lookup.copy())
-        self.custom_data_layer.get_import_data()
+        fixture_data = custom_lookup.copy()
+        async_to_sync(self.custom_data_layer.import_many)(fixture_data)
+        data = self.custom_data_layer.get_import_data()
+        self.assertEqual(data.count(), len(fixture_data))
+        first_record = data.first()
+        self.assertIn("council district", first_record.json)
+        self.assertIn("mayoral region", first_record.json)
+        self.assertIn(
+            first_record.json["council district"],
+            [
+                "Newcastle upon Tyne",
+                "North Tyneside",
+                "South Tyneside",
+                "Gateshead",
+                "County Durham",
+                "Sunderland",
+                "Northumberland",
+            ],
+        )
 
+        # Create the source itself
         self.source: models.ExternalDataSource = self.create_test_source()
 
         if self.source.automated_webhooks:
@@ -258,11 +277,6 @@ class TestExternalDataSource:
         i.e. to test the pivot table functionality
         that brings custom campaign data back into the CRM, based on geography
         """
-        records = await self.custom_data_layer.fetch_all()
-        # Check that the import is storing it all
-        await self.custom_data_layer.import_many(
-            [self.custom_data_layer.get_record_id(record) for record in records]
-        )
         # Add a test record
         record = await self.create_test_record(
             models.ExternalDataSource.CUDRecord(
