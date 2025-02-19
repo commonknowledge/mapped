@@ -1312,6 +1312,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             "type": "object",
             "properties": {
                 "value": {"type": "string", "required": True},
+                "type": {"type": "string"},
                 "label": {"type": "string"},
                 "description": {"type": "string"},
                 "external_id": {"type": "string"},
@@ -2804,10 +2805,9 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             member_ids = members
         else:
             member_ids = [self.get_record_id(member) for member in members]
+        member_ids = [str(x) for x in member_ids if x is not None]
 
-        member_ids_hash = hashlib.md5(
-            "".join(sorted([str(x) for x in member_ids])).encode()
-        ).hexdigest()
+        member_ids_hash = hashlib.md5("".join(sorted(member_ids)).encode()).hexdigest()
         try:
             return await refresh_many.configure(
                 # Dedupe `update_many` jobs for the same config
@@ -2848,10 +2848,9 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             member_ids = members
         else:
             member_ids = [self.get_record_id(member) for member in members]
+        member_ids = [str(x) for x in member_ids if x is not None]
 
-        member_ids_hash = hashlib.md5(
-            "".join(sorted([str(x) for x in member_ids])).encode()
-        ).hexdigest()
+        member_ids_hash = hashlib.md5("".join(sorted(member_ids)).encode()).hexdigest()
         try:
             return await import_many.configure(
                 priority=priority,

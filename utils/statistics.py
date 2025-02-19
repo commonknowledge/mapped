@@ -122,8 +122,8 @@ def merge_column_types(
         # Record the data type of this key
         if key not in target:
             target[key] = extra[key]
-        # If this key has a variable type, mark as "other"
-        elif target[key] != extra[key]:
+        # If this key has a different type, and it is not EMPTY, mark as "unknown"
+        elif extra[key] != StatisticalDataType.EMPTY and target[key] != extra[key]:
             target[key] = StatisticalDataType.UNKNOWN
 
 

@@ -27,7 +27,7 @@ services:
   - key: SERVER_RESET_QUERY
     value: DISCARD ALL
   - key: MAX_CLIENT_CONN
-    value: 500
+    value: 10000
   - key: DEFAULT_POOL_SIZE
     value: 50
 - type: web

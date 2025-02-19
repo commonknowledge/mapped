@@ -274,7 +274,7 @@ const ReportProvider = ({ query, children }: ReportProviderProps) => {
     variables: UpdateMapReportMutationVariables,
     client: ApolloClient<object>
   ) {
-    const parseResult = MapReportInputSchema().safeParse(variables)
+    const parseResult = MapReportInputSchema().safeParse(variables.input)
     if (parseResult.success) {
       return client.mutate<
         UpdateMapReportMutation,

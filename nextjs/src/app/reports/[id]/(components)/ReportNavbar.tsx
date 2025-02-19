@@ -3,6 +3,7 @@ import { useReport } from '@/lib/map/useReport'
 
 import { ViewCreator } from '@/components/report/ViewCreator'
 import { dataTypeDisplay, ViewIcon } from '@/components/report/ViewIcon'
+import { Button } from '@/components/ui/button'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -66,16 +67,20 @@ export default function ReportNavbar() {
 
   return (
     <nav
-      style={{ height: NAVBAR_HEIGHT.toString() + 'px' }}
-      className="fixed top-0 left-0 w-full bg-meepGray-600 flex flex-row items-center
+      className="fixed top-0 left-0 w-full bg-meepGray-600 grid gap-1 items-center
      justify-between px-4 shadow-md z-10 border border-b-meepGray-800"
+      style={{
+        height: NAVBAR_HEIGHT.toString() + 'px',
+        // Three columns: 18rem, 1fr, remainder/noshrink
+        gridTemplateColumns: 'minmax(0, 18rem) 1fr min-content',
+      }}
     >
-      <section className="flex flex-row items-center gap-2 w-full">
-        <Link href="/reports" className="py-sm">
+      <section className="flex flex-row items-center gap-1">
+        <Link href="/reports">
           <MappedIcon height={20} />
         </Link>
         <div
-          className="text-white text-lg font-bold font-IBMPlexSans text-nowrap overflow-ellipsis"
+          className="text-white text-lg font-bold font-IBMPlexSans truncate"
           {...contentEditableMutation(
             (name) =>
               updateReport((d) => {
@@ -86,66 +91,69 @@ export default function ReportNavbar() {
         >
           {title}
         </div>
-        <div className="flex gap-8 items-center w-full">
-          <ReportActions />
-          <PanelLeft
-            onClick={leftSidebar.toggle}
-            className="text-meepGray-400 w-4 h-4 cursor-pointer"
-          />{' '}
-          <div className="flex flex-row gap-2 items-center overflow-x-auto w-full relative">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              modifiers={[restrictToParentElement, restrictToHorizontalAxis]}
-              onDragEnd={({ active, over }) => {
-                if (!!over && active.id !== over.id) {
-                  updateReport((draft) => {
-                    const oldIndex = draft.displayOptions.viewSortOrder.indexOf(
-                      String(active.id)
-                    )
-                    const newIndex = draft.displayOptions.viewSortOrder.indexOf(
-                      String(over.id)
-                    )
-                    draft.displayOptions.viewSortOrder = arrayMove(
-                      draft.displayOptions.viewSortOrder,
-                      oldIndex,
-                      newIndex
-                    )
-                  })
-                }
-              }}
-            >
-              <SortableContext
-                items={report.displayOptions.viewSortOrder}
-                strategy={horizontalListSortingStrategy}
-              >
-                {report.displayOptions.viewSortOrder
-                  .map((viewId) => report.displayOptions.views[viewId])
-                  .filter(Boolean)
-                  .map((view) => (
-                    <SortableViewTabItem key={view.id} view={view} />
-                  ))}
-              </SortableContext>
-            </DndContext>
-            <ViewCreator />
-          </div>
-          <div className="flex flex-row items-center gap-0 ml-auto">
-            {viewManager.currentView?.type === ViewType.Map ? (
-              <MapComboBox />
-            ) : viewManager.currentView?.type === ViewType.Table ? (
-              <TableComboBox />
-            ) : null}
-            <ReportStarredItemsDropdown />
-            {/* {!!explorer.isValidEntity(explorer.state) && ( */}
-            <PanelRight
-              onClick={explorer.toggle}
-              className="text-meepGray-400 w-4 h-4 cursor-pointer ml-3"
-            />
-            {/* )} */}
-          </div>
-        </div>
+        <ReportActions />
+        <Button variant="ghost" size="sm" onClick={leftSidebar.toggle}>
+          <PanelLeft className="text-meepGray-400 w-4 h-4 cursor-pointer shrink-0" />
+        </Button>
       </section>
-      <section className="flex space-x-4"> </section>
+      <section
+        className={twMerge(
+          'grid grid-flow-col items-center gap-1',
+          // If too many tabs, smaller text
+          report.displayOptions.viewSortOrder.length > 5
+            ? 'text-sm'
+            : 'text-base'
+        )}
+      >
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToParentElement, restrictToHorizontalAxis]}
+          onDragEnd={({ active, over }) => {
+            if (!!over && active.id !== over.id) {
+              updateReport((draft) => {
+                const oldIndex = draft.displayOptions.viewSortOrder.indexOf(
+                  String(active.id)
+                )
+                const newIndex = draft.displayOptions.viewSortOrder.indexOf(
+                  String(over.id)
+                )
+                draft.displayOptions.viewSortOrder = arrayMove(
+                  draft.displayOptions.viewSortOrder,
+                  oldIndex,
+                  newIndex
+                )
+              })
+            }
+          }}
+        >
+          <SortableContext
+            items={report.displayOptions.viewSortOrder}
+            strategy={horizontalListSortingStrategy}
+          >
+            {report.displayOptions.viewSortOrder
+              .map((viewId) => report.displayOptions.views[viewId])
+              .filter(Boolean)
+              .map((view) => (
+                <SortableViewTabItem key={view.id} view={view} />
+              ))}
+          </SortableContext>
+        </DndContext>
+      </section>
+      <section className="flex flex-row items-center">
+        <ViewCreator />
+        {viewManager.currentView?.type === ViewType.Map ? (
+          <MapComboBox />
+        ) : viewManager.currentView?.type === ViewType.Table ? (
+          <TableComboBox />
+        ) : null}
+        <ReportStarredItemsDropdown />
+        {/* {!!explorer.isValidEntity(explorer.state) && ( */}
+        <Button variant="ghost" size="sm" onClick={explorer.toggle}>
+          <PanelRight className="text-meepGray-400 w-4 h-4 cursor-pointer" />
+        </Button>
+        {/* )} */}
+      </section>
     </nav>
   )
 }
@@ -183,10 +191,10 @@ function SortableViewTabItem({ view }: { view: ViewConfig }) {
         >
           <div
             className={twMerge(
-              'px-2 py-1 rounded-md cursor-pointer flex items-center gap-1 h-full bg-meepGray-600',
+              'w-full px-2 py-1 rounded-md cursor-pointer flex items-center justify-center gap-1 h-full bg-meepGray-600',
               view.id === viewManager.currentView?.id
                 ? 'text-white bg-meepGray-800'
-                : 'text-meepGray-400'
+                : 'text-meepGray-400 bg-black bg-opacity-10'
             )}
           >
             <ViewIcon viewType={view.type} className="shrink-0" />

@@ -338,8 +338,12 @@ if env("DATABASE_CONNECTION_POOLER_HOSTPORT"):
     host, port = env("DATABASE_CONNECTION_POOLER_HOSTPORT").split(":")
     DATABASES["default"]["HOST"] = host
     DATABASES["default"]["PORT"] = port
+    # Disable server-side cursors
+    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
     # Close connections after use
-    DATABASES["default"]["CONN_MAX_AGE"] = 0
+    # DATABASES["default"]["CONN_MAX_AGE"] = 0
+    # Enable connection health checks
+    # DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
