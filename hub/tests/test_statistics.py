@@ -40,6 +40,7 @@ class TestStatistics(TestCase):
                 "type": models.DatabaseJSONSource.GeographyTypes.AREA,
                 "components": [
                     {
+                        "type": "area_code",
                         "field": "LA code",
                         "metadata": {"lih_area_type__code": ["STC", "DIS"]},
                     },
