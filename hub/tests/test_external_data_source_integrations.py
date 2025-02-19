@@ -37,7 +37,7 @@ class TestExternalDataSource:
                 organisation=self.organisation,
                 id_field="council district",
                 geography_column="council district",
-                geography_column_type=models.AirtableSource.GeographyTypes.ADMIN_DISTRICT,
+                geography_column_type=models.DatabaseJSONSource.GeographyTypes.ADMIN_DISTRICT,
             )
         )
         async_to_sync(self.custom_data_layer.import_many)(self.custom_data_layer.data)
