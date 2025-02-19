@@ -14,6 +14,7 @@ from django.test import TestCase
 from asgiref.sync import async_to_sync, sync_to_async
 
 from hub import models
+from hub.tests.fixtures.custom_lookup import custom_lookup
 
 
 class TestExternalDataSource:
@@ -40,7 +41,7 @@ class TestExternalDataSource:
                 geography_column_type=models.DatabaseJSONSource.GeographyTypes.ADMIN_DISTRICT,
             )
         )
-        async_to_sync(self.custom_data_layer.import_many)(self.custom_data_layer.data)
+        async_to_sync(self.custom_data_layer.import_many)(custom_lookup.copy())
         self.custom_data_layer.get_import_data()
 
         self.source: models.ExternalDataSource = self.create_test_source()

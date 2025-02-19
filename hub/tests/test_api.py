@@ -6,6 +6,7 @@ from django.urls import reverse
 from asgiref.sync import async_to_sync
 
 from hub import models
+from hub.tests.fixtures.custom_lookup import custom_lookup
 
 
 class TestPublicAPI(TestCase):
@@ -32,7 +33,7 @@ class TestPublicAPI(TestCase):
                 geography_column_type=models.DatabaseJSONSource.GeographyTypes.ADMIN_DISTRICT,
             )
         )
-        async_to_sync(cls.custom_data_layer.import_many)(cls.custom_data_layer.data)
+        async_to_sync(cls.custom_data_layer.import_many)(custom_lookup.copy())
         cls.custom_data_layer.get_import_data()
         # Make a dummy region
         area_type, x = models.AreaType.objects.update_or_create(
