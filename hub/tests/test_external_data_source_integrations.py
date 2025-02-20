@@ -1292,6 +1292,9 @@ class TestDatabaseJSONSource(TestUploadedCSVSource):
     async def test_pivot_table(self):
         self.skipTest("TODO: implement test")
 
+    async def test_enrichment_electoral_commission(self):
+        self.skipTest("TODO: implement test using likewise data")
+
     async def test_import_many(self):
         # Confirm the database is empty
         self.source.data = []
@@ -1355,13 +1358,16 @@ class TestDatabaseJSONSourceUsingRowNumberAsID(TestUploadedCSVSourceUsingRowNumb
             self.fail("This data source shouldn't have any problem with duplicates")
 
     async def test_refresh_many(self):
-        self.skipTest("TODO: implement test")
+        self.skipTest("TODO: implement test using likewise data")
 
     async def test_refresh_one(self):
-        self.skipTest("TODO: implement test")
+        self.skipTest("TODO: implement test using likewise data")
 
     async def test_pivot_table(self):
-        self.skipTest("TODO: implement test")
+        self.skipTest("TODO: implement test using likewise data")
+
+    async def test_enrichment_electoral_commission(self):
+        self.skipTest("TODO: implement test using likewise data")
 
     async def test_import_many(self):
         # Confirm the database is empty
