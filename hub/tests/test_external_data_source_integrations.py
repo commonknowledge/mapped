@@ -1067,7 +1067,7 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
         # Add some test data
         records = list(await self.source.fetch_all())
         fetch_count = len(records)
-        self.assertGreaterEqual(fetch_count, 10)
+        self.assertEqual(fetch_count, 10)
 
         # Check that the import is storing it all
         await self.source.import_many(
@@ -1075,8 +1075,8 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
         )
 
         # Test GenericData queryset
-        import_data = self.source.get_import_data()
-        import_count = await import_data.acount()
+        import_data = await sync_to_async(list)(self.source.get_import_data())
+        import_count = len(import_data)
         self.assertEqual(import_count, fetch_count)
         data = await sync_to_async(list)(import_data.select_related("area"))
 
@@ -1283,10 +1283,13 @@ class TestDatabaseJSONSource(TestUploadedCSVSource):
             self.fail("This data source shouldn't have any problem with duplicates")
 
     async def test_refresh_many(self):
-        self.skipTest("Not implemented")
+        self.skipTest("TODO: implement test")
 
     async def test_refresh_one(self):
-        self.skipTest("Not implemented")
+        self.skipTest("TODO: implement test")
+
+    async def test_pivot_table(self):
+        self.skipTest("TODO: implement test")
 
     async def test_import_many(self):
         # Confirm the database is empty
@@ -1351,10 +1354,13 @@ class TestDatabaseJSONSourceUsingRowNumberAsID(TestUploadedCSVSourceUsingRowNumb
             self.fail("This data source shouldn't have any problem with duplicates")
 
     async def test_refresh_many(self):
-        self.skipTest("Not implemented")
+        self.skipTest("TODO: implement test")
 
     async def test_refresh_one(self):
-        self.skipTest("Not implemented")
+        self.skipTest("TODO: implement test")
+
+    async def test_pivot_table(self):
+        self.skipTest("TODO: implement test")
 
     async def test_import_many(self):
         # Confirm the database is empty

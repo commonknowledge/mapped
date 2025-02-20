@@ -3161,12 +3161,7 @@ class DataFrameSource(ExternalDataSource):
 
     id_field = models.CharField(max_length=250, default="id")
     use_row_number_as_id = models.BooleanField(default=False)
-    internal_id_key = "mapped_internal_data_id"
-
-    def save(self, *args, **kwargs):
-        if self.use_row_number_as_id:
-            self.id_field = self.internal_id_key
-        return super().save(*args, **kwargs)
+    internal_id_key = "mapped_row_index"
 
     def load_data_into_unformatted_df(self) -> pd.DataFrame:
         raise NotImplementedError(
@@ -3178,11 +3173,6 @@ class DataFrameSource(ExternalDataSource):
         df = self.load_data_into_unformatted_df()
         if df is None:
             raise ValueError("Could not load CSV file")
-        if self.use_row_number_as_id:
-            if self.id_field != self.internal_id_key:
-                self.id_field = self.internal_id_key
-                self.save()
-                self.refresh_from_db()
         df[self.internal_id_key] = (
             df.index if self.use_row_number_as_id else df[self.id_field]
         )
@@ -3204,7 +3194,18 @@ class DataFrameSource(ExternalDataSource):
     def get_record_id(self, record: dict):
         if record is None:
             return None
-        return record.get(self.internal_id_key, None)
+        if self.use_row_number_as_id:
+            id = record.get(self.internal_id_key, None)
+            if id:
+                return id
+            # Maybe this data is not yet imported;
+            # try matching on the row number by matching the record to the df's columns:
+            id = self.df.index[self.df.columns.isin(record.keys())].tolist()
+            if len(id) == 1:
+                return id[0]
+            return None
+        else:
+            return record.get(self.id_field, None)
 
     async def fetch_one(self, member_id):
         el = self.df.loc[member_id]
