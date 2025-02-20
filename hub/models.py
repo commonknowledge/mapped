@@ -2951,7 +2951,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         data = dict
         tags = list[str]
 
-    def delete_one(self, record_id: str):
+    async def delete_one(self, record_id: str):
         """
         Used for tests
         """
@@ -2959,7 +2959,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             "Delete one not implemented for this data source type."
         )
 
-    def create_one(self, record: CUDRecord):
+    async def create_one(self, record: CUDRecord) -> dict:
         """
         Used for tests
         """
@@ -2967,7 +2967,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             "Create one not implemented for this data source type."
         )
 
-    def create_many(self, records: List[CUDRecord]):
+    async def create_many(self, records: List[CUDRecord]):
         """
         Used for tests
         """
@@ -3263,24 +3263,24 @@ class DatabaseJSONSource(DataFrameSource):
         for mapped_record in mapped_records:
             await self.update_one(mapped_record)
 
-    def delete_one(self, record_id):
+    async def delete_one(self, record_id):
         self.data = [
             record for record in self.data if record[self.id_field] != record_id
         ]
-        self.save()
+        await self.asave()
 
-    def create_one(self, record):
+    async def create_one(self, record):
         self.data.append(record["data"])
-        self.save()
+        await self.asave()
         return record
 
-    def create_many(self, records):
+    async def create_many(self, records):
         self.data.extend([record["data"] for record in records])
-        self.save()
+        await self.asave()
         return records
 
 
-class UploadedCSVSource(ExternalDataSource):
+class UploadedCSVSource(DataFrameSource):
     """
     A media URL
     """
@@ -3545,10 +3545,10 @@ class AirtableSource(ExternalDataSource):
         logger.debug("Webhook member result", webhook_object.cursor, member_ids)
         return member_ids
 
-    def delete_one(self, record_id):
+    async def delete_one(self, record_id):
         return self.table.delete(record_id)
 
-    def create_one(self, record):
+    async def create_one(self, record):
         data = {
             **record["data"],
         }
@@ -3559,7 +3559,7 @@ class AirtableSource(ExternalDataSource):
         record = self.table.create(data)
         return record
 
-    def create_many(self, records):
+    async def create_many(self, records):
         records = self.table.batch_create(
             [
                 {
@@ -3923,10 +3923,10 @@ class MailchimpSource(ExternalDataSource):
             data={"merge_fields": merge_fields},
         )
 
-    def delete_one(self, record_id):
+    async def delete_one(self, record_id):
         return self.client.lists.members.delete(self.list_id, record_id)
 
-    def create_one(self, record: ExternalDataSource.CUDRecord):
+    async def create_one(self, record):
         merge_fields = {
             key: str(value) for key, value in record["data"].items() if key.isupper()
         }
@@ -3973,10 +3973,10 @@ class MailchimpSource(ExternalDataSource):
 
         return mailchimp_record
 
-    def create_many(self, records):
+    async def create_many(self, records):
         created_records = []
         for record in records:
-            created_records.append(self.create_one(record))
+            created_records.append(await self.create_one(record))
         return created_records
 
     def filter(self, filter: dict) -> dict:
@@ -4299,12 +4299,12 @@ class ActionNetworkSource(ExternalDataSource):
             id, action_network_background_processing, **update_fields
         )
 
-    def delete_one(self, record_id):
+    async def delete_one(self, record_id):
         raise NotImplementedError(
             "Deleting a person is not allowed via the API. DELETE requests will return an error."
         )
 
-    def create_one(self, record: ExternalDataSource.CUDRecord):
+    async def create_one(self, record):
         record = self.client.upsert_person(
             email_address=record["email"],
             postal_addresses=[
@@ -4319,10 +4319,10 @@ class ActionNetworkSource(ExternalDataSource):
         )
         return record
 
-    def create_many(self, records):
+    async def create_many(self, records):
         created_records = []
         for record in records:
-            created_records.append(self.create_one(record))
+            created_records.append(await self.create_one(record))
         return created_records
 
     def get_import_data(self):
@@ -4825,7 +4825,7 @@ class EditableGoogleSheetsSource(ExternalDataSource):
         id = webhook_payload.get("id")
         return [id] if id else []
 
-    def delete_one(self, record_id):
+    async def delete_one(self, record_id):
         sheet_id = self.sheet["properties"]["sheetId"]
         row_numbers = self.fetch_row_numbers_for_ids([record_id])
         if not row_numbers[0]:
@@ -4849,10 +4849,10 @@ class EditableGoogleSheetsSource(ExternalDataSource):
             },
         ).execute()
 
-    def create_one(self, record) -> dict:
-        return self.create_many([record])[0]
+    async def create_one(self, record):
+        return await self.create_many([record])[0]
 
-    def create_many(self, records):
+    async def create_many(self, records):
         rows = []
         for record in records:
             row = [

@@ -53,10 +53,10 @@ class TestExternalDataSource:
         if self.source.automated_webhooks:
             self.source.teardown_unused_webhooks(force=True)
 
-    def tearDown(self) -> None:
+    async def tearDown(self) -> None:
         try:
             for record_id, source in self.records_to_delete:
-                source.delete_one(record_id)
+                await source.delete_one(record_id)
         except NotImplementedError:
             # Not all sources support deletion.
             print("Warning: deletion not implemented for source", self.source.crm_type)
@@ -66,14 +66,14 @@ class TestExternalDataSource:
         return super().tearDown()
 
     async def create_test_record(self, record: models.ExternalDataSource.CUDRecord):
-        record = self.source.create_one(record)
+        record = await self.source.create_one(record)
         self.records_to_delete.append((self.source.get_record_id(record), self.source))
         return record
 
     async def create_many_test_records(
         self, records: List[models.ExternalDataSource.CUDRecord]
     ):
-        records = self.source.create_many(records)
+        records = await self.source.create_many(records)
         self.records_to_delete += [
             (self.source.get_record_id(record), self.source) for record in records
         ]
@@ -89,10 +89,10 @@ class TestExternalDataSource:
 
     # Tests begin
 
-    def test_deduplication(self):
+    def test_deduplication(self: TestCase):
         try:
-            self.create_test_source(name="My duplicate source")  # Create duplicate
-            self.assertTrue(False)  # Force failure if no exception
+            with self.assertRaises(IntegrityError):
+                self.create_test_source(name="My duplicate source")
         except IntegrityError:
             pass
 
@@ -841,6 +841,7 @@ class TestUploadedCSVSource(TestExternalDataSource, TestCase):
                         "type": models.UploadedCSVSource.GeographyTypes.AREA,
                         "components": [
                             {
+                                "type": "area_code",
                                 "field": "geography",
                                 "metadata": {"lih_area_type__code": "EER"},
                             }
@@ -850,6 +851,13 @@ class TestUploadedCSVSource(TestExternalDataSource, TestCase):
                 )
             )
             return self.source
+
+    def test_field_definitions(self):
+        self.source.refresh_field_definitions()
+        self.assertSetEqual(
+            self.source.field_definitions,
+            [],
+        )
 
     async def test_fetch_one(self):
         # Get a single ID from the freshly read CSV
@@ -1103,10 +1111,67 @@ class TestDatabaseJSONSource(TestUploadedCSVSource):
         self.source = models.DatabaseJSONSource.objects.create(
             name=name,
             organisation=self.organisation,
-            data=regional_health_data.copy(),
             id_field="geography code",
+            data=regional_health_data.copy(),
+            geocoding_config={
+                "type": models.UploadedCSVSource.GeographyTypes.AREA,
+                "components": [
+                    {
+                        "type": "area_code",
+                        "field": "geography",
+                        "metadata": {"lih_area_type__code": "EER"},
+                    }
+                ],
+            },
         )
         return self.source
+
+    def test_deduplication(self: TestCase):
+        try:
+            self.create_test_source(name="My duplicate source")
+        except IntegrityError:
+            self.fail("This data source shouldn't have any problem with duplicates")
+
+    async def test_refresh_many(self):
+        self.skipTest("Not implemented")
+
+    async def test_refresh_one(self):
+        self.skipTest("Not implemented")
+
+    async def test_import_many(self):
+        # Confirm the database is empty
+        self.source.data = []
+        await self.source.asave()
+        original_count = await self.source.get_import_data().acount()
+        self.assertEqual(original_count, 0)
+
+        # Add some test data
+        data_to_import = regional_health_data.copy()
+        await self.source.import_many(data_to_import)
+        import_count = await self.source.get_import_data().acount()
+        self.assertEqual(import_count, len(data_to_import))
+
+        # Test GenericData queryset
+        import_data = self.source.get_import_data()
+        data = await sync_to_async(list)(import_data.select_related("area"))
+
+        # Check the data has been geocoded
+        north_east = next(
+            filter(
+                lambda r: r.json.get("geography code") == "E12000001",
+                data,
+            ),
+            None,
+        )
+        self.assertEqual("E12000001", north_east.data)
+        self.assertIsNotNone(north_east.postcode_data)
+        self.assertIsNotNone(north_east.area.name)
+
+        # Test dataframe
+        df = await sync_to_async(self.source.get_imported_dataframe)()
+        self.assertEqual(len(df.index), import_count)
+        self.assertEqual(len(df.index), import_count)
+        self.assertIn("geography", list(df.columns.values))
 
 
 class TestDatabaseJSONSourceUsingRowNumberAsID(TestUploadedCSVSourceUsingRowNumberAsID):
@@ -1116,5 +1181,62 @@ class TestDatabaseJSONSourceUsingRowNumberAsID(TestUploadedCSVSourceUsingRowNumb
             organisation=self.organisation,
             data=regional_health_data.copy(),
             use_row_number_as_id=True,
+            geocoding_config={
+                "type": models.UploadedCSVSource.GeographyTypes.AREA,
+                "components": [
+                    {
+                        "type": "area_code",
+                        "field": "geography",
+                        "metadata": {"lih_area_type__code": "EER"},
+                    }
+                ],
+            },
         )
         return self.source
+
+    def test_deduplication(self: TestCase):
+        try:
+            self.create_test_source(name="My duplicate source")
+        except IntegrityError:
+            self.fail("This data source shouldn't have any problem with duplicates")
+
+    async def test_refresh_many(self):
+        self.skipTest("Not implemented")
+
+    async def test_refresh_one(self):
+        self.skipTest("Not implemented")
+
+    async def test_import_many(self):
+        # Confirm the database is empty
+        original_count = await self.source.get_import_data().acount()
+        self.assertEqual(original_count, 0)
+
+        # Add some test data
+        await self.source.import_many(regional_health_data.copy())
+        records = list(await self.source.fetch_many())
+        fetch_count = len(records)
+        self.assertGreaterEqual(fetch_count, 10)
+
+        # Test GenericData queryset
+        import_data = self.source.get_import_data()
+        import_count = await import_data.acount()
+        self.assertEqual(import_count, fetch_count)
+        data = await sync_to_async(list)(import_data.select_related("area"))
+
+        # Check the data has been geocoded
+        north_east = next(
+            filter(
+                lambda r: r.json.get("geography code") == "E12000001",
+                data,
+            ),
+            None,
+        )
+        self.assertEqual("E12000001", north_east.data)
+        self.assertIsNotNone(north_east.postcode_data)
+        self.assertIsNotNone(north_east.area.name)
+
+        # Test dataframe
+        df = await sync_to_async(self.source.get_imported_dataframe)()
+        self.assertEqual(len(df.index), import_count)
+        self.assertEqual(len(df.index), import_count)
+        self.assertIn("geography", list(df.columns.values))
