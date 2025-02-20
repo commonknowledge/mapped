@@ -104,6 +104,7 @@ class TestStatistics(TestGraphQLClientCase):
                 gss
                 label
                 count
+                category
               }
             }
             """,
@@ -150,6 +151,7 @@ class TestStatistics(TestGraphQLClientCase):
                 gss
                 label
                 count
+                category
               }
             }
             """,
@@ -195,6 +197,7 @@ class TestStatistics(TestGraphQLClientCase):
               statisticsForChoropleth(statsConfig: $statsConfig, choroplethConfig: $choroplethConfig) {
                 gss
                 label
+                category
                 count
                 formattedCount
               }
@@ -249,6 +252,7 @@ class TestStatistics(TestGraphQLClientCase):
                 gss
                 label
                 count
+                category
               }
             }
             """,
@@ -297,6 +301,7 @@ class TestStatistics(TestGraphQLClientCase):
                 gss
                 label
                 count
+                category
               }
             }
             """,
@@ -349,6 +354,7 @@ class TestStatistics(TestGraphQLClientCase):
               statisticsForChoropleth(statsConfig: $statsConfig, choroplethConfig: $choroplethConfig) {
                 gss
                 label
+                count
                 category
               }
             }
