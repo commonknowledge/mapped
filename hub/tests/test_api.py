@@ -1,10 +1,12 @@
 import json
 
-from django.conf import settings
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from asgiref.sync import async_to_sync
+
 from hub import models
+from hub.tests.fixtures.custom_lookup import custom_lookup
 
 
 class TestPublicAPI(TestCase):
@@ -21,39 +23,18 @@ class TestPublicAPI(TestCase):
             user=cls.user, organisation=cls.org, role="owner"
         )
         # Create source
-        cls.custom_data_layer: models.AirtableSource = (
-            models.AirtableSource.objects.create(
+        cls.custom_data_layer: models.DatabaseJSONSource = (
+            models.DatabaseJSONSource.objects.create(
                 name="Mayoral regions custom data layer",
-                data_type=models.AirtableSource.DataSourceType.OTHER,
+                data_type=models.DatabaseJSONSource.DataSourceType.OTHER,
                 organisation=cls.org,
-                base_id=settings.TEST_AIRTABLE_CUSTOMDATALAYER_BASE_ID,
-                table_id=settings.TEST_AIRTABLE_CUSTOMDATALAYER_TABLE_NAME,
-                api_key=settings.TEST_AIRTABLE_CUSTOMDATALAYER_API_KEY,
+                id_field="council district",
                 geography_column="council district",
-                geography_column_type=models.AirtableSource.GeographyTypes.ADMIN_DISTRICT,
+                geography_column_type=models.DatabaseJSONSource.GeographyTypes.ADMIN_DISTRICT,
             )
         )
-        # Some dummy data
-        ds, x = models.DataSet.objects.update_or_create(
-            name="xyz", external_data_source=cls.custom_data_layer
-        )
-        dt, x = models.DataType.objects.update_or_create(name="xyz", data_set=ds)
-        models.GenericData.objects.update_or_create(
-            json={
-                "mayoral region": "North East Mayoral Combined Authority",
-                "council district": "Newcastle upon Tyne",
-            },
-            data_type=dt,
-            data="1",
-        )
-        models.GenericData.objects.update_or_create(
-            json={
-                "mayoral region": "North East Mayoral Combined Authority",
-                "council district": "County Durham",
-            },
-            data_type=dt,
-            data="2",
-        )
+        async_to_sync(cls.custom_data_layer.import_many)(custom_lookup.copy())
+        cls.custom_data_layer.get_import_data()
         # Make a dummy region
         area_type, x = models.AreaType.objects.update_or_create(
             name="2010 Parliamentary Constituency",

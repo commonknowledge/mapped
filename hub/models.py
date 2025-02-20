@@ -3230,7 +3230,7 @@ class DataFrameSource(ExternalDataSource):
 
 
 class DatabaseJSONSource(DataFrameSource):
-    crm_type = "DatabaseJSONSource"
+    crm_type = "databasejson"
     has_webhooks = False
     automated_webhooks = False
     introspect_fields = False

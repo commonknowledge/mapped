@@ -4,50 +4,68 @@ from datetime import datetime
 from pathlib import Path
 from random import randint
 from typing import List
-from unittest import skip
+from unittest import skip, skipIf
 
 from django.conf import settings
 from django.core.files import File
 from django.db.utils import IntegrityError
 from django.test import TestCase
 
-from asgiref.sync import sync_to_async
+from asgiref.sync import async_to_sync, sync_to_async
 
 from hub import models
+from hub.tests.fixtures.custom_lookup import custom_lookup
 from hub.tests.fixtures.regional_health_data_for_tests import regional_health_data
+from hub.tests.utils import TestGraphQLClientCase
 
 
 class TestExternalDataSource:
-    class Meta:
-        abstract = True
-
-    # Implemented by specific source tests
-    # def create_test_source(self):
-    #     raise NotImplementedError()
-
     constituency_field = "constituency"
     mayoral_field = "mayoral region"
 
-    def setUp(self) -> None:
+    def setUp(self: TestGraphQLClientCase) -> None:
+        super().setUp()
         self.records_to_delete: list[tuple[str, models.ExternalDataSource]] = []
 
         self.organisation = models.Organisation.objects.create(
             name="Test Organisation", slug="test-organisation"
         )
-
-        self.custom_data_layer: models.AirtableSource = (
-            models.AirtableSource.objects.create(
-                name="Mayoral regions custom data layer",
-                data_type=models.AirtableSource.DataSourceType.OTHER,
-                organisation=self.organisation,
-                base_id=settings.TEST_AIRTABLE_CUSTOMDATALAYER_BASE_ID,
-                table_id=settings.TEST_AIRTABLE_CUSTOMDATALAYER_TABLE_NAME,
-                api_key=settings.TEST_AIRTABLE_CUSTOMDATALAYER_API_KEY,
-                geography_column="council district",
-                geography_column_type=models.AirtableSource.GeographyTypes.ADMIN_DISTRICT,
-            )
+        self.membership = models.Membership.objects.create(
+            user=self.user, organisation=self.organisation, role="owner"
         )
 
+        # Set up the pivot table
+        self.custom_data_layer: models.DatabaseJSONSource = (
+            models.DatabaseJSONSource.objects.create(
+                name="Mayoral regions custom data layer",
+                data_type=models.DatabaseJSONSource.DataSourceType.OTHER,
+                organisation=self.organisation,
+                id_field="council district",
+                geography_column="council district",
+                geography_column_type=models.DatabaseJSONSource.GeographyTypes.ADMIN_DISTRICT,
+            )
+        )
+        fixture_data = custom_lookup.copy()
+        async_to_sync(self.custom_data_layer.import_many)(fixture_data)
+        data = self.custom_data_layer.get_import_data()
+        self.assertEqual(data.count(), len(fixture_data))
+        first_record = data.first()
+        self.assertIn("council district", first_record.json)
+        self.assertIn("mayoral region", first_record.json)
+        self.assertIn(
+            first_record.json["council district"],
+            [
+                "Newcastle upon Tyne",
+                "North Tyneside",
+                "South Tyneside",
+                "Gateshead",
+                "County Durham",
+                "Sunderland",
+                "Northumberland",
+            ],
+        )
+
+        # Create the source itself
         self.source: models.ExternalDataSource = self.create_test_source()
 
         if self.source.automated_webhooks:
@@ -76,14 +94,6 @@ class TestExternalDataSource:
         records = await self.source.create_many(records)
         self.records_to_delete += [
             (self.source.get_record_id(record), self.source) for record in records
-        ]
-        return records
-
-    def create_custom_layer_airtable_records(self, records: any):
-        records = self.custom_data_layer.table.batch_create(records)
-        self.records_to_delete += [
-            (self.custom_data_layer.get_record_id(record), self.custom_data_layer)
-            for record in records
         ]
         return records
 
@@ -121,55 +131,21 @@ class TestExternalDataSource:
 
     async def test_import_many(self):
         # Confirm the database is empty
-        original_count = await self.custom_data_layer.get_import_data().acount()
+        original_count = await self.source.get_import_data().acount()
         self.assertEqual(original_count, 0)
         # Add some test data
-        self.create_custom_layer_airtable_records(
-            [
-                {
-                    "council district": "County Durham",
-                    "mayoral region": "North East Mayoral Combined Authority",
-                },
-                {
-                    "council district": "Northumberland",
-                    "mayoral region": "North East Mayoral Combined Authority",
-                },
-            ]
-        )
-        records = list(await self.custom_data_layer.fetch_all())
+        records = list(await self.source.fetch_all())
         fetch_count = len(records)
-        self.assertGreaterEqual(fetch_count, 2)
+        self.assertGreaterEqual(fetch_count, 1)
         # Check that the import is storing it all
-        await self.custom_data_layer.import_many(
-            [self.custom_data_layer.get_record_id(record) for record in records]
+        await self.source.import_many(
+            [self.source.get_record_id(record) for record in records]
         )
-        import_data = self.custom_data_layer.get_import_data()
+        import_data = self.source.get_import_data()
         import_count = await import_data.acount()
         self.assertEqual(import_count, fetch_count)
         # assert that 'council district' and 'mayoral region' keys are in the JSON object
-        first_record = await import_data.afirst()
-        self.assertIn("council district", first_record.json)
-        self.assertIn("mayoral region", first_record.json)
-        self.assertIn(
-            first_record.json["council district"],
-            [
-                "Newcastle upon Tyne",
-                "North Tyneside",
-                "South Tyneside",
-                "Gateshead",
-                "County Durham",
-                "Sunderland",
-                "Northumberland",
-            ],
-        )
-        self.assertIn(
-            first_record.json["mayoral region"],
-            ["North East Mayoral Combined Authority"],
-        )
-        df = await sync_to_async(self.custom_data_layer.get_imported_dataframe)()
-        # self.assertEqual(df.index) == import_count)
-        self.assertIn("council district", list(df.columns.values))
-        self.assertIn("mayoral region", list(df.columns.values))
+        df = await sync_to_async(self.source.get_imported_dataframe)()
         self.assertEqual(len(df.index), import_count)
 
     async def test_fetch_one(self):
@@ -303,24 +279,6 @@ class TestExternalDataSource:
         i.e. to test the pivot table functionality
         that brings custom campaign data back into the CRM, based on geography
         """
-        # Add some test data
-        self.create_custom_layer_airtable_records(
-            [
-                {
-                    "council district": "County Durham",
-                    "mayoral region": "North East Mayoral Combined Authority",
-                },
-                {
-                    "council district": "Northumberland",
-                    "mayoral region": "North East Mayoral Combined Authority",
-                },
-            ]
-        )
-        records = await self.custom_data_layer.fetch_all()
-        # Check that the import is storing it all
-        await self.custom_data_layer.import_many(
-            [self.custom_data_layer.get_record_id(record) for record in records]
-        )
         # Add a test record
         record = await self.create_test_record(
             models.ExternalDataSource.CUDRecord(
@@ -624,8 +582,200 @@ class TestExternalDataSource:
             elif a["label"] == "Waltham Forest":
                 self.assertEqual(postcode, "E10 6EF")
 
+    def test_list_sources(self):
+        result = self.graphql_query(
+            """
+              query ListOrganisations($currentOrganisationId: ID!) {
+                myOrganisations(filters: { id: $currentOrganisationId }) {
+                  id
+                  externalDataSources {
+                    id
+                    name
+                    dataType
+                    crmType
+                    autoImportEnabled
+                    autoUpdateEnabled
+                    sharingPermissions {
+                      id
+                      organisation {
+                        id
+                        name
+                      }
+                    }
+                  }
+                  sharingPermissionsFromOtherOrgs {
+                    id
+                    externalDataSource {
+                      id
+                      name
+                      dataType
+                      crmType
+                      organisation {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            """,
+            {
+                "currentOrganisationId": str(self.organisation.id),
+            },
+        )
 
-class TestAirtableSource(TestExternalDataSource, TestCase):
+        self.assertIsNone(result.get("errors", None))
+        self.assertEqual(
+            len(result["data"]["myOrganisations"][0]["externalDataSources"]),
+            2,
+        )
+        self.assertIn(
+            self.source.name,
+            [
+                source["name"]
+                for source in result["data"]["myOrganisations"][0][
+                    "externalDataSources"
+                ]
+            ],
+        )
+
+    def test_inspect_source(self):
+        result = self.graphql_query(
+            """
+              query ExternalDataSourceInspectPage($ID: ID!) {
+                  externalDataSource(id: $ID) {
+                    id
+                    name
+                    dataType
+                    remoteUrl
+                    crmType
+                    connectionDetails {
+                      ... on AirtableSource {
+                        apiKey
+                        baseId
+                        tableId
+                      }
+                      ... on MailchimpSource {
+                        apiKey
+                        listId
+                      }
+                      ... on ActionNetworkSource {
+                        apiKey
+                        groupSlug
+                      }
+                      ... on TicketTailorSource {
+                        apiKey
+                      }
+                    }
+                    lastImportJob {
+                      id
+                      lastEventAt
+                      status
+                    }
+                    lastUpdateJob {
+                      id
+                      lastEventAt
+                      status
+                    }
+                    autoImportEnabled
+                    autoUpdateEnabled
+                    hasWebhooks
+                    allowUpdates
+                    automatedWebhooks
+                    webhookUrl
+                    webhookHealthcheck
+                    geographyColumn
+                    geographyColumnType
+                    geocodingConfig
+                    usesValidGeocodingConfig
+                    postcodeField
+                    firstNameField
+                    lastNameField
+                    fullNameField
+                    emailField
+                    phoneField
+                    addressField
+                    titleField
+                    descriptionField
+                    imageField
+                    startTimeField
+                    endTimeField
+                    publicUrlField
+                    socialUrlField
+                    canDisplayPointField
+                    isImportScheduled
+                    importProgress {
+                      id
+                      hasForecast
+                      status
+                      total
+                      succeeded
+                      estimatedFinishTime
+                      actualFinishTime
+                      inQueue
+                      numberOfJobsAheadInQueue
+                      sendEmail
+                    }
+                    isUpdateScheduled
+                    updateProgress {
+                      id
+                      hasForecast
+                      status
+                      total
+                      succeeded
+                      estimatedFinishTime
+                      actualFinishTime
+                      inQueue
+                      numberOfJobsAheadInQueue
+                      sendEmail
+                    }
+                    importedDataCount
+                    importedDataGeocodingRate
+                    regionCount: importedDataCountOfAreas(
+                      analyticalAreaType: european_electoral_region
+                    )
+                    constituencyCount: importedDataCountOfAreas(
+                      analyticalAreaType: parliamentary_constituency
+                    )
+                    ladCount: importedDataCountOfAreas(analyticalAreaType: admin_district)
+                    wardCount: importedDataCountOfAreas(analyticalAreaType: admin_ward)
+                    fieldDefinitions(refreshFromSource: true) {
+                      label
+                      value
+                      description
+                      editable
+                    }
+                    updateMapping {
+                      source
+                      sourcePath
+                      destinationColumn
+                    }
+                    sharingPermissions {
+                      id
+                    }
+                    organisation {
+                      id
+                      name
+                    }
+                  }
+                }
+            """,
+            {
+                "ID": str(self.source.id),
+            },
+        )
+
+        self.assertIsNone(result.get("errors", None))
+        self.assertEqual(
+            result["data"]["externalDataSource"]["name"],
+            self.source.name,
+        )
+
+
+@skipIf(
+    settings.SKIP_AIRTABLE_TESTS,
+    "Skipping Airtable tests",
+)
+class TestAirtableSource(TestExternalDataSource, TestGraphQLClientCase):
     def create_test_source(self, name="My test Airtable member list"):
         self.source = models.AirtableSource.objects.create(
             name=name,
@@ -655,7 +805,7 @@ class TestAirtableSource(TestExternalDataSource, TestCase):
         return self.source
 
 
-class TestMailchimpSource(TestExternalDataSource, TestCase):
+class TestMailchimpSource(TestExternalDataSource, TestGraphQLClientCase):
     constituency_field = "CONSTITUEN"
     mayoral_field = "MAYORAL_RE"
 
@@ -687,7 +837,7 @@ class TestMailchimpSource(TestExternalDataSource, TestCase):
         return self.source
 
 
-class TestActionNetworkSource(TestExternalDataSource, TestCase):
+class TestActionNetworkSource(TestExternalDataSource, TestGraphQLClientCase):
     constituency_field = "custom_fields.constituency"
     mayoral_field = "custom_fields.mayoral_region"
 
@@ -759,7 +909,7 @@ class TestActionNetworkSource(TestExternalDataSource, TestCase):
 @skip(
     reason="Google Sheets can't be automatically tested as the refresh token expires after 7 days - need to use a published app"
 )
-class TestEditableGoogleSheetsSource(TestExternalDataSource, TestCase):
+class TestEditableGoogleSheetsSource(TestExternalDataSource, TestGraphQLClientCase):
     def create_test_source(self, name="My test Google member list"):
         self.source: models.EditableGoogleSheetsSource = (
             models.EditableGoogleSheetsSource.objects.create(
@@ -821,7 +971,7 @@ class TestEditableGoogleSheetsSource(TestExternalDataSource, TestCase):
             self.assertIsNotNone(record)
 
 
-class TestUploadedCSVSource(TestExternalDataSource, TestCase):
+class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
     fixtures = ["regions"]
     file_path_from_root = "hub/fixtures/regional_health_data_for_tests.csv"
 
