@@ -1602,12 +1602,19 @@ def statistics_for_choropleth(
     fields_requested_by_resolver = info.selected_fields[0].selections
 
     # Start with fields requested by resolver
-    choropleth_statistics_columns = ["label", "gss", "count", "category"]
+    choropleth_statistics_columns = ["label", "gss"]
     return_columns = [
         field.name
         for field in fields_requested_by_resolver
         if field.name in choropleth_statistics_columns
     ]
+
+    if "count" in fields_requested_by_resolver:
+        # Default count value is the number of records
+        return_columns.append("count")
+
+    if "category" in fields_requested_by_resolver and choropleth_config.category_key:
+        return_columns.append("category")
 
     # Add any existing return columns
     if stats_config.return_columns:
@@ -1615,9 +1622,6 @@ def statistics_for_choropleth(
 
     # Remove duplicates
     stats_config.return_columns = list(set(return_columns))
-
-    if "category" in return_columns and not choropleth_config.category_key:
-        raise ValueError("Category key is required when requesting the category field")
 
     return (
         stats.statistics(
