@@ -992,7 +992,7 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
                         "components": [
                             {
                                 "type": "area_code",
-                                "field": "geography",
+                                "field": "geography code",
                                 "metadata": {"lih_area_type__code": "EER"},
                             }
                         ],
@@ -1075,8 +1075,8 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
         )
 
         # Test GenericData queryset
-        import_data = await sync_to_async(list)(self.source.get_import_data())
-        import_count = len(import_data)
+        import_data = self.source.get_import_data()
+        import_count = await import_data.acount()
         self.assertEqual(import_count, fetch_count)
         data = await sync_to_async(list)(import_data.select_related("area"))
 
@@ -1155,7 +1155,8 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestUploadedCSVSource):
                         "type": models.UploadedCSVSource.GeographyTypes.AREA,
                         "components": [
                             {
-                                "field": "geography",
+                                "type": "area_code",
+                                "field": "geography code",
                                 "metadata": {"lih_area_type__code": "EER"},
                             }
                         ],
@@ -1268,7 +1269,7 @@ class TestDatabaseJSONSource(TestUploadedCSVSource):
                 "components": [
                     {
                         "type": "area_code",
-                        "field": "geography",
+                        "field": "geography code",
                         "metadata": {"lih_area_type__code": "EER"},
                     }
                 ],
@@ -1339,7 +1340,7 @@ class TestDatabaseJSONSourceUsingRowNumberAsID(TestUploadedCSVSourceUsingRowNumb
                 "components": [
                     {
                         "type": "area_code",
-                        "field": "geography",
+                        "field": "geography code",
                         "metadata": {"lih_area_type__code": "EER"},
                     }
                 ],
