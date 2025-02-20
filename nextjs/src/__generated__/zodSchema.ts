@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ActionNetworkSourceInput, AggregationDefinition, AggregationOp, AirtableSourceInput, AnalyticalAreaType, AreaFilter, AreaQueryMode, AreaTypeFilter, CalculatedColumn, CommonDataLoaderFilter, CreateExternalDataSourceInput, CreateOrganisationInput, CrmType, DataSourceType, DatetimeDatetimeFilterLookup, DatetimeRangeLookup, EditableGoogleSheetsSourceInput, ExternalDataSourceFilter, ExternalDataSourceInput, GeoJsonTypes, GeographyTypes, GroupByColumn, HubPageInput, IdBaseFilterLookup, IdObject, IntComparisonFilterLookup, IntRangeLookup, MailChimpSourceInput, MapBounds, MapLayerInput, MapReportInput, OffsetPaginationInput, OneToManyInput, OperationMessageKind, OrganisationFilters, OrganisationInputPartial, PersonFilter, ProcrastinateJobStatus, QueueFilter, ReportFilter, SharingPermissionCudInput, SharingPermissionInput, StatisticsConfig, StrFilterLookup, TicketTailorSourceInput, UpdateMappingItemInput, WebhookType } from './graphql'
+import { ActionNetworkSourceInput, AggregationDefinition, AggregationOp, AirtableSourceInput, AnalyticalAreaType, AreaFilter, AreaQueryMode, AreaTypeFilter, CalculatedColumn, ChoroplethConfig, CommonDataLoaderFilter, CreateExternalDataSourceInput, CreateOrganisationInput, CrmType, DataSourceType, DatetimeDatetimeFilterLookup, DatetimeRangeLookup, EditableGoogleSheetsSourceInput, ExternalDataSourceFilter, ExternalDataSourceInput, GeoJsonTypes, GeographyTypes, GroupByColumn, HubPageInput, IdBaseFilterLookup, IdObject, IntComparisonFilterLookup, IntRangeLookup, MailChimpSourceInput, MapBounds, MapLayerInput, MapReportInput, OffsetPaginationInput, OneToManyInput, OperationMessageKind, OrganisationFilters, OrganisationInputPartial, PersonFilter, ProcrastinateJobStatus, QueueFilter, ReportFilter, SharingPermissionCudInput, SharingPermissionInput, StatisticsConfig, StrFilterLookup, TicketTailorSourceInput, UpdateMappingItemInput, WebhookType } from './graphql'
 
 type Properties<T> = Required<{
   [K in keyof T]: z.ZodType<T[K], any, T[K]>;
@@ -139,6 +139,15 @@ export function CalculatedColumnSchema(): z.ZodObject<Properties<CalculatedColum
     ignore: z.boolean().default(false).nullish(),
     isPercentage: z.boolean().default(false).nullish(),
     name: z.string()
+  })
+}
+
+export function ChoroplethConfigSchema(): z.ZodObject<Properties<ChoroplethConfig>> {
+  return z.object({
+    categoryKey: z.string().nullish(),
+    countKey: z.string().nullish(),
+    isCountKeyPercentage: z.boolean().default(false).nullish(),
+    mapBounds: MapBoundsSchema().nullish()
   })
 }
 

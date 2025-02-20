@@ -626,6 +626,13 @@ export type CalculatedColumn = {
   name: Scalars['String']['input'];
 };
 
+export type ChoroplethConfig = {
+  categoryKey?: InputMaybe<Scalars['String']['input']>;
+  countKey?: InputMaybe<Scalars['String']['input']>;
+  isCountKeyPercentage?: InputMaybe<Scalars['Boolean']['input']>;
+  mapBounds?: InputMaybe<MapBounds>;
+};
+
 export type CommonData = {
   data: Scalars['String']['output'];
   dataType: DataType;
@@ -1285,7 +1292,7 @@ export type FieldDefinition = {
   value: Scalars['String']['output'];
 };
 
-/** GenericData(id, data_type, data, date, float, int, json, created_at, last_update, point, polygon, area, postcode_data, postcode, first_name, last_name, full_name, email, phone, start_time, end_time, public_url, social_url, geocode_data, geocoder, address, title, description, image, can_display_point) */
+/** GenericData(id, data_type, data, date, float, int, json, created_at, last_update, parsed_json, point, polygon, area, postcode_data, postcode, first_name, last_name, full_name, email, phone, start_time, end_time, public_url, social_url, geocode_data, geocoder, address, title, description, image, can_display_point) */
 export type GenericData = CommonData & {
   __typename?: 'GenericData';
   address?: Maybe<Scalars['String']['output']>;
@@ -1319,7 +1326,7 @@ export type GenericData = CommonData & {
 };
 
 
-/** GenericData(id, data_type, data, date, float, int, json, created_at, last_update, point, polygon, area, postcode_data, postcode, first_name, last_name, full_name, email, phone, start_time, end_time, public_url, social_url, geocode_data, geocoder, address, title, description, image, can_display_point) */
+/** GenericData(id, data_type, data, date, float, int, json, created_at, last_update, parsed_json, point, polygon, area, postcode_data, postcode, first_name, last_name, full_name, email, phone, start_time, end_time, public_url, social_url, geocode_data, geocoder, address, title, description, image, can_display_point) */
 export type GenericDataAreaFromPointArgs = {
   areaType: Scalars['String']['input'];
 };
@@ -1358,12 +1365,11 @@ export type GroupByColumn = {
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** GenericData(id, data_type, data, date, float, int, json, created_at, last_update, point, polygon, area, postcode_data, postcode, first_name, last_name, full_name, email, phone, start_time, end_time, public_url, social_url, geocode_data, geocoder, address, title, description, image, can_display_point) */
+/** GenericData(id, data_type, data, date, float, int, json, created_at, last_update, parsed_json, point, polygon, area, postcode_data, postcode, first_name, last_name, full_name, email, phone, start_time, end_time, public_url, social_url, geocode_data, geocoder, address, title, description, image, can_display_point) */
 export type GroupedData = {
   __typename?: 'GroupedData';
   areaData?: Maybe<Area>;
   gss?: Maybe<Scalars['String']['output']>;
-  gssArea?: Maybe<Area>;
   importedData?: Maybe<Scalars['JSON']['output']>;
   label?: Maybe<Scalars['String']['output']>;
 };
@@ -1376,7 +1382,6 @@ export type GroupedDataCount = {
   count?: Maybe<Scalars['Float']['output']>;
   formattedCount?: Maybe<Scalars['String']['output']>;
   gss?: Maybe<Scalars['String']['output']>;
-  gssArea?: Maybe<Area>;
   isPercentage: Scalars['Boolean']['output'];
   label?: Maybe<Scalars['String']['output']>;
   row?: Maybe<Scalars['JSON']['output']>;
@@ -2549,10 +2554,7 @@ export type QueryStatisticsArgs = {
 
 
 export type QueryStatisticsForChoroplethArgs = {
-  categoryKey?: InputMaybe<Scalars['String']['input']>;
-  countKey?: InputMaybe<Scalars['String']['input']>;
-  isCountKeyPercentage?: InputMaybe<Scalars['Boolean']['input']>;
-  mapBounds?: InputMaybe<MapBounds>;
+  choroplethConfig?: InputMaybe<ChoroplethConfig>;
   statsConfig: StatisticsConfig;
 };
 
@@ -3604,10 +3606,7 @@ export type GetMapReportNameQuery = { __typename?: 'Query', mapReport: { __typen
 
 export type StatisticsQueryVariables = Exact<{
   config: StatisticsConfig;
-  categoryKey?: InputMaybe<Scalars['String']['input']>;
-  countKey?: InputMaybe<Scalars['String']['input']>;
-  mapBounds?: InputMaybe<MapBounds>;
-  isCountKeyPercentage?: InputMaybe<Scalars['Boolean']['input']>;
+  choroplethConfig: ChoroplethConfig;
 }>;
 
 
@@ -3852,7 +3851,7 @@ export const PatchMapReportDocument = {"kind":"Document","definitions":[{"kind":
 export const UpdateMapReportDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateMapReport"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"MapReportInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateMapReport"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"data"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"displayOptions"}},{"kind":"Field","name":{"kind":"Name","value":"layers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"source"}},{"kind":"Field","name":{"kind":"Name","value":"sourceData"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"inspectorType"}},{"kind":"Field","name":{"kind":"Name","value":"inspectorConfig"}},{"kind":"Field","name":{"kind":"Name","value":"mapboxPaint"}},{"kind":"Field","name":{"kind":"Name","value":"mapboxLayout"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateMapReportMutation, UpdateMapReportMutationVariables>;
 export const DeleteMapReportDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteMapReport"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"IDObject"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteMapReport"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"data"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<DeleteMapReportMutation, DeleteMapReportMutationVariables>;
 export const GetMapReportNameDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMapReportName"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mapReport"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<GetMapReportNameQuery, GetMapReportNameQueryVariables>;
-export const StatisticsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Statistics"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"config"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"StatisticsConfig"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"categoryKey"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"countKey"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"mapBounds"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"MapBounds"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"isCountKeyPercentage"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"statisticsForChoropleth"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"statsConfig"},"value":{"kind":"Variable","name":{"kind":"Name","value":"config"}}},{"kind":"Argument","name":{"kind":"Name","value":"categoryKey"},"value":{"kind":"Variable","name":{"kind":"Name","value":"categoryKey"}}},{"kind":"Argument","name":{"kind":"Name","value":"countKey"},"value":{"kind":"Variable","name":{"kind":"Name","value":"countKey"}}},{"kind":"Argument","name":{"kind":"Name","value":"mapBounds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"mapBounds"}}},{"kind":"Argument","name":{"kind":"Name","value":"isCountKeyPercentage"},"value":{"kind":"Variable","name":{"kind":"Name","value":"isCountKeyPercentage"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"gss"}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"formattedCount"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"columns"}}]}}]}}]} as unknown as DocumentNode<StatisticsQuery, StatisticsQueryVariables>;
+export const StatisticsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Statistics"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"config"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"StatisticsConfig"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"choroplethConfig"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ChoroplethConfig"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"statisticsForChoropleth"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"statsConfig"},"value":{"kind":"Variable","name":{"kind":"Name","value":"config"}}},{"kind":"Argument","name":{"kind":"Name","value":"choroplethConfig"},"value":{"kind":"Variable","name":{"kind":"Name","value":"choroplethConfig"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"gss"}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"formattedCount"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"columns"}}]}}]}}]} as unknown as DocumentNode<StatisticsQuery, StatisticsQueryVariables>;
 export const StatisticsTableDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"StatisticsTable"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"config"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"StatisticsConfig"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"statistics"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"statsConfig"},"value":{"kind":"Variable","name":{"kind":"Name","value":"config"}}}]}]}}]} as unknown as DocumentNode<StatisticsTableQuery, StatisticsTableQueryVariables>;
 export const SourceMetadataDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SourceMetadata"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"externalDataSource"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"fieldDefinitions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"label"}}]}}]}}]}}]} as unknown as DocumentNode<SourceMetadataQuery, SourceMetadataQueryVariables>;
 export const WebhookRefreshDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"WebhookRefresh"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ID"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"refreshWebhooks"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"externalDataSourceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"hasWebhooks"}},{"kind":"Field","name":{"kind":"Name","value":"automatedWebhooks"}},{"kind":"Field","name":{"kind":"Name","value":"webhookHealthcheck"}}]}}]}}]} as unknown as DocumentNode<WebhookRefreshMutation, WebhookRefreshMutationVariables>;

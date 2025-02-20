@@ -46,32 +46,29 @@ const useDataByBoundary = ({
     STATISTICS_QUERY,
     {
       variables: {
-        categoryKey:
-          view?.mapOptions?.choropleth.dataType === StatisticalDataType.Nominal
-            ? view?.mapOptions?.choropleth.field
-            : undefined,
-        countKey:
-          view?.mapOptions?.choropleth.dataType ===
-          StatisticalDataType.Continuous
-            ? view?.mapOptions?.choropleth.field
-            : undefined,
         config: {
           ...(view?.mapOptions?.choropleth.advancedStatisticsConfig! || {}),
           groupByArea: tileset.analyticalAreaType!,
-          returnColumns: ['gss', 'label'].concat(
-            view?.mapOptions?.choropleth.dataType ===
-              StatisticalDataType.Nominal
-              ? ['category']
-              : ['count']
-          ),
         },
-        mapBounds,
-        isCountKeyPercentage:
-          view?.mapOptions?.choropleth.dataType ===
-            StatisticalDataType.Continuous &&
-          !!view?.mapOptions?.choropleth.field
-            ? view?.mapOptions?.choropleth.fieldIsPercentage
-            : undefined,
+        choroplethConfig: {
+          mapBounds,
+          categoryKey:
+            view?.mapOptions?.choropleth.dataType ===
+            StatisticalDataType.Nominal
+              ? view?.mapOptions?.choropleth.field
+              : undefined,
+          countKey:
+            view?.mapOptions?.choropleth.dataType ===
+            StatisticalDataType.Continuous
+              ? view?.mapOptions?.choropleth.field
+              : undefined,
+          isCountKeyPercentage:
+            view?.mapOptions?.choropleth.dataType ===
+              StatisticalDataType.Continuous &&
+            !!view?.mapOptions?.choropleth.field
+              ? view?.mapOptions?.choropleth.fieldIsPercentage
+              : undefined,
+        },
       },
       skip:
         !view?.mapOptions?.choropleth.advancedStatisticsConfig ||
@@ -128,17 +125,11 @@ export const useTableDataByBoundary = (
 export const STATISTICS_QUERY = gql`
   query Statistics(
     $config: StatisticsConfig!
-    $categoryKey: String
-    $countKey: String
-    $mapBounds: MapBounds
-    $isCountKeyPercentage: Boolean
+    $choroplethConfig: ChoroplethConfig!
   ) {
     statisticsForChoropleth(
       statsConfig: $config
-      categoryKey: $categoryKey
-      countKey: $countKey
-      mapBounds: $mapBounds
-      isCountKeyPercentage: $isCountKeyPercentage
+      choroplethConfig: $choroplethConfig
     ) {
       label
       gss
