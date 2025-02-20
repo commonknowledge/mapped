@@ -68,11 +68,19 @@ class TestGraphQLClientCase(TestCase):
         self.assertIn(res.status_code, [200, 204])
         self.token = res.json()["data"]["tokenAuth"]["token"]["token"]
 
-    def graphql_query(self, query, variables=None):
+    def graphql_query(self, query, variables=None, headers=None):
+        __headers = {}
+        if self.token:
+            __headers.update({"Authorization": f"JWT {self.token}"})
+        if headers and isinstance(headers, dict):
+            __headers.update(headers)
+        data = {"query": query}
+        if variables:
+            data["variables"] = variables
         res = self.client.post(
             reverse("graphql"),
             content_type="application/json",
-            data={"query": query, "variables": variables},
-            headers={"Authorization": f"JWT {self.token}"},
+            data=data,
+            headers=__headers,
         )
         return res.json()

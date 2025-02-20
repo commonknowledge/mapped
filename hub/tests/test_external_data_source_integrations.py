@@ -18,18 +18,19 @@ from hub.tests.fixtures.custom_lookup import custom_lookup
 from hub.tests.utils import TestGraphQLClientCase
 
 
-class TestExternalDataSource(TestGraphQLClientCase):
-    class Meta:
-        abstract = True
-
+class TestExternalDataSource:
     constituency_field = "constituency"
     mayoral_field = "mayoral region"
 
-    def setUp(self) -> None:
+    def setUp(self: TestGraphQLClientCase) -> None:
+        super().setUp()
         self.records_to_delete: list[tuple[str, models.ExternalDataSource]] = []
 
         self.organisation = models.Organisation.objects.create(
             name="Test Organisation", slug="test-organisation"
+        )
+        self.membership = models.Membership.objects.create(
+            user=self.user, organisation=self.organisation, role="owner"
         )
 
         # Set up the pivot table
@@ -617,7 +618,7 @@ class TestExternalDataSource(TestGraphQLClientCase):
               }
             """,
             {
-                "currentOrganisationId": str(self.org.id),
+                "currentOrganisationId": str(self.organisation.id),
             },
         )
 
@@ -764,7 +765,7 @@ class TestExternalDataSource(TestGraphQLClientCase):
         )
 
 
-class TestAirtableSource(TestExternalDataSource, TestCase):
+class TestAirtableSource(TestExternalDataSource, TestGraphQLClientCase):
     def create_test_source(self, name="My test Airtable member list"):
         self.source = models.AirtableSource.objects.create(
             name=name,
@@ -794,7 +795,7 @@ class TestAirtableSource(TestExternalDataSource, TestCase):
         return self.source
 
 
-class TestMailchimpSource(TestExternalDataSource, TestCase):
+class TestMailchimpSource(TestExternalDataSource, TestGraphQLClientCase):
     constituency_field = "CONSTITUEN"
     mayoral_field = "MAYORAL_RE"
 
@@ -826,7 +827,7 @@ class TestMailchimpSource(TestExternalDataSource, TestCase):
         return self.source
 
 
-class TestActionNetworkSource(TestExternalDataSource, TestCase):
+class TestActionNetworkSource(TestExternalDataSource, TestGraphQLClientCase):
     constituency_field = "custom_fields.constituency"
     mayoral_field = "custom_fields.mayoral_region"
 
@@ -898,7 +899,7 @@ class TestActionNetworkSource(TestExternalDataSource, TestCase):
 @skip(
     reason="Google Sheets can't be automatically tested as the refresh token expires after 7 days - need to use a published app"
 )
-class TestEditableGoogleSheetsSource(TestExternalDataSource, TestCase):
+class TestEditableGoogleSheetsSource(TestExternalDataSource, TestGraphQLClientCase):
     def create_test_source(self, name="My test Google member list"):
         self.source: models.EditableGoogleSheetsSource = (
             models.EditableGoogleSheetsSource.objects.create(
@@ -960,7 +961,7 @@ class TestEditableGoogleSheetsSource(TestExternalDataSource, TestCase):
             self.assertIsNotNone(record)
 
 
-class TestUploadedCSVSource(TestExternalDataSource, TestCase):
+class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
     fixtures = ["regions"]
     file_path_from_root = "hub/fixtures/regional_health_data_for_tests.csv"
 
