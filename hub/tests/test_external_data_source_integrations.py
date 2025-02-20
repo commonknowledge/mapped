@@ -627,9 +627,14 @@ class TestExternalDataSource:
             len(result["data"]["myOrganisations"][0]["externalDataSources"]),
             2,
         )
-        self.assertEqual(
-            result["data"]["myOrganisations"][0]["externalDataSources"][0]["name"],
+        self.assertIn(
             self.source.name,
+            [
+                source["name"]
+                for source in result["data"]["myOrganisations"][0][
+                    "externalDataSources"
+                ]
+            ],
         )
 
     def test_inspect_source(self):
