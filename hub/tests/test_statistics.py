@@ -1,30 +1,18 @@
-from django.test import Client, TestCase, override_settings
-from django.urls import reverse
-
 from asgiref.sync import async_to_sync
 
 from hub import models
 from hub.graphql.types.stats import AggregationOp
-from hub.tests.utils import get_function_name
+from hub.tests.utils import TestGraphQLClientCase, get_function_name
 from utils.geo_reference import AnalyticalAreaType
 
 from .fixtures.statistics import eu_population_by_la
 
-username = "testuser"
-password = "12345"
 
-
-@override_settings(ALLOWED_HOSTS=["testserver"])
-class TestStatistics(TestCase):
+class TestStatistics(TestGraphQLClientCase):
     fixtures = ["councils", "regions"]
 
     def setUp(self) -> None:
-        # Load areas
-        self.client = Client()
-        # Create user
-        self.user = models.User.objects.create_user(
-            username=username, password=password
-        )
+        super().setUp()
         # Create org for user
         self.org = models.Organisation.objects.create(name="testorg", slug="testorg")
         self.membership = models.Membership.objects.create(
@@ -60,38 +48,6 @@ class TestStatistics(TestCase):
         # (see `duplicate_councils`)
         self.geocodable_council_count = 315
         self.count_regions = models.Area.objects.filter(area_type__code="EER").count()
-
-        # Login user
-        self.client.login(username=username, password=password)
-        res = self.client.post(
-            reverse("graphql"),
-            content_type="application/json",
-            data={
-                "variables": {"username": username, "password": password},
-                "query": """
-                  mutation Login($username: String!, $password: String!) {
-                    tokenAuth(username: $username, password: $password) {
-                      errors
-                      success
-                      token {
-                        token
-                      }
-                    }
-                  }
-              """,
-            },
-        )
-        self.assertIn(res.status_code, [200, 204])
-        self.token = res.json()["data"]["tokenAuth"]["token"]["token"]
-
-    def graphql_query(self, query, variables=None):
-        res = self.client.post(
-            reverse("graphql"),
-            content_type="application/json",
-            data={"query": query, "variables": variables},
-            headers={"Authorization": f"JWT {self.token}"},
-        )
-        return res.json()
 
     def test_count_by_area(self):
         # get function name from `self`

@@ -15,9 +15,10 @@ from asgiref.sync import async_to_sync, sync_to_async
 
 from hub import models
 from hub.tests.fixtures.custom_lookup import custom_lookup
+from hub.tests.utils import TestGraphQLClientCase
 
 
-class TestExternalDataSource:
+class TestExternalDataSource(TestGraphQLClientCase):
     class Meta:
         abstract = True
 
@@ -578,6 +579,189 @@ class TestExternalDataSource:
                 self.assertIn(postcode, ["E5 0AA", "E5 0AB"])
             elif a["label"] == "Waltham Forest":
                 self.assertEqual(postcode, "E10 6EF")
+
+    def test_list_sources(self):
+        result = self.graphql_query(
+            """
+              query ListOrganisations($currentOrganisationId: ID!) {
+                myOrganisations(filters: { id: $currentOrganisationId }) {
+                  id
+                  externalDataSources {
+                    id
+                    name
+                    dataType
+                    crmType
+                    autoImportEnabled
+                    autoUpdateEnabled
+                    sharingPermissions {
+                      id
+                      organisation {
+                        id
+                        name
+                      }
+                    }
+                  }
+                  sharingPermissionsFromOtherOrgs {
+                    id
+                    externalDataSource {
+                      id
+                      name
+                      dataType
+                      crmType
+                      organisation {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            """,
+            {
+                "currentOrganisationId": str(self.org.id),
+            },
+        )
+
+        self.assertIsNone(result.get("errors", None))
+        self.assertEqual(
+            len(result["data"]["myOrganisations"][0]["externalDataSources"]),
+            1,
+        )
+        self.assertEqual(
+            result["data"]["myOrganisations"][0]["externalDataSources"][0]["name"],
+            self.source.name,
+        )
+
+    def test_inspect_source(self):
+        result = self.graphql_query(
+            """
+              query ExternalDataSourceInspectPage($ID: ID!) {
+                  externalDataSource(id: $ID) {
+                    id
+                    name
+                    dataType
+                    remoteUrl
+                    crmType
+                    connectionDetails {
+                      ... on AirtableSource {
+                        apiKey
+                        baseId
+                        tableId
+                      }
+                      ... on MailchimpSource {
+                        apiKey
+                        listId
+                      }
+                      ... on ActionNetworkSource {
+                        apiKey
+                        groupSlug
+                      }
+                      ... on TicketTailorSource {
+                        apiKey
+                      }
+                    }
+                    lastImportJob {
+                      id
+                      lastEventAt
+                      status
+                    }
+                    lastUpdateJob {
+                      id
+                      lastEventAt
+                      status
+                    }
+                    autoImportEnabled
+                    autoUpdateEnabled
+                    hasWebhooks
+                    allowUpdates
+                    automatedWebhooks
+                    webhookUrl
+                    webhookHealthcheck
+                    geographyColumn
+                    geographyColumnType
+                    geocodingConfig
+                    usesValidGeocodingConfig
+                    postcodeField
+                    firstNameField
+                    lastNameField
+                    fullNameField
+                    emailField
+                    phoneField
+                    addressField
+                    titleField
+                    descriptionField
+                    imageField
+                    startTimeField
+                    endTimeField
+                    publicUrlField
+                    socialUrlField
+                    canDisplayPointField
+                    isImportScheduled
+                    importProgress {
+                      id
+                      hasForecast
+                      status
+                      total
+                      succeeded
+                      estimatedFinishTime
+                      actualFinishTime
+                      inQueue
+                      numberOfJobsAheadInQueue
+                      sendEmail
+                    }
+                    isUpdateScheduled
+                    updateProgress {
+                      id
+                      hasForecast
+                      status
+                      total
+                      succeeded
+                      estimatedFinishTime
+                      actualFinishTime
+                      inQueue
+                      numberOfJobsAheadInQueue
+                      sendEmail
+                    }
+                    importedDataCount
+                    importedDataGeocodingRate
+                    regionCount: importedDataCountOfAreas(
+                      analyticalAreaType: european_electoral_region
+                    )
+                    constituencyCount: importedDataCountOfAreas(
+                      analyticalAreaType: parliamentary_constituency
+                    )
+                    ladCount: importedDataCountOfAreas(analyticalAreaType: admin_district)
+                    wardCount: importedDataCountOfAreas(analyticalAreaType: admin_ward)
+                    fieldDefinitions(refreshFromSource: true) {
+                      label
+                      value
+                      description
+                      editable
+                    }
+                    updateMapping {
+                      source
+                      sourcePath
+                      destinationColumn
+                    }
+                    sharingPermissions {
+                      id
+                    }
+                    organisation {
+                      id
+                      name
+                    }
+                  }
+                }
+            """,
+            {
+                "ID": str(self.source.id),
+            },
+        )
+
+        self.assertIsNone(result.get("errors", None))
+        self.assertEqual(
+            result["data"]["externalDataSource"]["name"],
+            self.source.name,
+        )
 
 
 class TestAirtableSource(TestExternalDataSource, TestCase):

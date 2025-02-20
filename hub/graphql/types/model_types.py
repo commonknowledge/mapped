@@ -891,12 +891,13 @@ class BatchJobProgress:
 
 @strawberry.enum
 class CrmType(Enum):
-    airtable = "airtable"
-    mailchimp = "mailchimp"
-    actionnetwork = "actionnetwork"
-    tickettailor = "tickettailor"
-    editablegooglesheets = "editablegooglesheets"
-    uploadedcsv = "uploadedcsv"
+    airtable = models.AirtableSource.crm_type
+    mailchimp = models.MailchimpSource.crm_type
+    actionnetwork = models.ActionNetworkSource.crm_type
+    tickettailor = models.TicketTailorSource.crm_type
+    editablegooglesheets = models.EditableGoogleSheetsSource.crm_type
+    uploadedcsv = models.UploadedCSVSource.crm_type
+    databasejson = models.DatabaseJSONSource.crm_type
 
 
 @strawberry_django.type(models.ExternalDataSource, filters=ExternalDataSourceFilter)
@@ -1118,6 +1119,7 @@ class ExternalDataSource(BaseDataSource):
         "EditableGoogleSheetsSource",
         "TicketTailorSource",
         "UploadedCSVSource",
+        "DatabaseJSONSource",
     ]:
         instance = self.get_real_instance()
         return instance
@@ -1161,6 +1163,12 @@ class UploadedCSVSource(ExternalDataSource):
     delimiter: auto
 
 
+@strawberry_django.type(models.DatabaseJSONSource)
+class DatabaseJSONSource(ExternalDataSource):
+    pass
+
+
+@strawberry_django.type(models.MailchimpSource)
 @strawberry_django.type(models.MailchimpSource)
 class MailchimpSource(ExternalDataSource):
     api_key: str
