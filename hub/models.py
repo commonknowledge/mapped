@@ -3155,14 +3155,87 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         call_command("autoscale_render_workers")
 
 
-class DatabaseJSONSource(ExternalDataSource):
+class DataFrameSource(ExternalDataSource):
+    class Meta:
+        abstract = True
+
+    id_field = models.CharField(max_length=250, default="id")
+    use_row_number_as_id = models.BooleanField(default=False)
+    internal_id_key = "mapped_internal_data_id"
+
+    def save(self, *args, **kwargs):
+        if self.use_row_number_as_id:
+            self.id_field = self.internal_id_key
+        return super().save(*args, **kwargs)
+
+    def load_data_into_unformatted_df(self) -> pd.DataFrame:
+        raise NotImplementedError(
+            "load_data_into_unformatted_df not implemented for this data source type."
+        )
+
+    @cached_property
+    def df(self):
+        df = self.load_data_into_unformatted_df()
+        if df is None:
+            raise ValueError("Could not load CSV file")
+        if self.use_row_number_as_id:
+            if self.id_field != self.internal_id_key:
+                self.id_field = self.internal_id_key
+                self.save()
+                self.refresh_from_db()
+        df[self.internal_id_key] = (
+            df.index if self.use_row_number_as_id else df[self.id_field]
+        )
+        df = df.set_index(self.internal_id_key, drop=False)
+        return df
+
+    def load_field_definitions(self):
+        return [
+            self.FieldDefinition(
+                label=key,
+                value=key,
+                type=StatisticalDataType.from_dtype(dtype),
+                editable=self.allow_updates,
+            )
+            for key, dtype in self.df.dtypes.to_dict().items()
+            if key != self.internal_id_key
+        ]
+
+    def get_record_id(self, record: dict):
+        if record is None:
+            return None
+        return record.get(self.internal_id_key, None)
+
+    async def fetch_one(self, member_id):
+        el = self.df.loc[member_id]
+        # Check if series or dataframe
+        if isinstance(el, pd.Series):
+            return el.to_dict(into=PandasMappingSafeForPG)
+        else:
+            return el.to_dict(orient="records", into=PandasMappingSafeForPG)[0]
+
+    async def fetch_many(self, id_list: list[str]):
+        return self.df.loc[id_list].to_dict(
+            orient="records", into=PandasMappingSafeForPG
+        )
+
+    async def fetch_all(self):
+        return self.df.to_dict(orient="records", into=PandasMappingSafeForPG)
+
+    def get_record_field(self, record, field, field_type=None):
+        return get(record, field)
+
+    def get_record_dict(self, record):
+        return record
+
+
+class DatabaseJSONSource(DataFrameSource):
     crm_type = "DatabaseJSONSource"
     has_webhooks = False
     automated_webhooks = False
     introspect_fields = False
     default_data_type = None
     data = JSONField(default=list, blank=True)
-    id_field = models.CharField(max_length=250, default="id")
 
     class Meta:
         verbose_name = "Database JSON source"
@@ -3174,45 +3247,8 @@ class DatabaseJSONSource(ExternalDataSource):
     def healthcheck(self):
         return True
 
-    @cached_property
-    def df(self):
-        df = pd.DataFrame(self.data).set_index(self.id_field, drop=False)
-        if self.use_row_number_as_id:
-            if self.id_field != self.internal_id_key:
-                self.id_field = self.internal_id_key
-                self.save()
-                self.refresh_from_db()
-            df.index.name = self.internal_id_key
-        else:
-            df = df.set_index(self.id_field, drop=False)
-        return df
-
-    def load_field_definitions(self):
-        # get all keys from self.data
-        return [
-            self.FieldDefinition(label=col, value=col)
-            for col in self.df.columns.tolist()
-        ]
-
-    def get_record_id(self, record: dict):
-        return record.get(self.id_field, None)
-
-    async def fetch_one(self, member_id):
-        return self.df[member_id].to_dict(
-            orient="records", into=PandasMappingSafeForPG
-        )[0]
-
-    async def fetch_many(self, id_list: list[str]):
-        return self.df[id_list].to_dict(orient="records", into=PandasMappingSafeForPG)
-
-    async def fetch_all(self):
-        return self.df.to_dict(orient="records", into=PandasMappingSafeForPG)
-
-    def get_record_field(self, record, field, field_type=None):
-        return get(record, field)
-
-    def get_record_dict(self, record):
-        return record
+    def load_data_into_unformatted_df(self) -> pd.DataFrame:
+        return pd.DataFrame(self.data).set_index(self.id_field, drop=False)
 
     async def update_one(self, mapped_record, **kwargs):
         id = self.get_record_id(mapped_record["member"])
@@ -3265,22 +3301,10 @@ class UploadedCSVSource(ExternalDataSource):
         upload_to=org_directory_path,
         validators=[FileExtensionValidator(("csv",))],
     )
-    id_field = models.TextField()
     delimiter = models.TextField(default=",", blank=True)
-    use_row_number_as_id = models.BooleanField(default=False)
-    internal_id_key = "__mapped__row_index"
-
-    # Pandas report on columns
-    # TODO: replace this with DataTypes: https://linear.app/commonknowledge/issue/MAP-871/design-for-describing-data-source-data-types-entities
-    columns = ArrayField(models.TextField(), default=list, blank=True)
 
     class Meta:
         verbose_name = "Uploaded CSV file"
-
-    def save(self, *args, **kwargs):
-        if self.use_row_number_as_id:
-            self.id_field = self.internal_id_key
-        return super().save(*args, **kwargs)
 
     @classmethod
     def get_deduplication_field_names(self) -> list[str]:
@@ -3290,8 +3314,7 @@ class UploadedCSVSource(ExternalDataSource):
         # Check if file exists in Django
         return self.spreadsheet_file.storage.exists(self.spreadsheet_file.name)
 
-    @cached_property
-    def df(self):
+    def load_data_into_unformatted_df(self) -> pd.DataFrame:
         df = None
         if settings.MINIO_STORAGE_ENDPOINT:
             # file_text = io.StringIO(file.read().decode('utf-8')), delimiter=self.delimiter)
@@ -3316,57 +3339,7 @@ class UploadedCSVSource(ExternalDataSource):
                 # Read in chunks
                 low_memory=True,
             )
-        if df is None:
-            raise ValueError("Could not load CSV file")
-        if self.use_row_number_as_id:
-            if self.id_field != self.internal_id_key:
-                self.id_field = self.internal_id_key
-                self.save()
-                self.refresh_from_db()
-            df.index.name = self.internal_id_key
-        else:
-            df = df.set_index(self.id_field, drop=False)
         return df
-
-    def get_columns_from_file(self):
-        return self.df.columns.tolist()
-
-    def load_field_definitions(self):
-        return [self.FieldDefinition(label=col, value=col) for col in self.columns]
-
-    def get_record_id(self, record: dict):
-        return record.get(self.id_field, None)
-
-    async def fetch_one(self, member_id):
-        return self.df[self.df[self.id_field] == member_id].to_dict(
-            orient="records", into=PandasMappingSafeForPG
-        )[0]
-
-    async def fetch_many(self, id_list: list[str]):
-        return self.df[self.df[self.id_field].isin(id_list)].to_dict(
-            orient="records", into=PandasMappingSafeForPG
-        )
-
-    async def fetch_all(self):
-        return self.df.to_dict(orient="records", into=PandasMappingSafeForPG)
-
-    def get_record_field(self, record, field, field_type=None):
-        return get(record, field)
-
-    def get_record_dict(self, record):
-        return record
-
-
-# Signal that materialises columns to the database
-@receiver(models.signals.post_save, sender=UploadedCSVSource)
-def materialise_columns(sender, instance, created, **kwargs):
-    if (
-        created
-        and instance.spreadsheet_file
-        and (instance.columns is None or len(instance.columns) <= 0)
-    ):
-        instance.columns = instance.get_columns_from_file()
-        instance.save()
 
 
 class AirtableSource(ExternalDataSource):

@@ -3,6 +3,7 @@ import re
 import unicodedata
 from enum import Enum
 from typing import Any
+from numpy import dtype
 
 from pandas import Series
 
@@ -98,6 +99,27 @@ class StatisticalDataType(Enum):
             self.EMPTY: "empty",
         }
         return _STAT_TYPES.get(self, "categorical")
+
+    @classmethod
+    def from_dtype(cls, dt: dtype) -> "StatisticalDataType":
+        if dt == dtype("object"):
+            return cls.STRING
+        elif str(dt) == "category":
+            return cls.STRING
+        elif dt == dtype("int64"):
+            return cls.INT
+        elif dt == dtype("float64"):
+            return cls.FLOAT
+        elif dt == dtype("bool"):
+            return cls.BOOL
+        elif dt == dtype("datetime64") or str(dt).startswith("datetime64"):
+            # TODO: implement datetime StatisticalDataType
+            return cls.UNKNOWN
+        elif dt == dtype("timedelta") or str(dt).startswith("timedelta"):
+            # TODO: implement timedelta StatisticalDataType
+            return cls.UNKNOWN
+        else:
+            return cls.UNKNOWN
 
 
 def parse_and_type_json(json: dict) -> tuple[dict, dict[str, StatisticalDataType]]:

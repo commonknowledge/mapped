@@ -956,15 +956,7 @@ class TestUploadedCSVSource(TestExternalDataSource, TestCase):
         self.assertEqual(len(analytics), 10)
 
     async def test_analytics_imported_data(self):
-        """
-        This is testing the ability to get record data from the data source
-        """
         self.skipTest("Not implemented")
-        analytics = self.source.imported_data_count_by_area("european_electoral_region")
-        analytics = await sync_to_async(list)(analytics)
-        self.assertEqual(len(analytics), 10)
-        constituencies_in_report = [a["label"] for a in analytics]
-        self.assertIn("North West", constituencies_in_report)
 
     def test_field_definitions(self: TestCase):
         self.source.refresh_field_definitions()
@@ -986,10 +978,7 @@ class TestUploadedCSVSource(TestExternalDataSource, TestCase):
         )
 
 
-class TestUploadedCSVSourceUsingRowNumberAsID(TestExternalDataSource, TestCase):
-    fixtures = ["regions"]
-    file_path_from_root = "hub/fixtures/regional_health_data_for_tests.csv"
-
+class TestUploadedCSVSourceUsingRowNumberAsID(TestUploadedCSVSource):
     def create_test_source(self, name="My test CSV file"):
         path = Path(os.path.join(settings.BASE_DIR, self.file_path_from_root))
 
@@ -1021,7 +1010,7 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestExternalDataSource, TestCase):
     async def test_fetch_one(self):
         # Get a single ID from the freshly read CSV
         # Test this functionality
-        record = await self.source.fetch_one(1)
+        record = await self.source.fetch_one(0)
         # Check
         self.assertEqual(
             self.source.get_record_field(record, "geography"),
@@ -1029,7 +1018,7 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestExternalDataSource, TestCase):
         )
 
     async def test_fetch_many(self):
-        rows = await self.source.fetch_many([1, 2])
+        rows = await self.source.fetch_many([0, 1])
 
         # 10 rows
         self.assertEqual(len(rows), 2)
@@ -1059,11 +1048,8 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestExternalDataSource, TestCase):
         # 10 rows
         self.assertEqual(len(rows), 10)
         # Check fetch generates valid dictionaries (via DF ingest)
-        for record in rows:
-            self.assertEqual(
-                self.source.get_record_id(record),
-                record.get("geography code", None),
-            )
+        for index, record in enumerate(rows):
+            self.assertEqual(self.source.get_record_id(record), index)
 
     async def test_import_async(self):
         self.skipTest("Not implemented")
@@ -1075,6 +1061,7 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestExternalDataSource, TestCase):
 
         # Add some test data
         records = list(await self.source.fetch_all())
+
         fetch_count = len(records)
         self.assertGreaterEqual(fetch_count, 10)
 
@@ -1097,7 +1084,7 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestExternalDataSource, TestCase):
             ),
             None,
         )
-        self.assertEqual(5, west_midlands.data)
+        self.assertEqual("4", west_midlands.data)
         self.assertIsNotNone(west_midlands.postcode_data)
         self.assertIsNotNone(west_midlands.area.name)
 
@@ -1111,7 +1098,7 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestExternalDataSource, TestCase):
         self.skipTest("Not implemented")
 
 
-class TestDatabaseJSONSource(TestUploadedCSVSource, TestCase):
+class TestDatabaseJSONSource(TestUploadedCSVSource):
     def create_test_source(self, name="My test DB JSON file"):
         self.source = models.DatabaseJSONSource.objects.create(
             name=name,
@@ -1119,11 +1106,10 @@ class TestDatabaseJSONSource(TestUploadedCSVSource, TestCase):
             data=regional_health_data.copy(),
             id_field="geography code",
         )
+        return self.source
 
 
-class TestDatabaseJSONSourceUsingRowNumberAsID(
-    TestUploadedCSVSourceUsingRowNumberAsID, TestCase
-):
+class TestDatabaseJSONSourceUsingRowNumberAsID(TestUploadedCSVSourceUsingRowNumberAsID):
     def create_test_source(self, name="My test DB JSON file"):
         self.source = models.DatabaseJSONSource.objects.create(
             name=name,
@@ -1131,3 +1117,4 @@ class TestDatabaseJSONSourceUsingRowNumberAsID(
             data=regional_health_data.copy(),
             use_row_number_as_id=True,
         )
+        return self.source
