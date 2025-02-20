@@ -625,7 +625,7 @@ class TestExternalDataSource:
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
             len(result["data"]["myOrganisations"][0]["externalDataSources"]),
-            1,
+            2,
         )
         self.assertEqual(
             result["data"]["myOrganisations"][0]["externalDataSources"][0]["name"],
