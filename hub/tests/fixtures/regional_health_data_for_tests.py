@@ -2,7 +2,7 @@ regional_health_data = [
     {
         "date": "2021",
         "geography": "North East",
-        "geography code": "E12000001",
+        "geography code": "E15000001",
         "General Health: Very good health": "44.7",
         "General Health: Good health": "33.6",
         "General Health: Fair health": "14.8",
@@ -12,7 +12,7 @@ regional_health_data = [
     {
         "date": "2021",
         "geography": "North West",
-        "geography code": "E12000002",
+        "geography code": "E15000002",
         "General Health: Very good health": "46.8",
         "General Health: Good health": "33.2",
         "General Health: Fair health": "13.7",
@@ -22,7 +22,7 @@ regional_health_data = [
     {
         "date": "2021",
         "geography": "Yorkshire and The Humber",
-        "geography code": "E12000003",
+        "geography code": "E15000003",
         "General Health: Very good health": "45.3",
         "General Health: Good health": "34.8",
         "General Health: Fair health": "14.0",
@@ -32,7 +32,7 @@ regional_health_data = [
     {
         "date": "2021",
         "geography": "East Midlands",
-        "geography code": "E12000004",
+        "geography code": "E15000004",
         "General Health: Very good health": "45.8",
         "General Health: Good health": "35.1",
         "General Health: Fair health": "13.7",
@@ -42,7 +42,7 @@ regional_health_data = [
     {
         "date": "2021",
         "geography": "West Midlands",
-        "geography code": "E12000005",
+        "geography code": "E15000005",
         "General Health: Very good health": "45.2",
         "General Health: Good health": "35.0",
         "General Health: Fair health": "13.9",
@@ -52,7 +52,7 @@ regional_health_data = [
     {
         "date": "2021",
         "geography": "Eastern",
-        "geography code": "E12000006",
+        "geography code": "E15000006",
         "General Health: Very good health": "47.9",
         "General Health: Good health": "35.0",
         "General Health: Fair health": "12.5",
@@ -62,7 +62,7 @@ regional_health_data = [
     {
         "date": "2021",
         "geography": "London",
-        "geography code": "E12000007",
+        "geography code": "E15000007",
         "General Health: Very good health": "49.0",
         "General Health: Good health": "32.9",
         "General Health: Fair health": "12.6",
@@ -72,7 +72,7 @@ regional_health_data = [
     {
         "date": "2021",
         "geography": "South East",
-        "geography code": "E12000008",
+        "geography code": "E15000008",
         "General Health: Very good health": "49.6",
         "General Health: Good health": "34.4",
         "General Health: Fair health": "11.8",
@@ -82,7 +82,7 @@ regional_health_data = [
     {
         "date": "2021",
         "geography": "South West",
-        "geography code": "E12000009",
+        "geography code": "E15000009",
         "General Health: Very good health": "48.7",
         "General Health: Good health": "34.1",
         "General Health: Fair health": "12.5",
@@ -92,7 +92,7 @@ regional_health_data = [
     {
         "date": "2021",
         "geography": "Wales",
-        "geography code": "W92000004",
+        "geography code": "W08000001",
         "General Health: Very good health": "46.6",
         "General Health: Good health": "32.5",
         "General Health: Fair health": "14.1",

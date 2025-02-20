@@ -1012,7 +1012,7 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
     async def test_fetch_one(self):
         # Get a single ID from the freshly read CSV
         # Test this functionality
-        record = await self.source.fetch_one("E12000001")
+        record = await self.source.fetch_one("E15000001")
         # Check
         self.assertEqual(
             self.source.get_record_field(record, "geography"),
@@ -1020,14 +1020,14 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
         )
 
     async def test_fetch_many(self):
-        rows = await self.source.fetch_many(["E12000004", "E12000005"])
+        rows = await self.source.fetch_many(["E15000004", "E15000005"])
 
         # 10 rows
         self.assertEqual(len(rows), 2)
         # Find data matching
         expected_rows = [
-            {"geography": "East Midlands", "geography code": "E12000004"},
-            {"geography": "West Midlands", "geography code": "E12000005"},
+            {"geography": "East Midlands", "geography code": "E15000004"},
+            {"geography": "West Midlands", "geography code": "E15000005"},
         ]
         for expected in expected_rows:
             record = next(
@@ -1083,12 +1083,12 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
         # Check the data has been geocoded
         north_east = next(
             filter(
-                lambda r: r.json.get("geography code") == "E12000001",
+                lambda r: r.json.get("geography code") == "E15000001",
                 data,
             ),
             None,
         )
-        self.assertEqual("E12000001", north_east.data)
+        self.assertEqual("E15000001", north_east.data)
         self.assertIsNotNone(north_east.postcode_data)
         self.assertIsNotNone(north_east.area.name)
 
@@ -1183,8 +1183,8 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestUploadedCSVSource):
         self.assertEqual(len(rows), 2)
         # Find data matching
         expected_rows = [
-            {"geography": "North East", "geography code": "E12000001"},
-            {"geography": "North West", "geography code": "E12000002"},
+            {"geography": "North East", "geography code": "E15000001"},
+            {"geography": "North West", "geography code": "E15000002"},
         ]
         for expected in expected_rows:
             record = next(
@@ -1238,7 +1238,7 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestUploadedCSVSource):
         # Check the data has been geocoded
         west_midlands = next(
             filter(
-                lambda r: r.json.get("geography code") == "E12000005",
+                lambda r: r.json.get("geography code") == "E15000005",
                 data,
             ),
             None,
@@ -1312,12 +1312,12 @@ class TestDatabaseJSONSource(TestUploadedCSVSource):
         # Check the data has been geocoded
         north_east = next(
             filter(
-                lambda r: r.json.get("geography code") == "E12000001",
+                lambda r: r.json.get("geography code") == "E15000001",
                 data,
             ),
             None,
         )
-        self.assertEqual("E12000001", north_east.data)
+        self.assertEqual("E15000001", north_east.data)
         self.assertIsNotNone(north_east.postcode_data)
         self.assertIsNotNone(north_east.area.name)
 
@@ -1383,12 +1383,12 @@ class TestDatabaseJSONSourceUsingRowNumberAsID(TestUploadedCSVSourceUsingRowNumb
         # Check the data has been geocoded
         north_east = next(
             filter(
-                lambda r: r.json.get("geography code") == "E12000001",
+                lambda r: r.json.get("geography code") == "E15000001",
                 data,
             ),
             None,
         )
-        self.assertEqual("E12000001", north_east.data)
+        self.assertEqual("E15000001", north_east.data)
         self.assertIsNotNone(north_east.postcode_data)
         self.assertIsNotNone(north_east.area.name)
 
