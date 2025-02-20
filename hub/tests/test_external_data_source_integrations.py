@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from random import randint
 from typing import List
-from unittest import skip
+from unittest import skip, skipIf
 
 from django.conf import settings
 from django.core.files import File
@@ -765,6 +765,10 @@ class TestExternalDataSource:
         )
 
 
+@skipIf(
+    settings.SKIP_AIRTABLE_TESTS,
+    "Skipping Airtable tests",
+)
 class TestAirtableSource(TestExternalDataSource, TestGraphQLClientCase):
     def create_test_source(self, name="My test Airtable member list"):
         self.source = models.AirtableSource.objects.create(
