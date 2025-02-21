@@ -623,7 +623,7 @@ async def add_member(
     record = source.CUDRecord(
         email=email, postcode=postcode, data=custom_fields, tags=tags
     )
-    member = source.create_one(record)
+    member = await source.create_one(record)
     member_id = source.get_record_id(member)
     await source.import_many([member_id])
     return True

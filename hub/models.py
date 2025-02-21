@@ -14,7 +14,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.gis.db.models import MultiPolygonField, PointField
 from django.contrib.gis.geos import Point
-from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
@@ -2951,7 +2950,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         data = dict
         tags = list[str]
 
-    def delete_one(self, record_id: str):
+    async def delete_one(self, record_id: str):
         """
         Used for tests
         """
@@ -2959,7 +2958,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             "Delete one not implemented for this data source type."
         )
 
-    def create_one(self, record: CUDRecord):
+    async def create_one(self, record: CUDRecord) -> dict:
         """
         Used for tests
         """
@@ -2967,7 +2966,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             "Create one not implemented for this data source type."
         )
 
-    def create_many(self, records: List[CUDRecord]):
+    async def create_many(self, records: List[CUDRecord]):
         """
         Used for tests
         """
@@ -3155,14 +3154,92 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         call_command("autoscale_render_workers")
 
 
-class DatabaseJSONSource(ExternalDataSource):
+class DataFrameSource(ExternalDataSource):
+    class Meta:
+        abstract = True
+
+    id_field = models.CharField(max_length=250, default="id")
+    use_row_number_as_id = models.BooleanField(default=False)
+    mapped_row_id = "mapped_row_id"
+
+    def load_data_into_unformatted_df(self) -> pd.DataFrame:
+        raise NotImplementedError(
+            "load_data_into_unformatted_df not implemented for this data source type."
+        )
+
+    @cached_property
+    def df(self):
+        df = self.load_data_into_unformatted_df()
+        if df is None:
+            raise ValueError("Could not load CSV file")
+        df[self.mapped_row_id] = (
+            df.index if self.use_row_number_as_id else df[self.id_field]
+        )
+        df = df.set_index(self.mapped_row_id, drop=False)
+        return df
+
+    def load_field_definitions(self):
+        return [
+            self.FieldDefinition(
+                label=key,
+                value=key,
+                type=StatisticalDataType.from_dtype(dtype),
+                editable=self.allow_updates,
+            )
+            for key, dtype in self.df.dtypes.to_dict().items()
+            if key != self.mapped_row_id
+        ]
+
+    def get_record_id(self, record: dict):
+        if record is None or not isinstance(record, dict):
+            return None
+        if self.use_row_number_as_id:
+            id = record.get(self.mapped_row_id, None)
+            if id:
+                return id
+            # Maybe this data is not yet imported;
+            # try matching the record to the df by values of the record dict:
+            filtered_df = self.df
+            for key in record.keys():
+                filtered_df = filtered_df.loc[(filtered_df[key] == record[key])]
+            id = filtered_df.index.tolist()
+            if len(id) >= 1:
+                return id[0]
+            else:
+                return None
+        else:
+            return record.get(self.id_field, None)
+
+    async def fetch_one(self, member_id):
+        el = self.df.loc[member_id]
+        # Check if series or dataframe
+        if isinstance(el, pd.Series):
+            return el.to_dict(into=PandasMappingSafeForPG)
+        else:
+            return el.to_dict(orient="records", into=PandasMappingSafeForPG)[0]
+
+    async def fetch_many(self, id_list: list[str]):
+        return self.df.loc[id_list].to_dict(
+            orient="records", into=PandasMappingSafeForPG
+        )
+
+    async def fetch_all(self):
+        return self.df.to_dict(orient="records", into=PandasMappingSafeForPG)
+
+    def get_record_field(self, record, field, field_type=None):
+        return get(record, field)
+
+    def get_record_dict(self, record):
+        return record
+
+
+class DatabaseJSONSource(DataFrameSource):
     crm_type = "databasejson"
     has_webhooks = False
     automated_webhooks = False
     introspect_fields = False
     default_data_type = None
     data = JSONField(default=list, blank=True)
-    id_field = models.CharField(max_length=250, default="id")
 
     class Meta:
         verbose_name = "Database JSON source"
@@ -3174,42 +3251,14 @@ class DatabaseJSONSource(ExternalDataSource):
     def healthcheck(self):
         return True
 
-    @cached_property
-    def df(self):
-        return pd.DataFrame(self.data).set_index(self.id_field, drop=False)
-
-    def load_field_definitions(self):
-        # get all keys from self.data
-        return [
-            self.FieldDefinition(label=col, value=col)
-            for col in self.df.columns.tolist()
-        ]
-
-    def get_record_id(self, record: dict):
-        return record.get(self.id_field, None)
-
-    async def fetch_one(self, member_id):
-        return self.df[member_id].to_dict(
-            orient="records", into=PandasMappingSafeForPG
-        )[0]
-
-    async def fetch_many(self, id_list: list[str]):
-        return self.df[id_list].to_dict(orient="records", into=PandasMappingSafeForPG)
-
-    async def fetch_all(self):
-        return self.df.to_dict(orient="records", into=PandasMappingSafeForPG)
-
-    def get_record_field(self, record, field, field_type=None):
-        return get(record, field)
-
-    def get_record_dict(self, record):
-        return record
+    def load_data_into_unformatted_df(self) -> pd.DataFrame:
+        return pd.DataFrame.from_records(self.data)
 
     async def update_one(self, mapped_record, **kwargs):
         id = self.get_record_id(mapped_record["member"])
         data = mapped_record["update_fields"]
         self.data = [
-            {**record, **data} if record[self.id_field] == id else record
+            {**record, **data} if self.get_record_id(record) == id else record
             for record in self.data
         ]
         await self.asave()
@@ -3218,24 +3267,24 @@ class DatabaseJSONSource(ExternalDataSource):
         for mapped_record in mapped_records:
             await self.update_one(mapped_record)
 
-    def delete_one(self, record_id):
+    async def delete_one(self, record_id):
         self.data = [
-            record for record in self.data if record[self.id_field] != record_id
+            record for record in self.data if self.get_record_id(record) != record_id
         ]
-        self.save()
+        await self.asave()
 
-    def create_one(self, record):
+    async def create_one(self, record):
         self.data.append(record["data"])
-        self.save()
+        await self.asave()
         return record
 
-    def create_many(self, records):
+    async def create_many(self, records):
         self.data.extend([record["data"] for record in records])
-        self.save()
+        await self.asave()
         return records
 
 
-class UploadedCSVSource(ExternalDataSource):
+class UploadedCSVSource(DataFrameSource):
     """
     A media URL
     """
@@ -3256,12 +3305,7 @@ class UploadedCSVSource(ExternalDataSource):
         upload_to=org_directory_path,
         validators=[FileExtensionValidator(("csv",))],
     )
-    id_field = models.TextField()
     delimiter = models.TextField(default=",", blank=True)
-
-    # Pandas report on columns
-    # TODO: replace this with DataTypes: https://linear.app/commonknowledge/issue/MAP-871/design-for-describing-data-source-data-types-entities
-    columns = ArrayField(models.TextField(), default=list, blank=True)
 
     class Meta:
         verbose_name = "Uploaded CSV file"
@@ -3274,8 +3318,7 @@ class UploadedCSVSource(ExternalDataSource):
         # Check if file exists in Django
         return self.spreadsheet_file.storage.exists(self.spreadsheet_file.name)
 
-    @cached_property
-    def df(self):
+    def load_data_into_unformatted_df(self) -> pd.DataFrame:
         df = None
         if settings.MINIO_STORAGE_ENDPOINT:
             # file_text = io.StringIO(file.read().decode('utf-8')), delimiter=self.delimiter)
@@ -3300,49 +3343,7 @@ class UploadedCSVSource(ExternalDataSource):
                 # Read in chunks
                 low_memory=True,
             )
-        if df is None:
-            raise ValueError("Could not load CSV file")
-        return df.set_index(self.id_field, drop=False)
-
-    def get_columns_from_file(self):
-        return self.df.columns.tolist()
-
-    def load_field_definitions(self):
-        return [self.FieldDefinition(label=col, value=col) for col in self.columns]
-
-    def get_record_id(self, record: dict):
-        return record.get(self.id_field, None)
-
-    async def fetch_one(self, member_id):
-        return self.df[self.df[self.id_field] == member_id].to_dict(
-            orient="records", into=PandasMappingSafeForPG
-        )[0]
-
-    async def fetch_many(self, id_list: list[str]):
-        return self.df[self.df[self.id_field].isin(id_list)].to_dict(
-            orient="records", into=PandasMappingSafeForPG
-        )
-
-    async def fetch_all(self):
-        return self.df.to_dict(orient="records", into=PandasMappingSafeForPG)
-
-    def get_record_field(self, record, field, field_type=None):
-        return get(record, field)
-
-    def get_record_dict(self, record):
-        return record
-
-
-# Signal that materialises columns to the database
-@receiver(models.signals.post_save, sender=UploadedCSVSource)
-def materialise_columns(sender, instance, created, **kwargs):
-    if (
-        created
-        and instance.spreadsheet_file
-        and (instance.columns is None or len(instance.columns) <= 0)
-    ):
-        instance.columns = instance.get_columns_from_file()
-        instance.save()
+        return df
 
 
 class AirtableSource(ExternalDataSource):
@@ -3548,10 +3549,10 @@ class AirtableSource(ExternalDataSource):
         logger.debug("Webhook member result", webhook_object.cursor, member_ids)
         return member_ids
 
-    def delete_one(self, record_id):
+    async def delete_one(self, record_id):
         return self.table.delete(record_id)
 
-    def create_one(self, record):
+    async def create_one(self, record):
         data = {
             **record["data"],
         }
@@ -3562,7 +3563,7 @@ class AirtableSource(ExternalDataSource):
         record = self.table.create(data)
         return record
 
-    def create_many(self, records):
+    async def create_many(self, records):
         records = self.table.batch_create(
             [
                 {
@@ -3926,10 +3927,10 @@ class MailchimpSource(ExternalDataSource):
             data={"merge_fields": merge_fields},
         )
 
-    def delete_one(self, record_id):
+    async def delete_one(self, record_id):
         return self.client.lists.members.delete(self.list_id, record_id)
 
-    def create_one(self, record: ExternalDataSource.CUDRecord):
+    async def create_one(self, record):
         merge_fields = {
             key: str(value) for key, value in record["data"].items() if key.isupper()
         }
@@ -3976,10 +3977,10 @@ class MailchimpSource(ExternalDataSource):
 
         return mailchimp_record
 
-    def create_many(self, records):
+    async def create_many(self, records):
         created_records = []
         for record in records:
-            created_records.append(self.create_one(record))
+            created_records.append(await self.create_one(record))
         return created_records
 
     def filter(self, filter: dict) -> dict:
@@ -4302,12 +4303,12 @@ class ActionNetworkSource(ExternalDataSource):
             id, action_network_background_processing, **update_fields
         )
 
-    def delete_one(self, record_id):
+    async def delete_one(self, record_id):
         raise NotImplementedError(
             "Deleting a person is not allowed via the API. DELETE requests will return an error."
         )
 
-    def create_one(self, record: ExternalDataSource.CUDRecord):
+    async def create_one(self, record):
         record = self.client.upsert_person(
             email_address=record["email"],
             postal_addresses=[
@@ -4322,10 +4323,10 @@ class ActionNetworkSource(ExternalDataSource):
         )
         return record
 
-    def create_many(self, records):
+    async def create_many(self, records):
         created_records = []
         for record in records:
-            created_records.append(self.create_one(record))
+            created_records.append(await self.create_one(record))
         return created_records
 
     def get_import_data(self):
@@ -4828,7 +4829,7 @@ class EditableGoogleSheetsSource(ExternalDataSource):
         id = webhook_payload.get("id")
         return [id] if id else []
 
-    def delete_one(self, record_id):
+    async def delete_one(self, record_id):
         sheet_id = self.sheet["properties"]["sheetId"]
         row_numbers = self.fetch_row_numbers_for_ids([record_id])
         if not row_numbers[0]:
@@ -4852,10 +4853,10 @@ class EditableGoogleSheetsSource(ExternalDataSource):
             },
         ).execute()
 
-    def create_one(self, record) -> dict:
-        return self.create_many([record])[0]
+    async def create_one(self, record):
+        return await self.create_many([record])[0]
 
-    def create_many(self, records):
+    async def create_many(self, records):
         rows = []
         for record in records:
             row = [
