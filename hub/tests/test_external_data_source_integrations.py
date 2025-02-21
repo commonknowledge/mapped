@@ -21,7 +21,7 @@ from hub.tests.utils import TestGraphQLClientCase
 
 
 # We use SerializeMixin because webhook URLs are shared between tests
-class TestExternalDataSource(SerializeMixin):
+class TestExternalDataSource:
     lockfile = __file__
     constituency_field = "constituency"
     mayoral_field = "mayoral region"
@@ -778,7 +778,7 @@ class TestExternalDataSource(SerializeMixin):
     settings.SKIP_AIRTABLE_TESTS,
     "Skipping Airtable tests",
 )
-class TestAirtableSource(TestExternalDataSource, TestGraphQLClientCase):
+class TestAirtableSource(TestExternalDataSource, TestGraphQLClientCase, SerializeMixin):
     def create_test_source(self, name="My test Airtable member list"):
         self.source = models.AirtableSource.objects.create(
             name=name,
@@ -808,7 +808,9 @@ class TestAirtableSource(TestExternalDataSource, TestGraphQLClientCase):
         return self.source
 
 
-class TestMailchimpSource(TestExternalDataSource, TestGraphQLClientCase):
+class TestMailchimpSource(
+    TestExternalDataSource, TestGraphQLClientCase, SerializeMixin
+):
     constituency_field = "CONSTITUEN"
     mayoral_field = "MAYORAL_RE"
 
@@ -840,7 +842,9 @@ class TestMailchimpSource(TestExternalDataSource, TestGraphQLClientCase):
         return self.source
 
 
-class TestActionNetworkSource(TestExternalDataSource, TestGraphQLClientCase):
+class TestActionNetworkSource(
+    TestExternalDataSource, TestGraphQLClientCase, SerializeMixin
+):
     constituency_field = "custom_fields.constituency"
     mayoral_field = "custom_fields.mayoral_region"
 
@@ -912,7 +916,9 @@ class TestActionNetworkSource(TestExternalDataSource, TestGraphQLClientCase):
 @skip(
     reason="Google Sheets can't be automatically tested as the refresh token expires after 7 days - need to use a published app"
 )
-class TestEditableGoogleSheetsSource(TestExternalDataSource, TestGraphQLClientCase):
+class TestEditableGoogleSheetsSource(
+    TestExternalDataSource, TestGraphQLClientCase, SerializeMixin
+):
     def create_test_source(self, name="My test Google member list"):
         self.source: models.EditableGoogleSheetsSource = (
             models.EditableGoogleSheetsSource.objects.create(
