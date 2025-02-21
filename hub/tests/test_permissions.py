@@ -1,11 +1,12 @@
+from asgiref.sync import async_to_sync
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from asgiref.sync import async_to_sync
+import pytz
+
 from hub import models
-from hub.tests.fixtures.regional_health_data_for_tests import regional_health_data
 from utils import geo
-from django.contrib.gis.geos import Polygon
+from django.contrib.gis.geos import MultiPolygon, Polygon
 
 fixture_data = [
     {
@@ -29,12 +30,44 @@ class Setup:
         self.membership = models.Membership.objects.create(
             user=self.user, organisation=self.org, role="owner"
         )
+        # Make a dummy region
+        area_type = models.AreaType.objects.create(
+            name="2018 European Electoral Regions",
+            code="EER",
+            area_type="European Electoral Region",
+            description="European Electoral Region boundaries, as at December 2018",
+        )
+        multi_polygon = MultiPolygon(
+            (
+                Polygon(
+                    (
+                        (-90.0000, -45.0000),  # Southwest point
+                        (-90.0000, 45.0000),  # Northwest point
+                        (90.0000, 45.0000),  # Northeast point
+                        (90.0000, -45.0000),  # Southeast point
+                        (
+                            -90.0000,
+                            -45.0000,
+                        ),  # Close the polygon by returning to start
+                    )
+                )
+            )
+        )
+        models.Area.objects.create(
+            mapit_id="XXX",
+            gss="XXX",
+            name="Fake area",
+            area_type=area_type,
+            polygon=multi_polygon,
+            point=multi_polygon.centroid,
+        )
         # Create source
         self.source: models.DatabaseJSONSource = (
             models.DatabaseJSONSource.objects.create(
                 name="testsource",
                 organisation=self.org,
                 id_field="id",
+                email_field="email",
                 geocoding_config={
                     "type": models.UploadedCSVSource.GeographyTypes.AREA,
                     "components": [
@@ -47,34 +80,12 @@ class Setup:
                 },
             )
         )
-        # Make a dummy region
-        area_type = models.AreaType.objects.create(
-            name="2018 European Electoral Regions",
-            code="EER",
-            area_type="European Electoral Region",
-            description="European Electoral Region boundaries, as at December 2018",
-        )
-        models.Area.objects.create(
-            mapit_id="XXX",
-            gss="XXX",
-            name="Fake area",
-            area_type=area_type,
-            polygon=Polygon(
-                [
-                    (-90.0000, -45.0000),  # Southwest point
-                    (-90.0000, 45.0000),  # Northwest point
-                    (90.0000, 45.0000),  # Northeast point
-                    (90.0000, -45.0000),  # Southeast point
-                    (-90.0000, -45.0000),  # Close the polygon
-                ]
-            ),
-        )
         # Ingest data
         async_to_sync(self.source.import_many)(fixture_data)
         imported_data = list(self.source.get_import_data())
         self.assertEqual(
             len(imported_data),
-            len(fixture_data),
+            1,
             "Something's gone wrong with data ingestion.",
         )
         self.generic_data = imported_data[0]
@@ -163,8 +174,8 @@ class TestOwnSources(Setup, TestCase):
 
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
-            len(result["data"]["statisticsForChoropleth"]),
-            len(fixture_data),
+            [{"gss": "XXX", "count": 1, "formattedCount": "1"}],
+            result["data"]["statisticsForChoropleth"],
         )
 
     # Test graphQL query for geojson point
@@ -178,7 +189,7 @@ class TestOwnSources(Setup, TestCase):
                 }
                 properties {
                   id
-                  json
+                  email
                 }
               }
             }
@@ -196,23 +207,13 @@ class TestOwnSources(Setup, TestCase):
         result = res.json()
 
         self.assertIsNone(result.get("errors", None))
-        self.assertIsNotNone(
+        self.assertDictEqual(
             result["data"]["importedDataGeojsonPoint"],
-            "No data returned",
-        )
-        self.assertEqual(
-            result["data"]["importedDataGeojsonPoint"]["id"],
-            str(self.generic_data.id),
-        )
-        self.assertIsNotNone(
-            result["data"]["importedDataGeojsonPoint"]["geometry"]["coordinates"],
-        )
-        self.assertIsNotNone(
-            result["data"]["importedDataGeojsonPoint"]["properties"],
-        )
-        self.assertEqual(
-            result["data"]["importedDataGeojsonPoint"]["properties"]["json"],
-            str(self.generic_data.json),
+            {
+                "id": str(self.generic_data.id),
+                "geometry": {"coordinates": [0.0, 0.0]},
+                "properties": {"id": str(self.generic_data.id), "email": "xyz@bbc.com"},
+            },
         )
 
     # Test tileserver query for vector tiles
@@ -322,8 +323,8 @@ class TestFullSharing(Setup, TestCase):
 
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
-            len(result["data"]["statisticsForChoropleth"]),
-            len(fixture_data),
+            [{"gss": "XXX", "count": 1, "formattedCount": "1"}],
+            result["data"]["statisticsForChoropleth"],
         )
 
     def test_generic_data_visibility(self):
@@ -1189,8 +1190,8 @@ class TestLoggedInUserForPublicSource(Setup, TestCase):
 
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
-            len(result["data"]["statisticsForChoropleth"]),
-            len(fixture_data),
+            [{"gss": "XXX", "count": 1, "formattedCount": "1"}],
+            result["data"]["statisticsForChoropleth"],
         )
 
     def test_generic_data_visibility(self):
