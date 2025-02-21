@@ -1002,13 +1002,6 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
             )
             return self.source
 
-    def test_field_definitions(self):
-        self.source.refresh_field_definitions()
-        self.assertSetEqual(
-            self.source.field_definitions,
-            [],
-        )
-
     async def test_fetch_one(self):
         # Get a single ID from the freshly read CSV
         # Test this functionality

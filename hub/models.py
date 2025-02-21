@@ -14,7 +14,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.gis.db.models import MultiPolygonField, PointField
 from django.contrib.gis.geos import Point
-from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
