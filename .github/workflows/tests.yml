@@ -8,8 +8,13 @@ on:
   pull_request:
     
 jobs:
+  prep:
+    name: Prep Django
+    uses: ./.github/workflows/_prep_django.yml
+
   check_startup:
-    uses: ./.github/workflows/__prep_django.yml
+    name: Check that Django starts up correctly
+    needs: prep
     steps:
       - name: Start ngrok tunnelling
         run: |
@@ -29,7 +34,8 @@ jobs:
         run: gunicorn local_intelligence_hub.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 > server.log 2>&1 &
 
   tests:
-    uses: ./.github/workflows/__prep_django.yml
+    name: Run Django tests
+    needs: prep
     steps:
       - name: Run django tests
         run: cat .env && coverage run --source=. --branch manage.py test --parallel || (cat server.log && exit 1)
@@ -43,7 +49,8 @@ jobs:
           retention-days: 5
 
   geocoding_tests:
-    uses: ./.github/workflows/__prep_django.yml
+    name: Run geocoding tests
+    needs: prep
     steps:
      - name: Run geocoding tests in isolation
         run: |

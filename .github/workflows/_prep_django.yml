@@ -1,14 +1,11 @@
 name: Prep Django
-
-concurrency: 
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
   
 on:
   workflow_call:
     
 jobs:
-  test:
+  prep:
+    name: Prep Django
     runs-on: ubuntu-latest
     environment: testing
     services:
