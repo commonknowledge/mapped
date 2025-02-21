@@ -1,4 +1,4 @@
-name: Run project tests
+name: Run geocoding tests
 
 concurrency: 
   group: ${{ github.workflow }}-${{ github.ref }}
