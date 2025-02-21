@@ -3,8 +3,8 @@ import re
 import unicodedata
 from enum import Enum
 from typing import Any
-from numpy import dtype
 
+from numpy import dtype
 from pandas import Series
 
 currency_symbols = "".join(
@@ -79,7 +79,7 @@ class StatisticalDataType(Enum):
     def get_database_type(self):
         _DB_TYPES = {
             self.BOOL: "bool",
-            self.INT: "int",
+            self.INT: "bigint",
             self.FLOAT: "float",
             self.PERCENTAGE: "float",
             self.STRING: "varchar",
