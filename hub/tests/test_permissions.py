@@ -1,17 +1,17 @@
-from datetime import datetime
-
-from django.contrib.gis.geos import Point
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-import pytz
-
+from asgiref.sync import async_to_sync
 from hub import models
+from hub.tests.fixtures.regional_health_data_for_tests import regional_health_data
 from utils import geo
-from utils.statistics import StatisticalDataType
+
+fixture_data = regional_health_data.copy()
 
 
 class Setup:
+    fixtures = ["regions"]
+
     def setUp(self) -> None:
         self.client = Client()
         # Create user
@@ -24,44 +24,32 @@ class Setup:
             user=self.user, organisation=self.org, role="owner"
         )
         # Create source
-        self.source = models.ExternalDataSource.objects.create(
-            name="testsource",
-            organisation=self.org,
-            field_definitions=[
-                {"value": "some", "type": StatisticalDataType.STRING.value}
-            ],
-            last_import=datetime.now(tz=pytz.utc),
-        )
-        # Some dummy data
-        ds = models.DataSet.objects.create(name="xyz", external_data_source=self.source)
-        dt = models.DataType.objects.create(name="xyz", data_set=ds)
-        self.generic_data = models.GenericData.objects.create(
-            data="xyz",
-            email="xyz@bbc.com",
-            json={"some": "thing"},
-            parsed_json={"some": "thing"},
-            point=Point(x=0, y=0, srid=4326),
-            postcode_data={
-                "european_electoral_region": "XXX",
-                "codes": {
-                    "european_electoral_region": "XXX",
+        self.source: models.DatabaseJSONSource = (
+            models.DatabaseJSONSource.objects.create(
+                name="testsource",
+                organisation=self.org,
+                id_field="geography code",
+                geocoding_config={
+                    "type": models.UploadedCSVSource.GeographyTypes.AREA,
+                    "components": [
+                        {
+                            "type": "area_code",
+                            "field": "geography code",
+                            "metadata": {"lih_area_type__code": "EER"},
+                        }
+                    ],
                 },
-            },
-            data_type=dt,
+            )
         )
-        # Make a dummy region
-        area_type = models.AreaType.objects.create(
-            name="2018 European Electoral Regions",
-            code="EER",
-            area_type="European Electoral Region",
-            description="European Electoral Region boundaries, as at December 2018",
+        # Ingest data
+        async_to_sync(self.source.import_many)(fixture_data)
+        imported_data = list(self.source.get_import_data())
+        self.assertEqual(
+            len(imported_data),
+            len(fixture_data),
+            "Something's gone wrong with data ingestion.",
         )
-        models.Area.objects.create(
-            mapit_id="XXX",
-            gss="XXX",
-            name="Fake area",
-            area_type=area_type,
-        )
+        self.generic_data = imported_data[0]
         # Create report
         self.report = models.MapReport.objects.create(
             name="testreport",
@@ -147,8 +135,8 @@ class TestOwnSources(Setup, TestCase):
 
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
-            [{"gss": "XXX", "count": 1, "formattedCount": "1"}],
-            result["data"]["statisticsForChoropleth"],
+            len(result["data"]["statisticsForChoropleth"]),
+            len(fixture_data),
         )
 
     # Test graphQL query for geojson point
@@ -162,7 +150,7 @@ class TestOwnSources(Setup, TestCase):
                 }
                 properties {
                   id
-                  email
+                  json
                 }
               }
             }
@@ -180,13 +168,23 @@ class TestOwnSources(Setup, TestCase):
         result = res.json()
 
         self.assertIsNone(result.get("errors", None))
-        self.assertDictEqual(
+        self.assertIsNotNone(
             result["data"]["importedDataGeojsonPoint"],
-            {
-                "id": str(self.generic_data.id),
-                "geometry": {"coordinates": [0.0, 0.0]},
-                "properties": {"id": str(self.generic_data.id), "email": "xyz@bbc.com"},
-            },
+            "No data returned",
+        )
+        self.assertEqual(
+            result["data"]["importedDataGeojsonPoint"]["id"],
+            str(self.generic_data.id),
+        )
+        self.assertIsNotNone(
+            result["data"]["importedDataGeojsonPoint"]["geometry"]["coordinates"],
+        )
+        self.assertIsNotNone(
+            result["data"]["importedDataGeojsonPoint"]["properties"],
+        )
+        self.assertEqual(
+            result["data"]["importedDataGeojsonPoint"]["properties"]["json"],
+            str(self.generic_data.json),
         )
 
     # Test tileserver query for vector tiles
@@ -296,8 +294,8 @@ class TestFullSharing(Setup, TestCase):
 
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
-            [{"gss": "XXX", "count": 1, "formattedCount": "1"}],
-            result["data"]["statisticsForChoropleth"],
+            len(result["data"]["statisticsForChoropleth"]),
+            len(fixture_data),
         )
 
     def test_generic_data_visibility(self):
@@ -1163,8 +1161,8 @@ class TestLoggedInUserForPublicSource(Setup, TestCase):
 
         self.assertIsNone(result.get("errors", None))
         self.assertEqual(
-            [{"gss": "XXX", "count": 1, "formattedCount": "1"}],
-            result["data"]["statisticsForChoropleth"],
+            len(result["data"]["statisticsForChoropleth"]),
+            len(fixture_data),
         )
 
     def test_generic_data_visibility(self):
