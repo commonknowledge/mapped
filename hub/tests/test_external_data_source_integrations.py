@@ -10,7 +10,6 @@ from django.conf import settings
 from django.core.files import File
 from django.db.utils import IntegrityError
 from django.test import TestCase
-from django.test.testcases import SerializeMixin
 
 from asgiref.sync import async_to_sync, sync_to_async
 
@@ -20,7 +19,6 @@ from hub.tests.fixtures.regional_health_data_for_tests import regional_health_da
 from hub.tests.utils import TestGraphQLClientCase
 
 
-# We use SerializeMixin because webhook URLs are shared between tests
 class TestExternalDataSource:
     lockfile = __file__
     constituency_field = "constituency"
@@ -129,8 +127,12 @@ class TestExternalDataSource:
             self.fail()
         except ValueError as e:
             self.assertTrue("Not enough webhooks" in str(e))
-        self.source.setup_webhooks()
-        self.assertTrue(self.source.webhook_healthcheck())
+        try:
+            self.source.setup_webhooks()
+            self.assertTrue(self.source.webhook_healthcheck())
+        except Exception as e:
+            print("Error while setting up webhook with URL:", self.source.webhook_url())
+            raise e
 
     async def test_import_many(self):
         # Confirm the database is empty
@@ -778,7 +780,7 @@ class TestExternalDataSource:
     settings.SKIP_AIRTABLE_TESTS,
     "Skipping Airtable tests",
 )
-class TestAirtableSource(TestExternalDataSource, TestGraphQLClientCase, SerializeMixin):
+class TestAirtableSource(TestExternalDataSource, TestGraphQLClientCase):
     def create_test_source(self, name="My test Airtable member list"):
         self.source = models.AirtableSource.objects.create(
             name=name,
@@ -808,9 +810,7 @@ class TestAirtableSource(TestExternalDataSource, TestGraphQLClientCase, Serializ
         return self.source
 
 
-class TestMailchimpSource(
-    TestExternalDataSource, TestGraphQLClientCase, SerializeMixin
-):
+class TestMailchimpSource(TestExternalDataSource, TestGraphQLClientCase):
     constituency_field = "CONSTITUEN"
     mayoral_field = "MAYORAL_RE"
 
@@ -842,9 +842,7 @@ class TestMailchimpSource(
         return self.source
 
 
-class TestActionNetworkSource(
-    TestExternalDataSource, TestGraphQLClientCase, SerializeMixin
-):
+class TestActionNetworkSource(TestExternalDataSource, TestGraphQLClientCase):
     constituency_field = "custom_fields.constituency"
     mayoral_field = "custom_fields.mayoral_region"
 
@@ -916,9 +914,7 @@ class TestActionNetworkSource(
 @skip(
     reason="Google Sheets can't be automatically tested as the refresh token expires after 7 days - need to use a published app"
 )
-class TestEditableGoogleSheetsSource(
-    TestExternalDataSource, TestGraphQLClientCase, SerializeMixin
-):
+class TestEditableGoogleSheetsSource(TestExternalDataSource, TestGraphQLClientCase):
     def create_test_source(self, name="My test Google member list"):
         self.source: models.EditableGoogleSheetsSource = (
             models.EditableGoogleSheetsSource.objects.create(
