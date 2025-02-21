@@ -91,8 +91,11 @@ class TestStatistics(TestGraphQLClientCase):
                 )
                 for r in result["data"]["statisticsForChoropleth"]
             ),
-            "There should be a numeric count for every council",
+            "There should be a numeric count for every council: "
+            + str([r["count"] for r in result["data"]["statisticsForChoropleth"]]),
         )
+        for r in result["data"]["statisticsForChoropleth"]:
+            self.assertGreaterEqual(r["count"], 1)
 
     def test_field_value_by_area(self):
         query_name = get_function_name(self)
