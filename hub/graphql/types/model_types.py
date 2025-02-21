@@ -1599,18 +1599,18 @@ def statistics_for_choropleth(
         assert check_user_can_view_source(user, source)
 
     # If one requested count or category or gss, for example, ensure they're in there:
-    fields_requested_by_resolver = info.selected_fields[0].selections
+    fields_requested_by_resolver = [f.name for f in info.selected_fields[0].selections]
 
     # Start with fields requested by resolver
     choropleth_statistics_columns = ["label", "gss"]
     return_columns = [
-        field.name
+        field
         for field in fields_requested_by_resolver
-        if field.name in choropleth_statistics_columns
+        if field in choropleth_statistics_columns
     ]
 
     if "count" in fields_requested_by_resolver:
-        # Default count value is the number of records
+        # (Count will default to the count of records automatically.)
         return_columns.append("count")
 
     if "category" in fields_requested_by_resolver and choropleth_config.category_key:

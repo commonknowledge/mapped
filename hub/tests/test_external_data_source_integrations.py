@@ -15,6 +15,7 @@ from asgiref.sync import async_to_sync, sync_to_async
 
 from hub import models
 from hub.tests.fixtures.custom_lookup import custom_lookup
+from hub.tests.fixtures.regional_health_data_for_tests import regional_health_data
 from hub.tests.utils import TestGraphQLClientCase
 
 
@@ -70,10 +71,10 @@ class TestExternalDataSource:
         if self.source.automated_webhooks:
             self.source.teardown_unused_webhooks(force=True)
 
-    def tearDown(self) -> None:
+    async def tearDown(self) -> None:
         try:
             for record_id, source in self.records_to_delete:
-                source.delete_one(record_id)
+                await source.delete_one(record_id)
         except NotImplementedError:
             # Not all sources support deletion.
             print("Warning: deletion not implemented for source", self.source.crm_type)
@@ -83,14 +84,14 @@ class TestExternalDataSource:
         return super().tearDown()
 
     async def create_test_record(self, record: models.ExternalDataSource.CUDRecord):
-        record = self.source.create_one(record)
+        record = await self.source.create_one(record)
         self.records_to_delete.append((self.source.get_record_id(record), self.source))
         return record
 
     async def create_many_test_records(
         self, records: List[models.ExternalDataSource.CUDRecord]
     ):
-        records = self.source.create_many(records)
+        records = await self.source.create_many(records)
         self.records_to_delete += [
             (self.source.get_record_id(record), self.source) for record in records
         ]
@@ -98,10 +99,10 @@ class TestExternalDataSource:
 
     # Tests begin
 
-    def test_deduplication(self):
+    def test_deduplication(self: TestCase):
         try:
-            self.create_test_source(name="My duplicate source")  # Create duplicate
-            self.assertTrue(False)  # Force failure if no exception
+            with self.assertRaises(IntegrityError):
+                self.create_test_source(name="My duplicate source")
         except IntegrityError:
             pass
 
@@ -990,7 +991,8 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
                         "type": models.UploadedCSVSource.GeographyTypes.AREA,
                         "components": [
                             {
-                                "field": "geography",
+                                "type": "area_code",
+                                "field": "geography code",
                                 "metadata": {"lih_area_type__code": "EER"},
                             }
                         ],
@@ -1003,7 +1005,7 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
     async def test_fetch_one(self):
         # Get a single ID from the freshly read CSV
         # Test this functionality
-        record = await self.source.fetch_one("E12000001")
+        record = await self.source.fetch_one("E15000001")
         # Check
         self.assertEqual(
             self.source.get_record_field(record, "geography"),
@@ -1011,14 +1013,14 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
         )
 
     async def test_fetch_many(self):
-        rows = await self.source.fetch_many(["E12000004", "E12000005"])
+        rows = await self.source.fetch_many(["E15000004", "E15000005"])
 
         # 10 rows
         self.assertEqual(len(rows), 2)
         # Find data matching
         expected_rows = [
-            {"geography": "East Midlands", "geography code": "E12000004"},
-            {"geography": "West Midlands", "geography code": "E12000005"},
+            {"geography": "East Midlands", "geography code": "E15000004"},
+            {"geography": "West Midlands", "geography code": "E15000005"},
         ]
         for expected in expected_rows:
             record = next(
@@ -1058,7 +1060,7 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
         # Add some test data
         records = list(await self.source.fetch_all())
         fetch_count = len(records)
-        self.assertGreaterEqual(fetch_count, 10)
+        self.assertEqual(fetch_count, 10)
 
         # Check that the import is storing it all
         await self.source.import_many(
@@ -1074,12 +1076,12 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
         # Check the data has been geocoded
         north_east = next(
             filter(
-                lambda r: r.json.get("geography code") == "E12000001",
+                lambda r: r.json.get("geography code") == "E15000001",
                 data,
             ),
             None,
         )
-        self.assertEqual("E12000001", north_east.data)
+        self.assertEqual("E15000001", north_east.data)
         self.assertIsNotNone(north_east.postcode_data)
         self.assertIsNotNone(north_east.area.name)
 
@@ -1105,15 +1107,7 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
         self.assertEqual(len(analytics), 10)
 
     async def test_analytics_imported_data(self):
-        """
-        This is testing the ability to get record data from the data source
-        """
         self.skipTest("Not implemented")
-        analytics = self.source.imported_data_count_by_area("european_electoral_region")
-        analytics = await sync_to_async(list)(analytics)
-        self.assertEqual(len(analytics), 10)
-        constituencies_in_report = [a["label"] for a in analytics]
-        self.assertIn("North West", constituencies_in_report)
 
     def test_field_definitions(self: TestCase):
         self.source.refresh_field_definitions()
@@ -1133,3 +1127,281 @@ class TestUploadedCSVSource(TestExternalDataSource, TestGraphQLClientCase):
                 ]
             ),
         )
+
+
+class TestUploadedCSVSourceUsingRowNumberAsID(TestUploadedCSVSource):
+    def create_test_source(self, name="My test CSV file"):
+        path = Path(os.path.join(settings.BASE_DIR, self.file_path_from_root))
+
+        with path.open(mode="rb") as f:
+            file = File(f, name=path.name)
+
+            self.source: models.UploadedCSVSource = (
+                models.UploadedCSVSource.objects.create(
+                    name=name,
+                    data_type=models.EditableGoogleSheetsSource.DataSourceType.AREA_STATS,
+                    organisation=self.organisation,
+                    # !!!
+                    use_row_number_as_id=True,
+                    # !!!
+                    geocoding_config={
+                        "type": models.UploadedCSVSource.GeographyTypes.AREA,
+                        "components": [
+                            {
+                                "type": "area_code",
+                                "field": "geography code",
+                                "metadata": {"lih_area_type__code": "EER"},
+                            }
+                        ],
+                    },
+                    spreadsheet_file=file,
+                )
+            )
+            return self.source
+
+    async def test_fetch_one(self):
+        # Get a single ID from the freshly read CSV
+        # Test this functionality
+        record = await self.source.fetch_one(0)
+        # Check
+        self.assertEqual(
+            self.source.get_record_field(record, "geography"),
+            "North East",
+        )
+
+    async def test_fetch_many(self):
+        rows = await self.source.fetch_many([0, 1])
+
+        # 10 rows
+        self.assertEqual(len(rows), 2)
+        # Find data matching
+        expected_rows = [
+            {
+                "geography": "North East",
+                "geography code": "E15000001",
+                self.source.mapped_row_id: 0,
+            },
+            {
+                "geography": "North West",
+                "geography code": "E15000002",
+                self.source.mapped_row_id: 1,
+            },
+        ]
+        for expected in expected_rows:
+            record = next(
+                filter(
+                    lambda r: self.source.get_record_field(r, "geography code")
+                    == expected["geography code"],
+                    rows,
+                ),
+                None,
+            )
+            self.assertIsNotNone(record)
+            self.assertEqual(
+                self.source.get_record_field(record, "geography"),
+                expected["geography"],
+            )
+            self.assertEqual(
+                self.source.get_record_field(record, self.source.mapped_row_id),
+                expected[self.source.mapped_row_id],
+            )
+
+    async def test_fetch_all(self):
+        rows = await self.source.fetch_all()
+
+        # 10 rows
+        self.assertEqual(len(rows), 10)
+        # Check fetch generates valid dictionaries (via DF ingest)
+        for index, record in enumerate(rows):
+            self.assertEqual(self.source.get_record_id(record), index)
+
+    async def test_import_async(self):
+        self.skipTest("Not implemented")
+
+    async def test_import_many(self):
+        # Confirm the database is empty
+        original_count = await self.source.get_import_data().acount()
+        self.assertEqual(original_count, 0)
+
+        # Add some test data
+        records = list(await self.source.fetch_all())
+
+        fetch_count = len(records)
+        self.assertGreaterEqual(fetch_count, 10)
+
+        # Check that the import is storing it all
+        await self.source.import_many(
+            [self.source.get_record_id(record) for record in records]
+        )
+
+        # Test GenericData queryset
+        import_data = self.source.get_import_data()
+        import_count = await import_data.acount()
+        self.assertEqual(import_count, fetch_count)
+        data = await sync_to_async(list)(import_data.select_related("area"))
+
+        # Check the data has been geocoded
+        west_midlands = next(
+            filter(
+                lambda r: r.json.get("geography code") == "E15000005",
+                data,
+            ),
+            None,
+        )
+        self.assertEqual("4", west_midlands.data)
+        self.assertIsNotNone(west_midlands.postcode_data)
+        self.assertIsNotNone(west_midlands.area.name)
+
+        # Test dataframe
+        df = await sync_to_async(self.source.get_imported_dataframe)()
+        self.assertEqual(len(df.index), import_count)
+        self.assertEqual(len(df.index), import_count)
+        self.assertIn("geography", list(df.columns.values))
+
+    async def test_analytics_counts(self):
+        self.skipTest("Not implemented")
+
+
+class TestDatabaseJSONSource(TestUploadedCSVSource):
+    def create_test_source(self, name="My test DB JSON file"):
+        self.source = models.DatabaseJSONSource.objects.create(
+            name=name,
+            organisation=self.organisation,
+            id_field="geography code",
+            data=regional_health_data.copy(),
+            geocoding_config={
+                "type": models.UploadedCSVSource.GeographyTypes.AREA,
+                "components": [
+                    {
+                        "type": "area_code",
+                        "field": "geography code",
+                        "metadata": {"lih_area_type__code": "EER"},
+                    }
+                ],
+            },
+        )
+        return self.source
+
+    def test_deduplication(self: TestCase):
+        try:
+            self.create_test_source(name="My duplicate source")
+        except IntegrityError:
+            self.fail("This data source shouldn't have any problem with duplicates")
+
+    async def test_refresh_many(self):
+        self.skipTest("TODO: implement test")
+
+    async def test_refresh_one(self):
+        self.skipTest("TODO: implement test")
+
+    async def test_pivot_table(self):
+        self.skipTest("TODO: implement test")
+
+    async def test_enrichment_electoral_commission(self):
+        self.skipTest("TODO: implement test using likewise data")
+
+    async def test_import_many(self):
+        # Confirm the database is empty
+        self.source.data = []
+        await self.source.asave()
+        original_count = await self.source.get_import_data().acount()
+        self.assertEqual(original_count, 0)
+
+        # Add some test data
+        data_to_import = regional_health_data.copy()
+        await self.source.import_many(data_to_import)
+        import_count = await self.source.get_import_data().acount()
+        self.assertEqual(import_count, len(data_to_import))
+
+        # Test GenericData queryset
+        import_data = self.source.get_import_data()
+        data = await sync_to_async(list)(import_data.select_related("area"))
+
+        # Check the data has been geocoded
+        north_east = next(
+            filter(
+                lambda r: r.json.get("geography code") == "E15000001",
+                data,
+            ),
+            None,
+        )
+        self.assertEqual("E15000001", north_east.data)
+        self.assertIsNotNone(north_east.postcode_data)
+        self.assertIsNotNone(north_east.area.name)
+
+        # Test dataframe
+        df = await sync_to_async(self.source.get_imported_dataframe)()
+        self.assertEqual(len(df.index), import_count)
+        self.assertEqual(len(df.index), import_count)
+        self.assertIn("geography", list(df.columns.values))
+
+
+class TestDatabaseJSONSourceUsingRowNumberAsID(TestUploadedCSVSourceUsingRowNumberAsID):
+    def create_test_source(self, name="My test DB JSON file"):
+        self.source = models.DatabaseJSONSource.objects.create(
+            name=name,
+            organisation=self.organisation,
+            data=regional_health_data.copy(),
+            use_row_number_as_id=True,
+            geocoding_config={
+                "type": models.UploadedCSVSource.GeographyTypes.AREA,
+                "components": [
+                    {
+                        "type": "area_code",
+                        "field": "geography code",
+                        "metadata": {"lih_area_type__code": "EER"},
+                    }
+                ],
+            },
+        )
+        return self.source
+
+    def test_deduplication(self: TestCase):
+        try:
+            self.create_test_source(name="My duplicate source")
+        except IntegrityError:
+            self.fail("This data source shouldn't have any problem with duplicates")
+
+    async def test_refresh_many(self):
+        self.skipTest("TODO: implement test using likewise data")
+
+    async def test_refresh_one(self):
+        self.skipTest("TODO: implement test using likewise data")
+
+    async def test_pivot_table(self):
+        self.skipTest("TODO: implement test using likewise data")
+
+    async def test_enrichment_electoral_commission(self):
+        self.skipTest("TODO: implement test using likewise data")
+
+    async def test_import_many(self):
+        # Confirm the database is empty
+        original_count = await self.source.get_import_data().acount()
+        self.assertEqual(original_count, 0)
+
+        # Add some test data
+        await self.source.import_many(regional_health_data.copy())
+
+        # Test GenericData queryset
+        import_data = self.source.get_import_data()
+        import_count = await import_data.acount()
+        self.assertEqual(import_count, 10)
+        data = await sync_to_async(list)(import_data.select_related("area"))
+
+        # Check the data has been geocoded
+        north_east = next(
+            filter(
+                lambda r: r.json.get("geography code") == "E15000001",
+                data,
+            ),
+            None,
+        )
+        self.assertEqual("0", north_east.data)
+        self.assertIsNotNone(north_east.postcode_data)
+        self.assertIsNotNone(north_east.area.name)
+
+        # Test dataframe
+        df = await sync_to_async(self.source.get_imported_dataframe)()
+        self.assertEqual(len(df.index), import_count)
+        self.assertEqual(len(df.index), import_count)
+        self.assertIn("geography", list(df.columns.values))

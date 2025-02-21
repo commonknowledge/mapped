@@ -1,14 +1,20 @@
-from datetime import datetime
-
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-import pytz
+from asgiref.sync import async_to_sync
 
 from hub import models
 from utils import geo
-from utils.statistics import StatisticalDataType
+
+fixture_data = [
+    {
+        "id": "xyz",
+        "email": "xyz@bbc.com",
+        "some": "thing",
+        "region": "XXX",
+    },
+]
 
 
 class Setup:
@@ -23,32 +29,6 @@ class Setup:
         self.membership = models.Membership.objects.create(
             user=self.user, organisation=self.org, role="owner"
         )
-        # Create source
-        self.source = models.ExternalDataSource.objects.create(
-            name="testsource",
-            organisation=self.org,
-            field_definitions=[
-                {"value": "some", "type": StatisticalDataType.STRING.value}
-            ],
-            last_import=datetime.now(tz=pytz.utc),
-        )
-        # Some dummy data
-        ds = models.DataSet.objects.create(name="xyz", external_data_source=self.source)
-        dt = models.DataType.objects.create(name="xyz", data_set=ds)
-        self.generic_data = models.GenericData.objects.create(
-            data="xyz",
-            email="xyz@bbc.com",
-            json={"some": "thing"},
-            parsed_json={"some": "thing"},
-            point=Point(x=0, y=0, srid=4326),
-            postcode_data={
-                "european_electoral_region": "XXX",
-                "codes": {
-                    "european_electoral_region": "XXX",
-                },
-            },
-            data_type=dt,
-        )
         # Make a dummy region
         area_type = models.AreaType.objects.create(
             name="2018 European Electoral Regions",
@@ -56,12 +36,58 @@ class Setup:
             area_type="European Electoral Region",
             description="European Electoral Region boundaries, as at December 2018",
         )
+        multi_polygon = MultiPolygon(
+            (
+                Polygon(
+                    (
+                        (-90.0000, -45.0000),  # Southwest point
+                        (-90.0000, 45.0000),  # Northwest point
+                        (90.0000, 45.0000),  # Northeast point
+                        (90.0000, -45.0000),  # Southeast point
+                        (
+                            -90.0000,
+                            -45.0000,
+                        ),  # Close the polygon by returning to start
+                    )
+                )
+            )
+        )
         models.Area.objects.create(
             mapit_id="XXX",
             gss="XXX",
             name="Fake area",
             area_type=area_type,
+            polygon=multi_polygon,
+            point=multi_polygon.centroid,
         )
+        # Create source
+        self.source: models.DatabaseJSONSource = (
+            models.DatabaseJSONSource.objects.create(
+                name="testsource",
+                organisation=self.org,
+                id_field="id",
+                email_field="email",
+                geocoding_config={
+                    "type": models.UploadedCSVSource.GeographyTypes.AREA,
+                    "components": [
+                        {
+                            "type": "area_code",
+                            "field": "region",
+                            "metadata": {"lih_area_type__code": "EER"},
+                        }
+                    ],
+                },
+            )
+        )
+        # Ingest data
+        async_to_sync(self.source.import_many)(fixture_data)
+        imported_data = list(self.source.get_import_data())
+        self.assertEqual(
+            len(imported_data),
+            1,
+            "Something's gone wrong with data ingestion.",
+        )
+        self.generic_data = imported_data[0]
         # Create report
         self.report = models.MapReport.objects.create(
             name="testreport",

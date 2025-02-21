@@ -272,71 +272,69 @@ async def import_area_code_data(
     steps = []
 
     components = source.geocoding_config.get("components", [])
-    if not components:
-        return
+    if components:
+        item = components[0]
 
-    item = components[0]
+        literal_lih_area_type__code = item.get("metadata", {}).get(
+            "lih_area_type__code", None
+        )
+        literal_mapit_type = item.get("metadata", {}).get("mapit_type", None)
+        area_types = literal_lih_area_type__code or literal_mapit_type
+        literal_area_field = item.get("field", None)
+        area_code = str(source.get_record_field(record, literal_area_field))
 
-    literal_lih_area_type__code = item.get("metadata", {}).get(
-        "lih_area_type__code", None
-    )
-    literal_mapit_type = item.get("metadata", {}).get("mapit_type", None)
-    area_types = literal_lih_area_type__code or literal_mapit_type
-    literal_area_field = item.get("field", None)
-    area_code = str(source.get_record_field(record, literal_area_field))
+        if area_types and literal_area_field and area_code:
+            parsed_area_types = [str(s).upper() for s in ensure_list(area_types)]
 
-    if area_types is None or literal_area_field is None or area_code is None:
-        return
+            area_filters = {}
+            if literal_lih_area_type__code:
+                area_filters["area_type__code__in"] = ensure_list(
+                    literal_lih_area_type__code
+                )
+            if literal_mapit_type:
+                area_filters["mapit_type__in"] = ensure_list(literal_mapit_type)
 
-    parsed_area_types = [str(s).upper() for s in ensure_list(area_types)]
+            AreaLoader = FieldDataLoaderFactory.get_loader_class(
+                Area, field="gss", filters=area_filters, select_related=["area_type"]
+            )
 
-    area_filters = {}
-    if literal_lih_area_type__code:
-        area_filters["area_type__code__in"] = ensure_list(literal_lih_area_type__code)
-    if literal_mapit_type:
-        area_filters["mapit_type__in"] = ensure_list(literal_mapit_type)
+            area = await AreaLoader(geocoder_context).load(area_code)
 
-    AreaLoader = FieldDataLoaderFactory.get_loader_class(
-        Area, field="gss", filters=area_filters, select_related=["area_type"]
-    )
+            if area:
+                step = {
+                    "type": "area_code_matching",
+                    "area_types": parsed_area_types,
+                    "result": "failed" if area is None else "success",
+                    "search_term": area_code,
+                    "data": (
+                        {
+                            "centroid": area.polygon.centroid.json,
+                            "name": area.name,
+                            "id": area.id,
+                            "gss": area.gss,
+                        }
+                        if area is not None
+                        else None
+                    ),
+                }
+                steps.append(step)
 
-    area = await AreaLoader(geocoder_context).load(area_code)
+                geocoding_data["area_fields"] = geocoding_data.get("area_fields", {})
+                geocoding_data["area_fields"][area.area_type.code] = area.gss
+                update_data["geocode_data"].update({"data": geocoding_data})
+                if area is not None:
+                    postcode_data = await get_postcode_data_for_area(
+                        area, loaders, steps
+                    )
+                    update_data["postcode_data"] = postcode_data
+                    update_data["area"] = area
+                    update_data["point"] = area.point
+                else:
+                    # Reset geocoding data
+                    update_data["postcode_data"] = None
 
-    if area is None:
-        return
-
-    step = {
-        "type": "area_code_matching",
-        "area_types": parsed_area_types,
-        "result": "failed" if area is None else "success",
-        "search_term": area_code,
-        "data": (
-            {
-                "centroid": area.polygon.centroid.json,
-                "name": area.name,
-                "id": area.id,
-                "gss": area.gss,
-            }
-            if area is not None
-            else None
-        ),
-    }
-    steps.append(step)
-
-    geocoding_data["area_fields"] = geocoding_data.get("area_fields", {})
-    geocoding_data["area_fields"][area.area_type.code] = area.gss
-    update_data["geocode_data"].update({"data": geocoding_data})
-    if area is not None:
-        postcode_data = await get_postcode_data_for_area(area, loaders, steps)
-        update_data["postcode_data"] = postcode_data
-        update_data["area"] = area
-        update_data["point"] = area.point
-    else:
-        # Reset geocoding data
-        update_data["postcode_data"] = None
-
-    # Update the geocode data regardless, for debugging purposes
-    update_data["geocode_data"].update({"steps": steps})
+                # Update the geocode data regardless, for debugging purposes
+                update_data["geocode_data"].update({"steps": steps})
 
     return GeocodeResult(
         **update_data, data_type=data_type, data=source.get_record_id(record)
