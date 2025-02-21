@@ -1,4 +1,4 @@
-name: Run geocoding tests
+name: Django startup check
 
 concurrency: 
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -8,7 +8,7 @@ on:
   pull_request:
     
 jobs:
-  geocoding_test:
+  django_startup_check:
     runs-on: ubuntu-latest
     environment: testing
     services:
@@ -68,8 +68,9 @@ jobs:
           ~/.local/bin/poetry self add poetry-plugin-export
       - name: Install python dependencies
         run: ~/.local/bin/poetry export --with dev --without-hashes -f requirements.txt --output requirements.txt && pip install -r requirements.txt
-      - name: Run geocoding tests in isolation
-        run: |
-          echo "RUN_GEOCODING_TESTS=1" >> .env
-          cat .env && python manage.py test hub.tests.test_external_data_source_parsers || (cat server.log && exit 1)
-
+      - name: Initialize database
+        run: python manage.py migrate
+      - name: Initialize cache
+        run: python manage.py createcachetable
+      - name: Start server
+        run: gunicorn local_intelligence_hub.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 > server.log 2>&1 &

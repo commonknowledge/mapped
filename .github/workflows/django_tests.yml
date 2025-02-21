@@ -78,12 +78,6 @@ jobs:
           echo "BASE_URL=$BASE_URL" > .env
           ALLOWED_HOSTS=$(echo $BASE_URL | sed -e "s/https:\/\///g")
           echo "ALLOWED_HOSTS=$ALLOWED_HOSTS" >> .env
-      - name: Initialize database
-        run: python manage.py migrate
-      - name: Initialize cache
-        run: python manage.py createcachetable
-      - name: Start server
-        run: gunicorn local_intelligence_hub.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 > server.log 2>&1 &
       - name: Run django tests
         run: cat .env && coverage run --source=. --branch manage.py test --parallel || (cat server.log && exit 1)
       - name: Generate coverage xml
