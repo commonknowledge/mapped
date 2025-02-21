@@ -38,12 +38,8 @@ class StatisticalDataType(Enum):
 
         # 2. Empty check
         x_str = str(x).strip()
-        if not x_str or len(x_str) == 0:
+        if not x_str:
             return x_str, cls.EMPTY
-
-        # If number begins with 0 (e.g. phone numbers, or codes), treat it as a string:
-        if x_str[0] == "0":
-            return x_str, cls.STRING
 
         # 3. Percentage parsing
         if (
