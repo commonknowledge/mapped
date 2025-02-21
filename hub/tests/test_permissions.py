@@ -5,13 +5,19 @@ from asgiref.sync import async_to_sync
 from hub import models
 from hub.tests.fixtures.regional_health_data_for_tests import regional_health_data
 from utils import geo
+from django.contrib.gis.geos import Polygon
 
-fixture_data = regional_health_data.copy()
+fixture_data = [
+    {
+        "id": "xyz",
+        "email": "xyz@bbc.com",
+        "some": "thing",
+        "region": "XXX",
+    },
+]
 
 
 class Setup:
-    fixtures = ["regions"]
-
     def setUp(self) -> None:
         self.client = Client()
         # Create user
@@ -28,18 +34,40 @@ class Setup:
             models.DatabaseJSONSource.objects.create(
                 name="testsource",
                 organisation=self.org,
-                id_field="geography code",
+                id_field="id",
                 geocoding_config={
                     "type": models.UploadedCSVSource.GeographyTypes.AREA,
                     "components": [
                         {
                             "type": "area_code",
-                            "field": "geography code",
+                            "field": "region",
                             "metadata": {"lih_area_type__code": "EER"},
                         }
                     ],
                 },
             )
+        )
+        # Make a dummy region
+        area_type = models.AreaType.objects.create(
+            name="2018 European Electoral Regions",
+            code="EER",
+            area_type="European Electoral Region",
+            description="European Electoral Region boundaries, as at December 2018",
+        )
+        models.Area.objects.create(
+            mapit_id="XXX",
+            gss="XXX",
+            name="Fake area",
+            area_type=area_type,
+            polygon=Polygon(
+                [
+                    (-90.0000, -45.0000),  # Southwest point
+                    (-90.0000, 45.0000),  # Northwest point
+                    (90.0000, 45.0000),  # Northeast point
+                    (90.0000, -45.0000),  # Southeast point
+                    (-90.0000, -45.0000),  # Close the polygon
+                ]
+            ),
         )
         # Ingest data
         async_to_sync(self.source.import_many)(fixture_data)
