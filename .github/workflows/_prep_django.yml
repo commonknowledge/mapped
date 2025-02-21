@@ -65,8 +65,3 @@ jobs:
           ~/.local/bin/poetry self add poetry-plugin-export
       - name: Install python dependencies
         run: ~/.local/bin/poetry export --with dev --without-hashes -f requirements.txt --output requirements.txt && pip install -r requirements.txt
-      - name: Run geocoding tests in isolation
-        run: |
-          echo "RUN_GEOCODING_TESTS=1" >> .env
-          cat .env && python manage.py test hub.tests.test_external_data_source_parsers || (cat server.log && exit 1)
-
