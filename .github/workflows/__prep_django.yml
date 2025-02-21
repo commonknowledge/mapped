@@ -1,11 +1,11 @@
-name: Run geocoding tests
+name: Prep Django
 
 concurrency: 
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
   
 on:
-  pull_request:
+  workflow_call:
     
 jobs:
   test:
