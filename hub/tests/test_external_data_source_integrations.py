@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.files import File
 from django.db.utils import IntegrityError
 from django.test import TestCase
+from django.test.testcases import SerializeMixin
 
 from asgiref.sync import async_to_sync, sync_to_async
 
@@ -19,7 +20,9 @@ from hub.tests.fixtures.regional_health_data_for_tests import regional_health_da
 from hub.tests.utils import TestGraphQLClientCase
 
 
-class TestExternalDataSource:
+# We use SerializeMixin because webhook URLs are shared between tests
+class TestExternalDataSource(SerializeMixin):
+    lockfile = __file__
     constituency_field = "constituency"
     mayoral_field = "mayoral region"
 
