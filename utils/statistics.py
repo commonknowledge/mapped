@@ -79,7 +79,7 @@ class StatisticalDataType(Enum):
     def get_database_type(self):
         _DB_TYPES = {
             self.BOOL: "bool",
-            self.INT: "bigint",
+            self.INT: "int",
             self.FLOAT: "float",
             self.PERCENTAGE: "float",
             self.STRING: "varchar",
