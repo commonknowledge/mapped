@@ -1,12 +1,11 @@
-from asgiref.sync import async_to_sync
+from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-import pytz
+from asgiref.sync import async_to_sync
 
 from hub import models
 from utils import geo
-from django.contrib.gis.geos import MultiPolygon, Polygon
 
 fixture_data = [
     {
