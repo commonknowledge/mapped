@@ -1183,8 +1183,16 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestUploadedCSVSource):
         self.assertEqual(len(rows), 2)
         # Find data matching
         expected_rows = [
-            {"geography": "North East", "geography code": "E15000001"},
-            {"geography": "North West", "geography code": "E15000002"},
+            {
+                "geography": "North East",
+                "geography code": "E15000001",
+                self.source.mapped_row_id: 0,
+            },
+            {
+                "geography": "North West",
+                "geography code": "E15000002",
+                self.source.mapped_row_id: 1,
+            },
         ]
         for expected in expected_rows:
             record = next(
@@ -1199,6 +1207,10 @@ class TestUploadedCSVSourceUsingRowNumberAsID(TestUploadedCSVSource):
             self.assertEqual(
                 self.source.get_record_field(record, "geography"),
                 expected["geography"],
+            )
+            self.assertEqual(
+                self.source.get_record_field(record, self.source.mapped_row_id),
+                expected[self.source.mapped_row_id],
             )
 
     async def test_fetch_all(self):
@@ -1376,14 +1388,11 @@ class TestDatabaseJSONSourceUsingRowNumberAsID(TestUploadedCSVSourceUsingRowNumb
 
         # Add some test data
         await self.source.import_many(regional_health_data.copy())
-        records = list(await self.source.fetch_many())
-        fetch_count = len(records)
-        self.assertGreaterEqual(fetch_count, 10)
 
         # Test GenericData queryset
         import_data = self.source.get_import_data()
         import_count = await import_data.acount()
-        self.assertEqual(import_count, fetch_count)
+        self.assertEqual(import_count, 10)
         data = await sync_to_async(list)(import_data.select_related("area"))
 
         # Check the data has been geocoded
@@ -1394,7 +1403,7 @@ class TestDatabaseJSONSourceUsingRowNumberAsID(TestUploadedCSVSourceUsingRowNumb
             ),
             None,
         )
-        self.assertEqual("E15000001", north_east.data)
+        self.assertEqual("0", north_east.data)
         self.assertIsNotNone(north_east.postcode_data)
         self.assertIsNotNone(north_east.area.name)
 

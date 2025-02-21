@@ -3161,7 +3161,7 @@ class DataFrameSource(ExternalDataSource):
 
     id_field = models.CharField(max_length=250, default="id")
     use_row_number_as_id = models.BooleanField(default=False)
-    internal_id_key = "mapped_row_index"
+    mapped_row_id = "mapped_row_id"
 
     def load_data_into_unformatted_df(self) -> pd.DataFrame:
         raise NotImplementedError(
@@ -3173,10 +3173,10 @@ class DataFrameSource(ExternalDataSource):
         df = self.load_data_into_unformatted_df()
         if df is None:
             raise ValueError("Could not load CSV file")
-        df[self.internal_id_key] = (
+        df[self.mapped_row_id] = (
             df.index if self.use_row_number_as_id else df[self.id_field]
         )
-        df = df.set_index(self.internal_id_key, drop=False)
+        df = df.set_index(self.mapped_row_id, drop=False)
         return df
 
     def load_field_definitions(self):
@@ -3188,22 +3188,26 @@ class DataFrameSource(ExternalDataSource):
                 editable=self.allow_updates,
             )
             for key, dtype in self.df.dtypes.to_dict().items()
-            if key != self.internal_id_key
+            if key != self.mapped_row_id
         ]
 
     def get_record_id(self, record: dict):
-        if record is None:
+        if record is None or not isinstance(record, dict):
             return None
         if self.use_row_number_as_id:
-            id = record.get(self.internal_id_key, None)
+            id = record.get(self.mapped_row_id, None)
             if id:
                 return id
             # Maybe this data is not yet imported;
-            # try matching on the row number by matching the record to the df's columns:
-            id = self.df.index[self.df.columns.isin(record.keys())].tolist()
-            if len(id) == 1:
+            # try matching the record to the df by values of the record dict:
+            filtered_df = self.df
+            for key in record.keys():
+                filtered_df = filtered_df.loc[(filtered_df[key] == record[key])]
+            id = filtered_df.index.tolist()
+            if len(id) >= 1:
                 return id[0]
-            return None
+            else:
+                return None
         else:
             return record.get(self.id_field, None)
 
@@ -3249,13 +3253,13 @@ class DatabaseJSONSource(DataFrameSource):
         return True
 
     def load_data_into_unformatted_df(self) -> pd.DataFrame:
-        return pd.DataFrame(self.data).set_index(self.id_field, drop=False)
+        return pd.DataFrame.from_records(self.data)
 
     async def update_one(self, mapped_record, **kwargs):
         id = self.get_record_id(mapped_record["member"])
         data = mapped_record["update_fields"]
         self.data = [
-            {**record, **data} if record[self.id_field] == id else record
+            {**record, **data} if self.get_record_id(record) == id else record
             for record in self.data
         ]
         await self.asave()
@@ -3266,7 +3270,7 @@ class DatabaseJSONSource(DataFrameSource):
 
     async def delete_one(self, record_id):
         self.data = [
-            record for record in self.data if record[self.id_field] != record_id
+            record for record in self.data if self.get_record_id(record) != record_id
         ]
         await self.asave()
 
