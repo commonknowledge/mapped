@@ -62,12 +62,25 @@ jobs:
           curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
           echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | tee /etc/apt/sources.list.d/ngrok.list
           apt-get update && apt-get install -y binutils gdal-bin libproj-dev ngrok less postgresql-client
-      - name: Install poetry
+      - name: Generate requirements.txt from pyproject.toml
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           ~/.local/bin/poetry self add poetry-plugin-export
+          ~/.local/bin/poetry export --with dev --without-hashes -f requirements.txt --output requirements.txt
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+      - name: Cache python packages
+        id: poetry
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Install python dependencies
-        run: ~/.local/bin/poetry export --with dev --without-hashes -f requirements.txt --output requirements.txt && pip install -r requirements.txt
+        run: pip install -r requirements.txt
       - name: Start ngrok tunnelling
         run: |
           ngrok authtoken ${{ secrets.NGROK_AUTHTOKEN }}
