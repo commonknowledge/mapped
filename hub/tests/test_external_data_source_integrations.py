@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.files import File
 from django.db.utils import IntegrityError
 from django.test import LiveServerTestCase, TestCase, override_settings
+from django.test.testcases import SerializeMixin
 
 from asgiref.sync import async_to_sync, sync_to_async
 
@@ -35,8 +36,6 @@ class TestExternalDataSource:
         self.membership = models.Membership.objects.create(
             user=self.user, organisation=self.organisation, role="owner"
         )
-
-        print("Testcase ALLOWED_HOSTS", settings.ALLOWED_HOSTS)
 
         # Set up the pivot table
         self.custom_data_layer: models.DatabaseJSONSource = (
@@ -785,7 +784,7 @@ class TestExternalDataSource:
 )
 @override_settings(ALLOWED_HOSTS=["*"])
 class TestAirtableSource(
-    TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase
+    TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase, SerializeMixin
 ):
     def create_test_source(self, name="My test Airtable member list"):
         self.source = models.AirtableSource.objects.create(
@@ -818,7 +817,7 @@ class TestAirtableSource(
 
 @override_settings(ALLOWED_HOSTS=["*"])
 class TestMailchimpSource(
-    TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase
+    TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase, SerializeMixin
 ):
     constituency_field = "CONSTITUEN"
     mayoral_field = "MAYORAL_RE"
@@ -853,7 +852,7 @@ class TestMailchimpSource(
 
 @override_settings(ALLOWED_HOSTS=["*"])
 class TestActionNetworkSource(
-    TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase
+    TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase, SerializeMixin
 ):
     constituency_field = "custom_fields.constituency"
     mayoral_field = "custom_fields.mayoral_region"
@@ -928,7 +927,7 @@ class TestActionNetworkSource(
 )
 @override_settings(ALLOWED_HOSTS=["*"])
 class TestEditableGoogleSheetsSource(
-    TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase
+    TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase, SerializeMixin
 ):
     def create_test_source(self, name="My test Google member list"):
         self.source: models.EditableGoogleSheetsSource = (
