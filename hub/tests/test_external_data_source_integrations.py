@@ -16,7 +16,7 @@ from asgiref.sync import async_to_sync, sync_to_async
 from hub import models
 from hub.tests.fixtures.custom_lookup import custom_lookup
 from hub.tests.fixtures.regional_health_data_for_tests import regional_health_data
-from hub.tests.utils import ParallelisableLiveServerTestCase, TestGraphQLClientCase
+from hub.tests.utils import SeriablisedLiveServerTestCase, TestGraphQLClientCase
 
 
 class TestExternalDataSource:
@@ -783,7 +783,7 @@ class TestExternalDataSource:
 )
 @override_settings(ALLOWED_HOSTS=["*"])
 class TestAirtableSource(
-    TestExternalDataSource, TestGraphQLClientCase, ParallelisableLiveServerTestCase
+    TestExternalDataSource, TestGraphQLClientCase, SeriablisedLiveServerTestCase
 ):
     def create_test_source(self, name="My test Airtable member list"):
         self.source = models.AirtableSource.objects.create(
@@ -816,7 +816,7 @@ class TestAirtableSource(
 
 @override_settings(ALLOWED_HOSTS=["*"])
 class TestMailchimpSource(
-    TestExternalDataSource, TestGraphQLClientCase, ParallelisableLiveServerTestCase
+    TestExternalDataSource, TestGraphQLClientCase, SeriablisedLiveServerTestCase
 ):
     constituency_field = "CONSTITUEN"
     mayoral_field = "MAYORAL_RE"
@@ -851,7 +851,7 @@ class TestMailchimpSource(
 
 @override_settings(ALLOWED_HOSTS=["*"])
 class TestActionNetworkSource(
-    TestExternalDataSource, TestGraphQLClientCase, ParallelisableLiveServerTestCase
+    TestExternalDataSource, TestGraphQLClientCase, SeriablisedLiveServerTestCase
 ):
     constituency_field = "custom_fields.constituency"
     mayoral_field = "custom_fields.mayoral_region"
@@ -926,7 +926,7 @@ class TestActionNetworkSource(
 )
 @override_settings(ALLOWED_HOSTS=["*"])
 class TestEditableGoogleSheetsSource(
-    TestExternalDataSource, TestGraphQLClientCase, ParallelisableLiveServerTestCase
+    TestExternalDataSource, TestGraphQLClientCase, SeriablisedLiveServerTestCase
 ):
     def create_test_source(self, name="My test Google member list"):
         self.source: models.EditableGoogleSheetsSource = (

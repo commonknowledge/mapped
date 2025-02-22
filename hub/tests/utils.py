@@ -91,7 +91,9 @@ class TestGraphQLClientCase(TestCase):
         return res.json()
 
 
-class ParallelisableLiveServerTestCase(LiveServerTestCase, SerializeMixin):
+class SeriablisedLiveServerTestCase(LiveServerTestCase, SerializeMixin):
+    lockfile = "one_by_one_live_server_test_case.lock"
+
     def _create_server(self, connections_override=None):
         return self.server_class(
             (self.host, self.port),
