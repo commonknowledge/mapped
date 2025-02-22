@@ -10,7 +10,7 @@ from unittest import skip, skipIf
 from django.conf import settings
 from django.core.files import File
 from django.db.utils import IntegrityError
-from django.test import LiveServerTestCase, TestCase
+from django.test import LiveServerTestCase, TestCase, override_settings
 
 from asgiref.sync import async_to_sync, sync_to_async
 
@@ -39,7 +39,7 @@ class TestExternalDataSource:
             user=self.user, organisation=self.organisation, role="owner"
         )
 
-        logger.debug("Testcase ALLOWED_HOSTS", settings.ALLOWED_HOSTS)
+        print("Testcase ALLOWED_HOSTS", settings.ALLOWED_HOSTS)
 
         # Set up the pivot table
         self.custom_data_layer: models.DatabaseJSONSource = (
@@ -786,6 +786,7 @@ class TestExternalDataSource:
     settings.SKIP_AIRTABLE_TESTS,
     "Skipping Airtable tests",
 )
+@override_settings(ALLOWED_HOSTS=["*"])
 class TestAirtableSource(
     TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase
 ):
@@ -818,6 +819,7 @@ class TestAirtableSource(
         return self.source
 
 
+@override_settings(ALLOWED_HOSTS=["*"])
 class TestMailchimpSource(
     TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase
 ):
@@ -852,6 +854,7 @@ class TestMailchimpSource(
         return self.source
 
 
+@override_settings(ALLOWED_HOSTS=["*"])
 class TestActionNetworkSource(
     TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase
 ):
@@ -926,6 +929,7 @@ class TestActionNetworkSource(
 @skip(
     reason="Google Sheets can't be automatically tested as the refresh token expires after 7 days - need to use a published app"
 )
+@override_settings(ALLOWED_HOSTS=["*"])
 class TestEditableGoogleSheetsSource(
     TestExternalDataSource, TestGraphQLClientCase, LiveServerTestCase
 ):
