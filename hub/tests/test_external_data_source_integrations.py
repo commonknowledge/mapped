@@ -36,6 +36,8 @@ class TestExternalDataSource:
             user=self.user, organisation=self.organisation, role="owner"
         )
 
+        print("ALLOWED_HOSTS", settings.ALLOWED_HOSTS)
+
         # Set up the pivot table
         self.custom_data_layer: models.DatabaseJSONSource = (
             models.DatabaseJSONSource.objects.create(
