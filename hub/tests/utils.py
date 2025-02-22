@@ -2,6 +2,7 @@ import mimetypes
 import os
 
 from django.core.files.uploadedfile import UploadedFile
+from django.core.servers.basehttp import ThreadedWSGIServer
 from django.test import Client, TestCase, override_settings
 from django.test.testcases import (
     LiveServerTestCase,
@@ -92,7 +93,13 @@ class TestGraphQLClientCase(TestCase):
         return res.json()
 
 
+class PolyPortThreadedWSGIServer(ThreadedWSGIServer):
+    allow_reuse_port = True
+
+
 class ReusableLiveServerThread(LiveServerThread):
+    server_class = PolyPortThreadedWSGIServer
+
     def _create_server(self, connections_override=None):
         return self.server_class(
             (self.host, self.port),
