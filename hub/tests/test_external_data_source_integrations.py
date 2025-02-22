@@ -784,8 +784,6 @@ class TestExternalDataSource:
 class TestAirtableSource(
     TestExternalDataSource, TestGraphQLClientCase, SeriablisedLiveServerTestCase
 ):
-    lockfile = "external_data_source_live_server_test_case.lock"
-
     def create_test_source(self, name="My test Airtable member list"):
         self.source = models.AirtableSource.objects.create(
             name=name,
@@ -819,7 +817,6 @@ class TestAirtableSource(
 class TestMailchimpSource(
     TestExternalDataSource, TestGraphQLClientCase, SeriablisedLiveServerTestCase
 ):
-    lockfile = "external_data_source_live_server.lock"
     constituency_field = "CONSTITUEN"
     mayoral_field = "MAYORAL_RE"
 
@@ -855,7 +852,6 @@ class TestMailchimpSource(
 class TestActionNetworkSource(
     TestExternalDataSource, TestGraphQLClientCase, SeriablisedLiveServerTestCase
 ):
-    lockfile = "external_data_source_live_server.lock"
     constituency_field = "custom_fields.constituency"
     mayoral_field = "custom_fields.mayoral_region"
 
@@ -931,8 +927,6 @@ class TestActionNetworkSource(
 class TestEditableGoogleSheetsSource(
     TestExternalDataSource, TestGraphQLClientCase, SeriablisedLiveServerTestCase
 ):
-    lockfile = "external_data_source_live_server.lock"
-
     def create_test_source(self, name="My test Google member list"):
         self.source: models.EditableGoogleSheetsSource = (
             models.EditableGoogleSheetsSource.objects.create(

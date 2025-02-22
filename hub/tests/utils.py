@@ -5,6 +5,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.test import Client, TestCase, override_settings
 from django.test.testcases import (
     LiveServerTestCase,
+    LiveServerThread,
     QuietWSGIRequestHandler,
     SerializeMixin,
 )
@@ -91,9 +92,7 @@ class TestGraphQLClientCase(TestCase):
         return res.json()
 
 
-class SeriablisedLiveServerTestCase(LiveServerTestCase, SerializeMixin):
-    lockfile = "one_by_one_live_server_test_case.lock"
-
+class ReusableLiveServerThread(LiveServerThread):
     def _create_server(self, connections_override=None):
         return self.server_class(
             (self.host, self.port),
@@ -101,3 +100,8 @@ class SeriablisedLiveServerTestCase(LiveServerTestCase, SerializeMixin):
             allow_reuse_address=False,
             connections_override=connections_override,
         )
+
+
+class SeriablisedLiveServerTestCase(LiveServerTestCase, SerializeMixin):
+    lockfile = "one_by_one_live_server_test_case.lock"
+    server_thread_class = ReusableLiveServerThread
