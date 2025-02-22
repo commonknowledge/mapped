@@ -2764,7 +2764,10 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             )
             logger.info(f"Scheduled import batch {i} for source {external_data_source}")
         metrics.distribution(key="import_rows_requested", value=member_count)
-        await sync_to_async(call_command)("autoscale_render_workers")
+        try:
+            await sync_to_async(call_command)("autoscale_render_workers")
+        except ValueError:
+            pass
 
     async def schedule_refresh_one(self, member) -> int:
         logger.info(f"Scheduling refresh one for source {self} and member {member}")
@@ -3151,7 +3154,10 @@ class ExternalDataSource(PolymorphicModel, Analytics):
                 logger.error(f"Failed to cancel job {job.id}: {e}")
 
         # run command to update worker instances
-        call_command("autoscale_render_workers")
+        try:
+            call_command("autoscale_render_workers")
+        except ValueError:
+            pass
 
 
 class DataFrameSource(ExternalDataSource):
@@ -4213,7 +4219,10 @@ class ActionNetworkSource(ExternalDataSource):
             request_id=request_id,
             priority=ProcrastinateQueuePriority.UNGUESSABLE.value,
         )
-        await sync_to_async(call_command)("autoscale_render_workers")
+        try:
+            await sync_to_async(call_command)("autoscale_render_workers")
+        except ValueError:
+            pass
 
     @classmethod
     async def deferred_refresh_all(

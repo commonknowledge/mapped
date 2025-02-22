@@ -2,7 +2,14 @@ import mimetypes
 import os
 
 from django.core.files.uploadedfile import UploadedFile
+from django.core.servers.basehttp import ThreadedWSGIServer
 from django.test import Client, TestCase, override_settings
+from django.test.testcases import (
+    LiveServerTestCase,
+    LiveServerThread,
+    QuietWSGIRequestHandler,
+    SerializeMixin,
+)
 from django.urls import reverse
 
 from hub import models
@@ -84,3 +91,24 @@ class TestGraphQLClientCase(TestCase):
             headers=__headers,
         )
         return res.json()
+
+
+class PolyPortThreadedWSGIServer(ThreadedWSGIServer):
+    allow_reuse_port = True
+
+
+class ReusableLiveServerThread(LiveServerThread):
+    server_class = PolyPortThreadedWSGIServer
+
+    def _create_server(self, connections_override=None):
+        return self.server_class(
+            (self.host, self.port),
+            QuietWSGIRequestHandler,
+            allow_reuse_address=True,
+            connections_override=connections_override,
+        )
+
+
+class SeriablisedLiveServerTestCase(LiveServerTestCase, SerializeMixin):
+    lockfile = "one_by_one_live_server_test_case.lock"
+    server_thread_class = ReusableLiveServerThread

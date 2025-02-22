@@ -54,6 +54,7 @@ jobs:
         SECRET_KEY: keyboardcat
         POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
         POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
+        TEST_SERVER_PORT: 8000
     steps:
       - name: Checkout repo content
         uses: actions/checkout@v3
@@ -62,36 +63,36 @@ jobs:
           curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
           echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | tee /etc/apt/sources.list.d/ngrok.list
           apt-get update && apt-get install -y binutils gdal-bin libproj-dev ngrok less postgresql-client
-      - name: Install poetry
+      - name: Generate requirements.txt from pyproject.toml
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           ~/.local/bin/poetry self add poetry-plugin-export
-      - name: Install python dependencies
-        run: ~/.local/bin/poetry export --with dev --without-hashes -f requirements.txt --output requirements.txt && pip install -r requirements.txt
+          ~/.local/bin/poetry export --with dev --without-hashes -f requirements.txt --output requirements.txt
+      - name: Cache python packages
+        id: cache-venv
+        uses: actions/cache@v4
+        with:
+          path: ./.venv/
+          key: ${{ runner.os }}-venv-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-
+      - name: Install python dependencies if not cached
+        if: steps.cache-venv.outputs.cache-hit != 'true'
+        run: python -m venv ./.venv && . ./.venv/bin/activate && pip install -r requirements.txt
       - name: Start ngrok tunnelling
         run: |
           ngrok authtoken ${{ secrets.NGROK_AUTHTOKEN }}
-          ngrok http 8000 --log=stdout > ngrok.log &
-      - name: Extract ngrok URL
+          ngrok http $TEST_SERVER_PORT --log=stdout > ngrok.log &
+      - name: Inject ngrok URL into Django test case
         run: |
           BASE_URL=$(cat ngrok.log | grep 'url=' | awk -F= '{print $NF}')
-          echo "BASE_URL=$BASE_URL" > .env
+          echo "BASE_URL=$BASE_URL" >> $GITHUB_ENV
           ALLOWED_HOSTS=$(echo $BASE_URL | sed -e "s/https:\/\///g")
-          echo "ALLOWED_HOSTS=$ALLOWED_HOSTS" >> .env
-      - name: Initialize database
-        run: python manage.py migrate
-      - name: Initialize cache
-        run: python manage.py createcachetable
-      - name: Start server
-        run: gunicorn local_intelligence_hub.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 > server.log 2>&1 &
+          echo "ALLOWED_HOSTS=*" >> $GITHUB_ENV
       - name: Run django tests
-        run: cat .env && coverage run --source=. --branch manage.py test || (cat server.log && exit 1)
-      - name: Run geocoding tests in isolation
-        run: |
-          echo "RUN_GEOCODING_TESTS=1" >> .env
-          cat .env && python manage.py test hub.tests.test_external_data_source_parsers || (cat server.log && exit 1)
+        run: . ./.venv/bin/activate && coverage run --source=. --branch manage.py test --parallel || (cat server.log && exit 1)
       - name: Generate coverage xml
-        run: coverage xml
+        run: . ./.venv/bin/activate && coverage xml
       - name: Upload coverage.xml
         uses: actions/upload-artifact@v4
         with:
