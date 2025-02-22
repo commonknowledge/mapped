@@ -151,6 +151,8 @@ FRONTEND_BASE_URL = (
 BACKEND_URL = env("BASE_URL") if ENVIRONMENT != "production" else env("PROD_BASE_URL")
 BASE_URL = BACKEND_URL
 # Network security
+print("----BASE_URL", env("BASE_URL"), env("PROD_BASE_URL"))
+print("----ALLOWED_HOSTS", env("ALLOWED_HOSTS"), env("PROD_ALLOWED_HOSTS"))
 ALLOWED_HOSTS = (
     env("ALLOWED_HOSTS") if ENVIRONMENT != "production" else env("PROD_ALLOWED_HOSTS")
 )

@@ -89,13 +89,11 @@ jobs:
       - name: Inject ngrok URL into Django test case
         run: |
           BASE_URL=$(cat ngrok.log | grep 'url=' | awk -F= '{print $NF}')
-          echo "BASE_URL=$BASE_URL" > .env
           echo "BASE_URL=$BASE_URL" >> $GITHUB_ENV
           ALLOWED_HOSTS=$(echo $BASE_URL | sed -e "s/https:\/\///g")
-          echo "ALLOWED_HOSTS=$ALLOWED_HOSTS" >> .env
-          echo "ALLOWED_HOSTS=$ALLOWED_HOSTS" >> $GITHUB_ENV
+          echo "ALLOWED_HOSTS=$ALLOWED_HOSTS," >> $GITHUB_ENV
       - name: Run django tests
-        run: cat .env && coverage run --source=. --branch manage.py test hub.tests.test_external_data_source_integrations.TestMailchimpSource --parallel || (cat server.log && exit 1)
+        run: coverage run --source=. --branch manage.py test hub.tests.test_external_data_source_integrations.TestMailchimpSource --parallel || (cat server.log && exit 1)
       - name: Generate coverage xml
         run: coverage xml
       - name: Upload coverage.xml
