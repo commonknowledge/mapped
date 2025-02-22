@@ -97,7 +97,8 @@ class ReusableLiveServerThread(LiveServerThread):
         return self.server_class(
             (self.host, self.port),
             QuietWSGIRequestHandler,
-            allow_reuse_address=False,
+            allow_reuse_address=True,
+            allow_reuse_port=True,
             connections_override=connections_override,
         )
 
