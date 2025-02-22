@@ -92,7 +92,7 @@ jobs:
       - name: Run django tests
         run: . ./.venv/bin/activate && coverage run --source=. --branch manage.py test --parallel || (cat server.log && exit 1)
       - name: Generate coverage xml
-        run: coverage xml
+        run: . ./.venv/bin/activate && coverage xml
       - name: Upload coverage.xml
         uses: actions/upload-artifact@v4
         with:
