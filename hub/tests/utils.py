@@ -98,7 +98,6 @@ class ReusableLiveServerThread(LiveServerThread):
             (self.host, self.port),
             QuietWSGIRequestHandler,
             allow_reuse_address=True,
-            allow_reuse_port=True,
             connections_override=connections_override,
         )
 
