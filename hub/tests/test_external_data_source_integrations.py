@@ -1,4 +1,3 @@
-import logging
 import os
 from asyncio import sleep
 from datetime import datetime
@@ -18,8 +17,6 @@ from hub import models
 from hub.tests.fixtures.custom_lookup import custom_lookup
 from hub.tests.fixtures.regional_health_data_for_tests import regional_health_data
 from hub.tests.utils import TestGraphQLClientCase
-
-logger = logging.getLogger(__name__)
 
 
 class TestExternalDataSource:
