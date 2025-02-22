@@ -3,6 +3,11 @@ import os
 
 from django.core.files.uploadedfile import UploadedFile
 from django.test import Client, TestCase, override_settings
+from django.test.testcases import (
+    LiveServerTestCase,
+    QuietWSGIRequestHandler,
+    SerializeMixin,
+)
 from django.urls import reverse
 
 from hub import models
@@ -84,3 +89,13 @@ class TestGraphQLClientCase(TestCase):
             headers=__headers,
         )
         return res.json()
+
+
+class ParallelisableLiveServerTestCase(LiveServerTestCase, SerializeMixin):
+    def _create_server(self, connections_override=None):
+        return self.server_class(
+            (self.host, self.port),
+            QuietWSGIRequestHandler,
+            allow_reuse_address=False,
+            connections_override=connections_override,
+        )
