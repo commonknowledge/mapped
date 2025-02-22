@@ -1,3 +1,4 @@
+import logging
 import os
 from asyncio import sleep
 from datetime import datetime
@@ -18,6 +19,8 @@ from hub.tests.fixtures.custom_lookup import custom_lookup
 from hub.tests.fixtures.regional_health_data_for_tests import regional_health_data
 from hub.tests.utils import TestGraphQLClientCase
 
+logger = logging.getLogger(__name__)
+
 
 class TestExternalDataSource:
     lockfile = __file__
@@ -36,7 +39,7 @@ class TestExternalDataSource:
             user=self.user, organisation=self.organisation, role="owner"
         )
 
-        print("ALLOWED_HOSTS", settings.ALLOWED_HOSTS)
+        logger.debug("Testcase ALLOWED_HOSTS", settings.ALLOWED_HOSTS)
 
         # Set up the pivot table
         self.custom_data_layer: models.DatabaseJSONSource = (
