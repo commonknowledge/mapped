@@ -424,8 +424,8 @@ export default function ReportMapChoroplethLegend() {
                       .map(([key, value]) => ({
                         label: toSpaceCase(key),
                         options: value.map((value) => ({
-                          label: toSpaceCase(value),
                           value: value,
+                          label: value,
                         })),
                       }))}
                     onChange={(dataSourceField) => {
