@@ -17,6 +17,7 @@ import {
   CalendarDays,
   FlagTriangleRight,
   LineChart,
+  LucideFileJson,
   LucideFileSpreadsheet,
   MapPinIcon,
   Newspaper,
@@ -104,6 +105,28 @@ export const externalDataSourceOptions: Record<
           className={twMerge('text-brandBlue', props.className)}
         />
         Upload CSV
+      </div>
+    ),
+    screenshot: '/googleSheets-screenshot.png',
+    supported: false,
+  },
+  [CrmType.Databasejson]: {
+    key: CrmType.Databasejson,
+    modelName: 'DatabaseJSONSource',
+    name: 'Database JSON Data',
+    icon: (props: any) => (
+      <LucideFileJson
+        {...props}
+        className={twMerge('text-brandBlue', props.className)}
+      />
+    ),
+    logo: (props: any) => (
+      <div className="flex flex-col gap-2">
+        <LucideFileJson
+          {...props}
+          className={twMerge('text-brandBlue', props.className)}
+        />
+        Upload JSON
       </div>
     ),
     screenshot: '/googleSheets-screenshot.png',
