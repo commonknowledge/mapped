@@ -441,25 +441,25 @@ def statistics(
     if len(numerical_keys) > 0:
         df = add_computed_columns(df, numerical_keys)
 
-        # Apply formulas
-        if post_calcs and len(post_calcs) > 0:
-            for col in post_calcs:
+    # Apply formulas
+    if post_calcs and len(post_calcs) > 0:
+        for col in post_calcs:
+            try:
                 try:
-                    try:
-                        df[col.name] = df.eval(col.expression)
-                    except ValueError:
-                        # In case "where" is used, which pandas doesn't support
-                        # https://github.com/pandas-dev/pandas/issues/34834
-                        df[col.name] = ne.evaluate(col, local_dict=df)
-                    if col.name not in numerical_keys:
-                        numerical_keys += [col.name]
-                    if col.is_percentage and col.name not in percentage_keys:
-                        percentage_keys += [col.name]
-                except Exception as e:
-                    logger.warning(f"Error in statistics post_calcs: {e}")
+                    df[col.name] = df.eval(col.expression)
+                except ValueError:
+                    # In case "where" is used, which pandas doesn't support
+                    # https://github.com/pandas-dev/pandas/issues/34834
+                    df[col.name] = ne.evaluate(col, local_dict=df)
+                if col.name not in numerical_keys:
+                    numerical_keys += [col.name]
+                if col.is_percentage and col.name not in percentage_keys:
+                    percentage_keys += [col.name]
+            except Exception as e:
+                logger.warning(f"Error in statistics post_calcs: {e}")
 
-            # Then recalculate based on the formula, since they may've doctored the values.
-            df = add_computed_columns(df, numerical_keys)
+        # Then recalculate based on the formula, since they may've doctored the values.
+        df = add_computed_columns(df, numerical_keys)
 
     if choropleth_config.category_key or choropleth_config.count_key:
         if not conf.return_columns or len(conf.return_columns) == 0:
