@@ -146,8 +146,7 @@ export function ChoroplethConfigSchema(): z.ZodObject<Properties<ChoroplethConfi
   return z.object({
     categoryKey: z.string().nullish(),
     countKey: z.string().nullish(),
-    isCountKeyPercentage: z.boolean().default(false).nullish(),
-    mapBounds: MapBoundsSchema().nullish()
+    isCountKeyPercentage: z.boolean().default(false).nullish()
   })
 }
 

@@ -1591,6 +1591,7 @@ def statistics_for_choropleth(
     # they're gonna all be geo-joined for now.
     stats_config: stats.StatisticsConfig,
     choropleth_config: Optional[stats.ChoroplethConfig] = None,
+    map_bounds: Optional[stats.MapBounds] = None,
 ) -> List[GroupedDataCount]:
     choropleth_config = choropleth_config or stats.ChoroplethConfig()
 
@@ -1625,9 +1626,7 @@ def statistics_for_choropleth(
 
     return (
         stats.statistics(
-            stats_config,
-            choropleth_config,
-            as_grouped_data=True,
+            stats_config, choropleth_config, as_grouped_data=True, map_bounds=map_bounds
         )
         or []
     )  # Convert None to empty list for better front-end integration

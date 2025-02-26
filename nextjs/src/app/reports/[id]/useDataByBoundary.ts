@@ -46,12 +46,12 @@ const useDataByBoundary = ({
     STATISTICS_QUERY,
     {
       variables: {
+        mapBounds,
         config: {
           ...(view?.mapOptions?.choropleth.advancedStatisticsConfig! || {}),
           groupByArea: tileset.analyticalAreaType!,
         },
         choroplethConfig: {
-          mapBounds,
           categoryKey:
             view?.mapOptions?.choropleth.dataType ===
             StatisticalDataType.Nominal
@@ -126,10 +126,12 @@ export const STATISTICS_QUERY = gql`
   query Statistics(
     $config: StatisticsConfig!
     $choroplethConfig: ChoroplethConfig!
+    $mapBounds: MapBounds
   ) {
     statisticsForChoropleth(
       statsConfig: $config
       choroplethConfig: $choroplethConfig
+      mapBounds: $mapBounds
     ) {
       label
       gss
