@@ -15,7 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 def telemetry_task(func):
-    return func
+    """
+    Note: this does not work on Render. An exception is thrown in
+    the finally block with the message "Connection is closed".
+    We'll need to figure out why before using this again.
+    """
     task_name = func.__name__
     user_cpu_time_metric = f"task.{task_name}.user_cpu_time"
     system_cpu_time_metric = f"task.{task_name}.system_cpu_time"
@@ -64,7 +68,6 @@ def telemetry_task(func):
 
 
 @procrastinate.task(queue="external_data_sources")
-@telemetry_task
 async def refresh_one(external_data_source_id: str, member):
     from hub.models import ExternalDataSource
 
@@ -76,7 +79,6 @@ async def refresh_one(external_data_source_id: str, member):
 @procrastinate.task(
     queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
 )
-@telemetry_task
 async def refresh_many(
     external_data_source_id: str, members: list, request_id: str = None
 ):
@@ -92,7 +94,6 @@ async def refresh_many(
 @procrastinate.task(
     queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
 )
-@telemetry_task
 async def refresh_pages(
     external_data_source_id: str, current_page: int, request_id: str = None
 ):
@@ -137,7 +138,6 @@ async def refresh_pages(
 
 
 @procrastinate.task(queue="external_data_sources")
-@telemetry_task
 async def refresh_all(external_data_source_id: str, request_id: str = None):
     from hub.models import ExternalDataSource
 
@@ -180,7 +180,6 @@ async def setup_webhooks(external_data_source_id: str, refresh: bool = True):
 @procrastinate.task(
     queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
 )
-@telemetry_task
 async def import_many(
     external_data_source_id: str, members: list, request_id: str = None
 ):
@@ -196,7 +195,6 @@ async def import_many(
 @procrastinate.task(
     queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
 )
-@telemetry_task
 async def import_pages(
     external_data_source_id: str, current_page=1, request_id: str = None
 ):
@@ -241,7 +239,6 @@ async def import_pages(
 
 
 @procrastinate.task(queue="external_data_sources")
-@telemetry_task
 async def import_all(
     external_data_source_id: str, requested_at: str = None, request_id: str = None
 ):
