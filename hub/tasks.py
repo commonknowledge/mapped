@@ -7,7 +7,6 @@ import os
 
 from django.conf import settings
 from django.db.models import Count, Q
-
 from procrastinate.contrib.django import app as procrastinate
 from procrastinate.contrib.django.models import ProcrastinateJob
 from sentry_sdk import metrics
@@ -16,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def telemetry_task(func):
+    return func
     task_name = func.__name__
     user_cpu_time_metric = f"task.{task_name}.user_cpu_time"
     system_cpu_time_metric = f"task.{task_name}.system_cpu_time"
