@@ -2740,15 +2740,21 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         # Drop previous materialized view as data may have changed
         await sync_to_async(external_data_source.drop_materialized_view)()
         members = await external_data_source.fetch_all()
+        # Some data sources return an iterator of unknown length
+        member_count = (
+            len(members)
+            if hasattr(members, "__len__")
+            else settings.MEDIUM_PRIORITY_IMPORT_ROW_COUNT_THRESHOLD
+        )
         priority_enum = None
-        match len(members):
-            case _ if len(members) < settings.SUPER_QUICK_IMPORT_ROW_COUNT_THRESHOLD:
+        match member_count:
+            case _ if member_count < settings.SUPER_QUICK_IMPORT_ROW_COUNT_THRESHOLD:
                 priority_enum = ProcrastinateQueuePriority.SUPER_QUICK
-            case _ if len(
-                members
-            ) < settings.MEDIUM_PRIORITY_IMPORT_ROW_COUNT_THRESHOLD:
+            case (
+                _
+            ) if member_count < settings.MEDIUM_PRIORITY_IMPORT_ROW_COUNT_THRESHOLD:
                 priority_enum = ProcrastinateQueuePriority.MEDIUM
-            case _ if len(members) < settings.LARGE_IMPORT_ROW_COUNT_THRESHOLD:
+            case _ if member_count < settings.LARGE_IMPORT_ROW_COUNT_THRESHOLD:
                 priority_enum = ProcrastinateQueuePriority.SLOW
             case _:
                 priority_enum = ProcrastinateQueuePriority.VERY_SLOW

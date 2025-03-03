@@ -123,3 +123,10 @@ class ExternalDataSourceCreateWebhook(View):
         )
 
         return JsonResponse({"status": "ok"})
+
+
+async def test_retry_strategy(request):
+    from hub.tasks import test_retry_strategy
+
+    await test_retry_strategy.defer_async()
+    return JsonResponse({"status": "ok"})
