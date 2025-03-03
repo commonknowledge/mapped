@@ -34,6 +34,7 @@ from hub.views.mapped import (
     ExternalDataSourceCreateWebhook,
     ExternalDataSourceWebhook,
     test_retry_strategy,
+    test_simple_job,
 )
 
 handler404 = core.NotFoundPageView.as_view()
@@ -174,6 +175,7 @@ urlpatterns = [
     path("cms/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     path("test-retry-strategy", test_retry_strategy),
+    path("test-simple-job", test_simple_job),
     # For multi-tenancy wagtail page router logic
     path("", include(wagtail_urls)),
 ]

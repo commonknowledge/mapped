@@ -166,6 +166,11 @@ async def test_retry_strategy(job_context: JobContext):
     raise Exception("Test exception")
 
 
+@procrastinate.task(queue="debug", pass_context=True)
+async def test_simple_job(job_context: JobContext):
+    await ProcrastinateJob.objects.acount()
+
+
 @procrastinate.task(
     queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
 )

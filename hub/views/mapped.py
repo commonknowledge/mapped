@@ -130,3 +130,10 @@ async def test_retry_strategy(request):
 
     await test_retry_strategy.defer_async()
     return JsonResponse({"status": "ok"})
+
+
+async def test_simple_job(request):
+    from hub.tasks import test_simple_job
+
+    await test_simple_job.defer_async()
+    return JsonResponse({"status": "ok"})
