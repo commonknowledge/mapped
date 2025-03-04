@@ -2741,17 +2741,21 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         await sync_to_async(external_data_source.drop_materialized_view)()
         members = await external_data_source.fetch_all()
         priority_enum = None
-        match len(members):
-            case _ if len(members) < settings.SUPER_QUICK_IMPORT_ROW_COUNT_THRESHOLD:
-                priority_enum = ProcrastinateQueuePriority.SUPER_QUICK
-            case _ if len(
-                members
-            ) < settings.MEDIUM_PRIORITY_IMPORT_ROW_COUNT_THRESHOLD:
-                priority_enum = ProcrastinateQueuePriority.MEDIUM
-            case _ if len(members) < settings.LARGE_IMPORT_ROW_COUNT_THRESHOLD:
-                priority_enum = ProcrastinateQueuePriority.SLOW
-            case _:
-                priority_enum = ProcrastinateQueuePriority.VERY_SLOW
+        try:
+            match len(members):
+                case _ if len(members) < settings.SUPER_QUICK_IMPORT_ROW_COUNT_THRESHOLD:
+                    priority_enum = ProcrastinateQueuePriority.SUPER_QUICK
+                case _ if len(
+                    members
+                ) < settings.MEDIUM_PRIORITY_IMPORT_ROW_COUNT_THRESHOLD:
+                    priority_enum = ProcrastinateQueuePriority.MEDIUM
+                case _ if len(members) < settings.LARGE_IMPORT_ROW_COUNT_THRESHOLD:
+                    priority_enum = ProcrastinateQueuePriority.SLOW
+                case _:
+                    priority_enum = ProcrastinateQueuePriority.VERY_SLOW
+        except TypeError:
+            # In cases where members is not a list, we can't determine the length
+            priority_enum = ProcrastinateQueuePriority.VERY_SLOW
         member_count = 0
         batches = batched(members, settings.IMPORT_UPDATE_ALL_BATCH_SIZE)
         for i, batch in enumerate(batches):
