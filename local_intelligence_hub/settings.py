@@ -337,13 +337,13 @@ WSGI_APPLICATION = "local_intelligence_hub.wsgi.application"
 
 DATABASES = {"default": env.db(engine="django.contrib.gis.db.backends.postgis")}
 
-# if env("DATABASE_CONNECTION_POOLER_HOSTPORT"):
+if env("DATABASE_CONNECTION_POOLER_HOSTPORT"):
     # Replace the hostport in the DATABASE_URL with the connection pooler hostport
-    # host, port = env("DATABASE_CONNECTION_POOLER_HOSTPORT").split(":")
-    # DATABASES["default"]["HOST"] = host
-    # DATABASES["default"]["PORT"] = port
+    host, port = env("DATABASE_CONNECTION_POOLER_HOSTPORT").split(":")
+    DATABASES["default"]["HOST"] = host
+    DATABASES["default"]["PORT"] = port
     # Disable server-side cursors
-    # DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
     # Close connections after use
     # DATABASES["default"]["CONN_MAX_AGE"] = 0
     # Enable connection health checks
