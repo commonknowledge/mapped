@@ -167,6 +167,7 @@ class StatisticsConfig:
     group_by_area: Optional[AnalyticalAreaType] = None
     group_by_columns: Optional[List[GroupByColumn]] = None
     # Values
+    summary_calculations: Optional[bool] = True
     pre_group_by_calculated_columns: Optional[List[CalculatedColumn]] = None
     calculated_columns: Optional[List[CalculatedColumn]] = None
     aggregation_operation: Optional[AggregationOp] = None
@@ -323,7 +324,7 @@ def statistics(
         if t.get_statistical_type() == "percentage" and k not in exclude_keys
     ]
 
-    if len(numerical_keys) > 0:
+    if len(numerical_keys) > 0 and conf.summary_calculations:
         df = add_computed_columns(df, numerical_keys)
 
     # Apply the row-level cols
@@ -438,7 +439,7 @@ def statistics(
         # Merge the strings and the numericals back together
         df = df_mode.join(df_aggregated, on="gss", how="left")
 
-    if len(numerical_keys) > 0:
+    if len(numerical_keys) > 0 and conf.summary_calculations:
         df = add_computed_columns(df, numerical_keys)
 
     # Apply formulas
@@ -459,7 +460,8 @@ def statistics(
                 logger.warning(f"Error in statistics post_calcs: {e}")
 
         # Then recalculate based on the formula, since they may've doctored the values.
-        df = add_computed_columns(df, numerical_keys)
+        if conf.summary_calculations:
+            df = add_computed_columns(df, numerical_keys)
 
     if choropleth_config.category_key or choropleth_config.count_key:
         if not conf.return_columns or len(conf.return_columns) == 0:
