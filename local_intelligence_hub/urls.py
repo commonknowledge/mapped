@@ -30,7 +30,12 @@ from hub.graphql.context import CustomSchemaView
 from hub.graphql.schema import schema
 from hub.sitemap import hub_sitemap
 from hub.views import accounts, area, core, explore, landingpages, vector_tiles
-from hub.views.mapped import ExternalDataSourceCreateWebhook, ExternalDataSourceWebhook
+from hub.views.mapped import (
+    ExternalDataSourceCreateWebhook,
+    ExternalDataSourceWebhook,
+    test_retry_strategy,
+    test_simple_job,
+)
 
 handler404 = core.NotFoundPageView.as_view()
 
@@ -169,6 +174,8 @@ urlpatterns = [
     ),
     path("cms/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
+    path("test-retry-strategy", test_retry_strategy),
+    path("test-simple-job", test_simple_job),
     # For multi-tenancy wagtail page router logic
     path("", include(wagtail_urls)),
 ]

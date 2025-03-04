@@ -2740,6 +2740,12 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         # Drop previous materialized view as data may have changed
         await sync_to_async(external_data_source.drop_materialized_view)()
         members = await external_data_source.fetch_all()
+        # Some data sources return an iterator of unknown length
+        member_count = (
+            len(members)
+            if hasattr(members, "__len__")
+            else settings.MEDIUM_PRIORITY_IMPORT_ROW_COUNT_THRESHOLD
+        )
         priority_enum = None
         try:
             match len(members):

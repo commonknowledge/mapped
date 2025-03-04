@@ -183,7 +183,6 @@ class ChoroplethConfig:
     category_key: Optional[str] = None
     count_key: Optional[str] = None
     is_count_key_percentage: Optional[bool] = False
-    map_bounds: Optional[MapBounds] = None
 
 
 def statistics(
@@ -191,6 +190,7 @@ def statistics(
     choropleth_config: Optional[ChoroplethConfig] = None,
     as_grouped_data: bool = False,
     return_numeric_keys_only: Optional[bool] = False,
+    map_bounds: Optional[MapBounds] = None,
 ):
     choropleth_config = choropleth_config or ChoroplethConfig()
 
@@ -228,8 +228,7 @@ def statistics(
 
     # Actual SELECT statement is manually constructed below
     qs = models.GenericData.objects.values_list("id")
-    if choropleth_config.map_bounds:
-        map_bounds = choropleth_config.map_bounds
+    if map_bounds:
         bbox_coords = (
             (map_bounds.west, map_bounds.north),  # Top left
             (map_bounds.east, map_bounds.north),  # Top right

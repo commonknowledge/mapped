@@ -4,18 +4,26 @@ import datetime
 import functools
 import logging
 import os
+import threading
 
 from django.conf import settings
 from django.db.models import Count, Q
 
+from procrastinate import BaseRetryStrategy, JobContext, RetryDecision
 from procrastinate.contrib.django import app as procrastinate
 from procrastinate.contrib.django.models import ProcrastinateJob
+from pytz import UTC
 from sentry_sdk import metrics
 
 logger = logging.getLogger(__name__)
 
 
 def telemetry_task(func):
+    """
+    Note: this does not work on Render. An exception is thrown in
+    the finally block with the message "Connection is closed".
+    We'll need to figure out why before using this again.
+    """
     task_name = func.__name__
     user_cpu_time_metric = f"task.{task_name}.user_cpu_time"
     system_cpu_time_metric = f"task.{task_name}.system_cpu_time"
@@ -63,8 +71,109 @@ def telemetry_task(func):
     return wrapper
 
 
-@procrastinate.task(queue="external_data_sources")
-@telemetry_task
+class PipelineHealthRetryStrategy(BaseRetryStrategy):
+    max_attempts = 20
+
+    def get_retry_decision(
+        self, *, exception: Exception, job: ProcrastinateJob
+    ) -> RetryDecision:
+        # Run actual business logic in a thread, because async_to_sync() doesn't work in
+        # an async context, and it's not possible to use "await" in this function.
+        thread_result = {"retry_decision": None}
+
+        def thread_fn(thread_result):
+            thread_result["retry_decision"] = self._get_retry_decision(
+                exception=exception, job=job
+            )
+
+        thread = threading.Thread(target=thread_fn, args=(thread_result,))
+        thread.start()
+        thread.join()
+
+        return thread_result["retry_decision"]
+
+    def _get_retry_decision(
+        self, *, exception: Exception, job: ProcrastinateJob
+    ) -> RetryDecision:
+        if job.attempts >= self.max_attempts:
+            logger.error(f"Job {job} failed {job.attempts} times, giving up.")
+            return RetryDecision(should_retry=False)
+
+        last_successful_job = (
+            ProcrastinateJob.objects.filter(
+                scheduled_at__isnull=False, status="succeeded"
+            )
+            .order_by("-scheduled_at")
+            .first()
+        )
+        last_failed_job = (
+            ProcrastinateJob.objects.filter(scheduled_at__isnull=False, status="failed")
+            .order_by("-scheduled_at")
+            .first()
+        )
+
+        def is_pipeline_ok():
+            """
+            Assume the pipeline is ok if:
+            - There are no failed jobs
+            - The last successful job was scheduled after the last failed job
+            - The last successful job was scheduled within the last day
+
+            Also, assume the pipeline is not ok if:
+            - There is a failed job but no successful job
+            """
+            if not last_successful_job and not last_failed_job:
+                return True
+
+            if not last_failed_job:
+                return True
+
+            if not last_successful_job:
+                return False
+
+            if last_successful_job.scheduled_at > last_failed_job.scheduled_at:
+                return True
+
+            yesterday = datetime.datetime.now(tz=UTC) - datetime.timedelta(days=1)
+            return last_successful_job.scheduled_at > yesterday
+
+        pipeline_ok = is_pipeline_ok()
+
+        ONE_DAY_SECONDS = 24 * 60 * 60
+        if not pipeline_ok:
+            wait = ONE_DAY_SECONDS
+        else:
+            # Exponential backoff, starting at 3 minutes, increasing to 1 day after 10 attempts
+            wait = int(ONE_DAY_SECONDS / 2**10) * (2**job.attempts)
+            wait = min(wait, ONE_DAY_SECONDS)
+
+        logger.info(
+            f"Retry logic: pipeline is {'ok' if pipeline_ok else 'not ok'}, delaying for {wait} seconds"
+        )
+
+        return RetryDecision(
+            retry_in={"seconds": wait},
+        )
+
+
+@procrastinate.task(
+    queue="debug", retry=PipelineHealthRetryStrategy(), pass_context=True
+)
+async def test_retry_strategy(job_context: JobContext):
+    await ProcrastinateJob.objects.acount()
+    if job_context.job.attempts > 10:
+        return
+    raise Exception("Test exception")
+
+
+@procrastinate.task(queue="debug", pass_context=True)
+async def test_simple_job(job_context: JobContext):
+    await ProcrastinateJob.objects.acount()
+
+
+@procrastinate.task(
+    queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
+)
 async def refresh_one(external_data_source_id: str, member):
     from hub.models import ExternalDataSource
 
@@ -76,7 +185,6 @@ async def refresh_one(external_data_source_id: str, member):
 @procrastinate.task(
     queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
 )
-@telemetry_task
 async def refresh_many(
     external_data_source_id: str, members: list, request_id: str = None
 ):
@@ -92,7 +200,6 @@ async def refresh_many(
 @procrastinate.task(
     queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
 )
-@telemetry_task
 async def refresh_pages(
     external_data_source_id: str, current_page: int, request_id: str = None
 ):
@@ -137,8 +244,11 @@ async def refresh_pages(
 
 
 @procrastinate.task(queue="external_data_sources")
-@telemetry_task
-async def refresh_all(external_data_source_id: str, request_id: str = None):
+async def refresh_all(
+    external_data_source_id: str,
+    request_id: str = None,
+    retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT,
+):
     from hub.models import ExternalDataSource
 
     source = await ExternalDataSource.objects.aget(id=external_data_source_id)
@@ -180,7 +290,6 @@ async def setup_webhooks(external_data_source_id: str, refresh: bool = True):
 @procrastinate.task(
     queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
 )
-@telemetry_task
 async def import_many(
     external_data_source_id: str, members: list, request_id: str = None
 ):
@@ -196,7 +305,6 @@ async def import_many(
 @procrastinate.task(
     queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
 )
-@telemetry_task
 async def import_pages(
     external_data_source_id: str, current_page=1, request_id: str = None
 ):
@@ -240,8 +348,9 @@ async def import_pages(
     return enqueue_result
 
 
-@procrastinate.task(queue="external_data_sources")
-@telemetry_task
+@procrastinate.task(
+    queue="external_data_sources", retry=settings.IMPORT_UPDATE_MANY_RETRY_COUNT
+)
 async def import_all(
     external_data_source_id: str, requested_at: str = None, request_id: str = None
 ):
