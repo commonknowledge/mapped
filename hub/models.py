@@ -2000,6 +2000,99 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             logger.info(f"Imported {len(data)} records from {self}")
         elif (
             self.geography_column
+            and self.geography_column_type == self.GeographyTypes.PARLIAMENTARY_CONSTITUENCY_2024
+        ):
+            
+            async def create_import_record(record):
+                structured_data = get_update_data(self, record)
+                column_types = structured_data.pop("column_types")
+                gss = self.get_record_field(record, self.geography_column)
+                constituency = await Area.objects.filter(
+                    area_type__code="WMC23",
+                    gss=gss,
+                ).afirst()
+                if constituency:
+                    coord = constituency.point.centroid
+                    postcode_data = await loaders["postcodesIOFromPoint"].load(coord)
+                else:
+                    logger.warning(
+                        f"Could not find constituency for record {self.get_record_id(record)} and gss {gss}"
+                    )
+                    postcode_data = None
+
+                update_data = {
+                    **structured_data,
+                    "area": constituency,
+                    "point": constituency.point,
+                    "postcode_data": postcode_data,
+                }
+
+                await GenericData.objects.aupdate_or_create(
+                    data_type=data_type,
+                    data=self.get_record_id(record),
+                    defaults=update_data,
+                )
+
+                return column_types
+
+            all_column_types = await asyncio.gather(
+                *[create_import_record(record) for record in data]
+            )
+            combined_column_types = {}
+            for column_types in all_column_types:
+                merge_column_types(combined_column_types, column_types)
+            await self.update_field_definition_types(combined_column_types)
+
+            logger.info(f"Imported {len(data)} records from {self}")
+        elif (
+            self.geography_column
+            and self.geography_column_type == self.GeographyTypes.PARLIAMENTARY_CONSTITUENCY
+        ):
+            
+            async def create_import_record(record):
+                structured_data = get_update_data(self, record)
+                column_types = structured_data.pop("column_types")
+                gss = self.get_record_field(record, self.geography_column)
+                constituency = await Area.objects.filter(
+                    area_type__code="WMC",
+                    gss=gss,
+                ).afirst()
+                if constituency:
+                    coord = constituency.point.centroid
+                    postcode_data = await loaders["postcodesIOFromPoint"].load(coord)
+                else:
+                    logger.warning(
+                        f"Could not find constituency for record {self.get_record_id(record)} and gss {gss}"
+                    )
+                    postcode_data = None
+
+                update_data = {
+                    **structured_data,
+                    "area": constituency,
+                    "point": constituency.point,
+                    "postcode_data": postcode_data,
+                }
+
+                await GenericData.objects.aupdate_or_create(
+                    data_type=data_type,
+                    data=self.get_record_id(record),
+                    defaults=update_data,
+                )
+
+                return column_types
+
+            all_column_types = await asyncio.gather(
+                *[create_import_record(record) for record in data]
+            )
+            combined_column_types = {}
+            for column_types in all_column_types:
+                merge_column_types(combined_column_types, column_types)
+            await self.update_field_definition_types(combined_column_types)
+
+            logger.info(f"Imported {len(data)} records from {self}")
+            
+        elif (
+            self.geography_column
             and self.geography_column_type == self.GeographyTypes.OUTPUT_AREA
         ):
 
