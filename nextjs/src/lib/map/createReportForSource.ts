@@ -32,7 +32,9 @@ export function createReportForSource(
             type: ViewType.Map,
             mapOptions: {
               choropleth: {
-                layerId: reportLayerId,
+                advancedStatisticsConfig: {
+                  sourceIds: [sourceId],
+                },
               },
               layers: {
                 [reportLayerId]: {
