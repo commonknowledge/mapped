@@ -2000,9 +2000,10 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             logger.info(f"Imported {len(data)} records from {self}")
         elif (
             self.geography_column
-            and self.geography_column_type == self.GeographyTypes.PARLIAMENTARY_CONSTITUENCY_2024
+            and self.geography_column_type
+            == self.GeographyTypes.PARLIAMENTARY_CONSTITUENCY_2024
         ):
-            
+
             async def create_import_record(record):
                 structured_data = get_update_data(self, record)
                 column_types = structured_data.pop("column_types")
@@ -2046,9 +2047,10 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             logger.info(f"Imported {len(data)} records from {self}")
         elif (
             self.geography_column
-            and self.geography_column_type == self.GeographyTypes.PARLIAMENTARY_CONSTITUENCY
+            and self.geography_column_type
+            == self.GeographyTypes.PARLIAMENTARY_CONSTITUENCY
         ):
-            
+
             async def create_import_record(record):
                 structured_data = get_update_data(self, record)
                 column_types = structured_data.pop("column_types")
@@ -2090,7 +2092,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             await self.update_field_definition_types(combined_column_types)
 
             logger.info(f"Imported {len(data)} records from {self}")
-            
+
         elif (
             self.geography_column
             and self.geography_column_type == self.GeographyTypes.OUTPUT_AREA
@@ -2842,13 +2844,13 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         priority_enum = None
         try:
             match member_count:
-                case (
-                    _
-                ) if member_count < settings.SUPER_QUICK_IMPORT_ROW_COUNT_THRESHOLD:
+                case _ if (
+                    member_count < settings.SUPER_QUICK_IMPORT_ROW_COUNT_THRESHOLD
+                ):
                     priority_enum = ProcrastinateQueuePriority.SUPER_QUICK
-                case (
-                    _
-                ) if member_count < settings.MEDIUM_PRIORITY_IMPORT_ROW_COUNT_THRESHOLD:
+                case _ if (
+                    member_count < settings.MEDIUM_PRIORITY_IMPORT_ROW_COUNT_THRESHOLD
+                ):
                     priority_enum = ProcrastinateQueuePriority.MEDIUM
                 case _ if member_count < settings.LARGE_IMPORT_ROW_COUNT_THRESHOLD:
                     priority_enum = ProcrastinateQueuePriority.SLOW
