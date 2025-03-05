@@ -50,6 +50,14 @@ cd nextjs
 npm i
 ```
 
+# Cloning the Production Database
+```bash
+pg_dump -x -O {pg_connection_string} > meep.psql
+docker compose down -v
+docker compose up db
+psql postgres://postgres:password@127.0.0.1:53333/postgres < meep.psql
+```
+
 # Troubleshooting
 ## Bitwarden
 If the Bitwarden CLI isn't working for you, you can download the `.env` files manually, using BitWarden web:
