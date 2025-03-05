@@ -337,17 +337,19 @@ WSGI_APPLICATION = "local_intelligence_hub.wsgi.application"
 
 DATABASES = {"default": env.db(engine="django.contrib.gis.db.backends.postgis")}
 
-if env("DATABASE_CONNECTION_POOLER_HOSTPORT"):
-    # Replace the hostport in the DATABASE_URL with the connection pooler hostport
-    host, port = env("DATABASE_CONNECTION_POOLER_HOSTPORT").split(":")
-    DATABASES["default"]["HOST"] = host
-    DATABASES["default"]["PORT"] = port
-    # Disable server-side cursors
-    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
-    # Close connections after use
-    # DATABASES["default"]["CONN_MAX_AGE"] = 0
-    # Enable connection health checks
-    # DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+# TODO: Re-enable this. It caused this issue:
+# https://linear.app/commonknowledge/issue/MAP-1020/data-pipeline-is-completely-blocked-worker-is-reporting-connection-is#comment-e26ad8d4
+# if env("DATABASE_CONNECTION_POOLER_HOSTPORT"):
+#     # Replace the hostport in the DATABASE_URL with the connection pooler hostport
+#     host, port = env("DATABASE_CONNECTION_POOLER_HOSTPORT").split(":")
+#     DATABASES["default"]["HOST"] = host
+#     DATABASES["default"]["PORT"] = port
+#     # Disable server-side cursors
+#     DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+#     # Close connections after use
+#     # DATABASES["default"]["CONN_MAX_AGE"] = 0
+#     # Enable connection health checks
+#     # DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
