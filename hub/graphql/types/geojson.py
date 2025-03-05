@@ -45,6 +45,10 @@ class PointGeometry:
     # lng, lat
     coordinates: List[float]
 
+    @classmethod
+    def from_geodjango(cls, point: Point) -> "PointGeometry":
+        return PointGeometry(coordinates=[point.x, point.y])
+
 
 @strawberry.type
 class PointFeature(Feature):
@@ -57,7 +61,7 @@ class PointFeature(Feature):
     ) -> "PointFeature":
         return PointFeature(
             id=str(id),
-            geometry=PointGeometry(coordinates=point),
+            geometry=PointGeometry.from_geodjango(point),
             properties=properties,
         )
 
@@ -69,6 +73,10 @@ class PointFeature(Feature):
 class PolygonGeometry:
     type: GeoJSONTypes.Polygon = GeoJSONTypes.Polygon
     coordinates: List[List[List[float]]]
+
+    @classmethod
+    def from_geodjango(cls, polygon: Polygon) -> "PolygonGeometry":
+        return cls(coordinates=polygon.coords)
 
 
 @strawberry.type
@@ -82,12 +90,9 @@ class PolygonFeature(Feature):
     ) -> "PolygonFeature":
         return PolygonFeature(
             id=str(id),
-            geometry=PolygonGeometry(coordinates=polygon),
+            geometry=PolygonGeometry.from_geodjango(polygon),
             properties=properties,
         )
-
-
-#
 
 
 @strawberry.type
@@ -95,8 +100,9 @@ class MultiPolygonGeometry:
     type: GeoJSONTypes.MultiPolygon = GeoJSONTypes.MultiPolygon
     coordinates: JSON
 
-    def __init__(self, coordinates: MultiPolygon):
-        self.coordinates = coordinates.json
+    @classmethod
+    def from_geodjango(cls, multipolygon: MultiPolygon) -> "MultiPolygonGeometry":
+        return cls(coordinates=multipolygon.coords)
 
 
 @strawberry.type
@@ -110,6 +116,6 @@ class MultiPolygonFeature(Feature):
     ) -> "MultiPolygonFeature":
         return MultiPolygonFeature(
             id=str(id),
-            geometry=MultiPolygonGeometry(coordinates=multipolygon.json),
+            geometry=MultiPolygonGeometry.from_geodjango(multipolygon),
             properties=properties,
         )
