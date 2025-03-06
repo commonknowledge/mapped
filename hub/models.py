@@ -861,6 +861,25 @@ class GenericData(CommonData):
 
         super().save(*args, **kwargs)
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "postcode": self.postcode,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "full_name": self.full_name,
+            "email": self.email,
+            "phone": self.phone,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "public_url": self.public_url,
+            "social_url": self.social_url,
+            "address": self.address,
+            "title": self.title,
+            "description": self.description,
+            "json": self.json,
+        }
+
 
 class Area(models.Model):
     mapit_id = models.CharField(max_length=30)
@@ -2748,10 +2767,10 @@ class ExternalDataSource(PolymorphicModel, Analytics):
         )
         priority_enum = None
         try:
-            match member_count:
-                case (
-                    _
-                ) if member_count < settings.SUPER_QUICK_IMPORT_ROW_COUNT_THRESHOLD:
+            match len(members):
+                case _ if len(
+                    members
+                ) < settings.SUPER_QUICK_IMPORT_ROW_COUNT_THRESHOLD:
                     priority_enum = ProcrastinateQueuePriority.SUPER_QUICK
                 case (
                     _

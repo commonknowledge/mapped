@@ -1493,6 +1493,7 @@ export type GroupedData = {
 
 export type GroupedDataCount = {
   __typename?: 'GroupedDataCount';
+  area?: Maybe<Area>;
   areaData?: Maybe<Area>;
   category?: Maybe<Scalars['String']['output']>;
   columns?: Maybe<Array<Scalars['String']['output']>>;
@@ -2931,6 +2932,7 @@ export type StatisticsConfig = {
   queryId?: InputMaybe<Scalars['String']['input']>;
   returnColumns?: InputMaybe<Array<Scalars['String']['input']>>;
   sourceIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  summaryCalculations?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type StrFilterLookup = {

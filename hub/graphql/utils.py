@@ -1,3 +1,5 @@
+from typing import cast
+
 import strawberry
 import strawberry_django
 from strawberry.types.info import Info
@@ -40,3 +42,7 @@ def graphql_type_to_dict(value, delete_null_keys=False):
         lambda x: x if (x is not strawberry.UNSET) else None,
         delete_null_keys=delete_null_keys,
     )
+
+
+def django_model_instance_to_strawberry_type(instance, graphql_type: strawberry.type):
+    return cast(graphql_type, instance)
