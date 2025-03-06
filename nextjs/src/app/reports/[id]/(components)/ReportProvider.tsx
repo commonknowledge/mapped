@@ -225,14 +225,16 @@ const ReportProvider = ({ query, children }: ReportProviderProps) => {
           patch,
           reportId: reportObjectForDiffingAgainst.id,
         },
-        optimisticResponse: {
-          __typename: 'Mutation',
-          patchMapReportDisplayOptions: {
-            __typename: 'MapReport',
-            ...reportObjectForDiffingAgainst,
-            displayOptions: newReport.displayOptions,
-          },
-        },
+        // TODO: figure out how to re-enable this
+        // See bugs here: https://linear.app/commonknowledge/issue/MAP-1032/restore-setup-and-development-environment-to-working-order#comment-5acecc96
+        // optimisticResponse: {
+        //   __typename: 'Mutation',
+        //   patchMapReportDisplayOptions: {
+        //     __typename: 'MapReport',
+        //     ...reportObjectForDiffingAgainst,
+        //     displayOptions: newReport.displayOptions,
+        //   },
+        // },
       })
       return toastPromise(update, {
         loading: false,

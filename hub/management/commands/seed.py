@@ -155,6 +155,9 @@ class Command(BaseCommand):
         logger.info(f"Imported {len(events)} events from AirTable")
 
         # Create a Map Report for the data source
+        layer_id = str(uuid.uuid4())
+        view_id = str(uuid.uuid4())
+        view_layer_id = str(uuid.uuid4())
         map_report, _ = MapReport.objects.get_or_create(
             organisation=org,
             name="Test map report",
@@ -162,17 +165,49 @@ class Command(BaseCommand):
             defaults={
                 "layers": [
                     {
-                        "id": str(uuid.uuid4()),
+                        "id": layer_id,
                         "name": members_source.name,
                         "source": str(members_source.id),
                         "visible": True,
                     }
                 ],
                 "display_options": {
-                    "showMPs": True,
-                    "showStreetDetails": False,
-                    "analyticalAreaType": "parliamentary_constituency_2024",
-                    "showLastElectionData": True,
+                    "views": {
+                        view_id: {
+                            "id": layer_id,
+                            "type": "Map",
+                            "mapOptions": {
+                                "layers": {
+                                    view_layer_id: {
+                                        "id": view_layer_id,
+                                        "name": members_source.name,
+                                        "layerId": layer_id,
+                                        "minZoom": 5,
+                                        "visible": True,
+                                        "circleRadius": 5,
+                                    }
+                                },
+                                "display": {
+                                    "borders": True,
+                                    "choropleth": True,
+                                    "boundaryNames": True,
+                                    "labelsForAllAreas": False,
+                                    "choroplethValueLabels": True,
+                                },
+                                "choropleth": {
+                                    "mode": "Count",
+                                    "palette": "Inferno",
+                                    "dataType": "Continuous",
+                                    "boundaryType": "parliamentary_constituency_2024",
+                                    "advancedStatisticsConfig": {},
+                                },
+                            },
+                        }
+                    },
+                    "starred": {},
+                    "version": "2025-02-08",
+                    "areaExplorer": {"displays": {}, "displaySortOrder": []},
+                    "viewSortOrder": [view_id],
                 },
             },
         )

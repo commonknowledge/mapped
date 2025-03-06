@@ -9,27 +9,27 @@ databases:
   region: frankfurt
   postgresMajorVersion: "16"
 services:
-- type: pserv
-  name: pgbouncer
-  runtime: docker
-  plan: standard
-  repo: https://github.com/render-oss/docker-pgbouncer
-  region: frankfurt
-  previews:
-    generation: off
-  envVars:
-  - key: DATABASE_URL
-    fromDatabase:
-      name: meep-database
-      property: connectionString
-  - key: POOL_MODE
-    value: transaction
-  - key: SERVER_RESET_QUERY
-    value: DISCARD ALL
-  - key: MAX_CLIENT_CONN
-    value: 10000
-  - key: DEFAULT_POOL_SIZE
-    value: 50
+# - type: pserv
+#   name: pgbouncer
+#   runtime: docker
+#   plan: standard
+#   repo: https://github.com/render-oss/docker-pgbouncer
+#   region: frankfurt
+#   previews:
+#     generation: off
+#   envVars:
+#   - key: DATABASE_URL
+#     fromDatabase:
+#       name: meep-database
+#       property: connectionString
+#   - key: POOL_MODE
+#     value: transaction
+#   - key: SERVER_RESET_QUERY
+#     value: DISCARD ALL
+#   - key: MAX_CLIENT_CONN
+#     value: 10000
+#   - key: DEFAULT_POOL_SIZE
+#     value: 50
 - type: web
   name: meep-intelligence-hub-backend
   runtime: python
@@ -55,11 +55,11 @@ services:
     fromDatabase:
       name: meep-database
       property: connectionString
-  - key: DATABASE_CONNECTION_POOLER_HOSTPORT
-    fromService:
-      name: pgbouncer
-      property: hostport
-      type: pserv
+  # - key: DATABASE_CONNECTION_POOLER_HOSTPORT
+  #   fromService:
+  #     name: pgbouncer
+  #     property: hostport
+  #     type: pserv
   - key: CORS_ALLOWED_ORIGINS
     fromService:
       name: meep-intelligence-hub-frontend
@@ -105,11 +105,11 @@ services:
     fromDatabase:
       name: meep-database
       property: connectionString
-  - key: DATABASE_CONNECTION_POOLER_HOSTPORT
-    fromService:
-      name: pgbouncer
-      property: hostport
-      type: pserv
+  # - key: DATABASE_CONNECTION_POOLER_HOSTPORT
+  #   fromService:
+  #     name: pgbouncer
+  #     property: hostport
+  #     type: pserv
   - key: SCHEDULED_UPDATE_SECONDS_DELAY
     value: 0
   - key: CACHE_FILE

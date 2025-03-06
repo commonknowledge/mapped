@@ -2772,11 +2772,11 @@ class ExternalDataSource(PolymorphicModel, Analytics):
                     members
                 ) < settings.SUPER_QUICK_IMPORT_ROW_COUNT_THRESHOLD:
                     priority_enum = ProcrastinateQueuePriority.SUPER_QUICK
-                case _ if len(
-                    members
-                ) < settings.MEDIUM_PRIORITY_IMPORT_ROW_COUNT_THRESHOLD:
+                case (
+                    _
+                ) if member_count < settings.MEDIUM_PRIORITY_IMPORT_ROW_COUNT_THRESHOLD:
                     priority_enum = ProcrastinateQueuePriority.MEDIUM
-                case _ if len(members) < settings.LARGE_IMPORT_ROW_COUNT_THRESHOLD:
+                case _ if member_count < settings.LARGE_IMPORT_ROW_COUNT_THRESHOLD:
                     priority_enum = ProcrastinateQueuePriority.SLOW
                 case _:
                     priority_enum = ProcrastinateQueuePriority.VERY_SLOW
