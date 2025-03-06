@@ -1,6 +1,12 @@
+from typing import cast
+
+from django.forms.models import model_to_dict
+
 import strawberry
 import strawberry_django
+from asgiref.sync import sync_to_async
 from strawberry.types.info import Info
+from strawberry.types.object_type import StrawberryObjectDefinition
 
 from utils.py import transform_dict_values_recursive
 
@@ -40,3 +46,9 @@ def graphql_type_to_dict(value, delete_null_keys=False):
         lambda x: x if (x is not strawberry.UNSET) else None,
         delete_null_keys=delete_null_keys,
     )
+
+
+async def django_model_instance_to_strawberry_type(
+    instance, graphql_type: strawberry.type
+):
+    return cast(graphql_type, instance)

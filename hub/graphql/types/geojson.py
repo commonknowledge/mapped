@@ -53,7 +53,7 @@ class PointGeometry:
 @strawberry.type
 class PointFeature(Feature):
     geometry: PointGeometry
-    properties: JSON
+    properties: Optional[JSON] = strawberry.field(default_factory=dict)
 
     @classmethod
     def from_geodjango(
@@ -82,7 +82,7 @@ class PolygonGeometry:
 @strawberry.type
 class PolygonFeature(Feature):
     geometry: PolygonGeometry
-    properties: JSON
+    properties: Optional[JSON] = strawberry.field(default_factory=dict)
 
     @classmethod
     def from_geodjango(
@@ -108,7 +108,7 @@ class MultiPolygonGeometry:
 @strawberry.type
 class MultiPolygonFeature(Feature):
     geometry: MultiPolygonGeometry
-    properties: JSON
+    properties: Optional[JSON] = strawberry.field(default_factory=dict)
 
     @classmethod
     def from_geodjango(

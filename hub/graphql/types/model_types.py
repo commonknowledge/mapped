@@ -1,3 +1,4 @@
+import json
 import logging
 import urllib.parse
 from datetime import datetime
@@ -31,6 +32,7 @@ from hub.enrichment.sources.electoral_commission_postcode_lookup import (
 )
 from hub.graphql.context import HubDataLoaderContext
 from hub.graphql.dataloaders import (
+    FieldDataLoaderFactory,
     FieldReturningListDataLoaderFactory,
     ReverseFKWithFiltersDataLoaderFactory,
     filterable_dataloader_resolver,
@@ -40,7 +42,12 @@ from hub.graphql.types import stats as stats
 from hub.graphql.types.electoral_commission import ElectoralCommissionPostcodeLookup
 from hub.graphql.types.geojson import MultiPolygonFeature, PointFeature
 from hub.graphql.types.postcodes import PostcodesIOResult
-from hub.graphql.utils import attr_field, dict_key_field, fn_field
+from hub.graphql.utils import (
+    attr_field,
+    dict_key_field,
+    django_model_instance_to_strawberry_type,
+    fn_field,
+)
 from hub.management.commands.import_mps import party_shades
 from utils.geo_reference import (
     AnalyticalAreaType,
@@ -514,7 +521,7 @@ class ConstituencyElectionResult:
 
 @strawberry.type
 class ConstituencyElectionStats:
-    json: strawberry.Private[dict]
+    json: strawberry.Private[dict] = None
 
     date: str
     result: str
@@ -564,6 +571,30 @@ class ConstituencyElectionStats:
         )
 
 
+@strawberry.type
+class AreaFeatureAreaProperties:
+    name: str = dict_key_field()
+    gss: str = dict_key_field()
+    area_type_name: str = dict_key_field()
+    area_type_code: str = dict_key_field()
+
+
+@strawberry.type
+class AreaFeatureProperties:
+    area: AreaFeatureAreaProperties = dict_key_field()
+    data: Optional[JSON] = dict_key_field()
+
+
+@strawberry.type
+class AreaPolygonFeature(MultiPolygonFeature):
+    properties: AreaFeatureProperties = strawberry.field(default_factory=dict)
+
+
+@strawberry.type
+class AreaPointFeature(PointFeature):
+    properties: AreaFeatureProperties = strawberry.field(default_factory=dict)
+
+
 @strawberry_django.type(models.Area, filters=AreaFilter)
 class Area:
     id: auto
@@ -572,10 +603,16 @@ class Area:
     gss: auto
     name: auto
     area_type: "AreaType" = strawberry_django_dataloaders.fields.auto_dataloader_field()
-    geometry: auto
+    geometry: JSON = strawberry_django.field(
+        resolver=lambda root: (
+            json.loads(root.geometry)
+            if isinstance(root.geometry, str)
+            else root.geometry
+        )
+    )
     overlaps: auto
     # So that we can pass in properties to the geojson Feature objects
-    extra_geojson_properties: strawberry.Private[object]
+    geojson_feature_properties: strawberry.Private = None
     people: List[Person] = filterable_dataloader_resolver(
         filter_type=Optional[PersonFilter],
         field_name="person",
@@ -631,31 +668,34 @@ class Area:
         return cer
 
     @strawberry_django.field
-    def polygon(
-        self, info: Info, with_parent_data: bool = False
-    ) -> Optional[MultiPolygonFeature]:
+    def polygon(self, info: Info) -> Optional[AreaPolygonFeature]:
         props = {
-            "name": self.name,
-            "gss": self.gss,
-            "id": self.gss,
-            "area_type": self.area_type,
+            "area": {
+                "name": self.name,
+                "gss": self.gss,
+                "area_type_name": self.area_type.name,
+                "area_type_code": self.area_type.code,
+            },
+            "data": self.geojson_feature_properties,
         }
-        if with_parent_data and hasattr(self, "extra_geojson_properties"):
-            props["extra_geojson_properties"] = self.extra_geojson_properties
 
-        return MultiPolygonFeature.from_geodjango(
+        return AreaPolygonFeature.from_geodjango(
             multipolygon=self.polygon, id=self.gss, properties=props
         )
 
     @strawberry_django.field
-    def point(
-        self, info: Info, with_parent_data: bool = False
-    ) -> Optional[PointFeature]:
-        props = {"name": self.name, "gss": self.gss}
-        if with_parent_data and hasattr(self, "extra_geojson_properties"):
-            props["extra_geojson_properties"] = self.extra_geojson_properties
+    def point(self, info: Info) -> Optional[AreaPointFeature]:
+        props = {
+            "area": {
+                "name": self.name,
+                "gss": self.gss,
+                "area_type_name": self.area_type.name,
+                "area_type_code": self.area_type.code,
+            },
+            "data": self.geojson_feature_properties,
+        }
 
-        return PointFeature.from_geodjango(
+        return AreaPointFeature.from_geodjango(
             point=self.point, id=self.gss, properties=props
         )
 
@@ -700,6 +740,23 @@ class GroupedDataCount:
     formatted_count: Optional[str] = None
     area_data: Optional[strawberry.Private[Area]] = None
     is_percentage: bool = False
+    area: Optional[Area] = None
+
+    @strawberry_django.field
+    async def area(self, info: Info) -> Optional[Area]:
+        if self.area_data:
+            area = await self.area_data
+        elif self.gss:
+            area_loader = FieldDataLoaderFactory.get_loader_class(
+                models.Area, field="gss", select_related=["area_type"]
+            )
+            area = await area_loader(context=info.context).load(self.gss)
+        if area:
+            graphql_area: Area = await django_model_instance_to_strawberry_type(
+                area, Area
+            )
+            graphql_area.geojson_feature_properties = self.row
+            return graphql_area
 
 
 @strawberry_django.type(models.GenericData, filters=CommonDataFilter)
@@ -748,7 +805,6 @@ class GenericData(CommonData):
     public_url: auto
     description: auto
     image: auto
-    area: Optional[Area]
 
     postcode: auto
     remote_url: str = fn_field()
@@ -767,14 +823,42 @@ class GenericData(CommonData):
         return list(models.Area.objects.filter(polygon__contains=self.point))
 
     @strawberry_django.field
-    def area_from_point(self, area_type: str, info: Info) -> Optional[Area]:
-        if self.point is None:
-            return None
+    async def area(
+        self, type: Optional[AnalyticalAreaType], info: Info
+    ) -> Optional[Area]:
+        if type is None:
+            if self.area_id is not None:
+                area_by_id_loader = FieldDataLoaderFactory.get_loader_class(
+                    models.Area, field="id", select_related=["area_type"]
+                )
+                area = await area_by_id_loader(context=info.context).load(self.area_id)
+            else:
+                area = self.area
+        else:
+            gss = self.postcode_data["codes"].get(type.value, None)
+            if gss is None:
+                return None
+            area_loader = FieldDataLoaderFactory.get_loader_class(
+                models.Area, field="gss", select_related=["area_type"]
+            )
+            area = await area_loader(context=info.context).load(gss)
+        if area:
+            graphql_area = await django_model_instance_to_strawberry_type(area, Area)
+            graphql_area.geojson_feature_properties = self.to_dict()
+            return graphql_area
 
-        # TODO: data loader for this
-        return models.Area.objects.filter(
-            polygon__contains=self.point, area_type__code=area_type
-        ).first()
+    @strawberry_django.field
+    async def areas_overlapping(self, info: Info) -> List[Area]:
+        if self.postcode_data is None:
+            return []
+
+        area_loader = FieldDataLoaderFactory.get_loader_class(
+            models.Area, field="gss", select_related=["area_type"]
+        )
+        areas = await area_loader(context=info.context).load_many(
+            self.postcode_data["codes"].values()
+        )
+        return [a for a in areas if a is not None]
 
 
 @strawberry.type
@@ -1603,12 +1687,7 @@ def statistics_for_choropleth(
     fields_requested_by_resolver = [f.name for f in info.selected_fields[0].selections]
 
     # Start with fields requested by resolver
-    choropleth_statistics_columns = ["label", "gss"]
-    return_columns = [
-        field
-        for field in fields_requested_by_resolver
-        if field in choropleth_statistics_columns
-    ]
+    return_columns = []
 
     if "count" in fields_requested_by_resolver:
         # (Count will default to the count of records automatically.)
