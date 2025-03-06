@@ -676,7 +676,7 @@ class Area:
                 "area_type_name": self.area_type.name,
                 "area_type_code": self.area_type.code,
             },
-            "data": self.geojson_feature_properties,
+            "data": self.geojson_feature_properties if hasattr(self, "geojson_feature_properties") else {},
         }
 
         return AreaPolygonFeature.from_geodjango(
@@ -692,7 +692,7 @@ class Area:
                 "area_type_name": self.area_type.name,
                 "area_type_code": self.area_type.code,
             },
-            "data": self.geojson_feature_properties,
+            "data": self.geojson_feature_properties if hasattr(self, "geojson_feature_properties") else {},
         }
 
         return AreaPointFeature.from_geodjango(
@@ -751,9 +751,7 @@ class GroupedDataCount:
             )
             area = await area_loader(context=info.context).load(self.gss)
         if area:
-            graphql_area: Area = await django_model_instance_to_strawberry_type(
-                area, Area
-            )
+            graphql_area: Area = django_model_instance_to_strawberry_type(area, Area)
             graphql_area.geojson_feature_properties = self.row
             return graphql_area
 
@@ -813,27 +811,17 @@ class GenericData(CommonData):
         return benedict(self.postcode_data)
 
     @strawberry_django.field
-    def areas(self, info: Info) -> Optional[Area]:
-        if self.point is None:
-            return None
-
-        # TODO: data loader for this
-        # Convert to list to make deeper async resolvers work
-        return list(models.Area.objects.filter(polygon__contains=self.point))
-
-    @strawberry_django.field
     async def area(
-        self, type: Optional[AnalyticalAreaType], info: Info
+        self, info: Info, type: Optional[AnalyticalAreaType] = None
     ) -> Optional[Area]:
+        area = None
         if type is None:
             if self.area_id is not None:
                 area_by_id_loader = FieldDataLoaderFactory.get_loader_class(
                     models.Area, field="id", select_related=["area_type"]
                 )
                 area = await area_by_id_loader(context=info.context).load(self.area_id)
-            else:
-                area = self.area
-        else:
+        elif self.postcode_data is not None:
             gss = self.postcode_data["codes"].get(type.value, None)
             if gss is None:
                 return None
@@ -842,12 +830,12 @@ class GenericData(CommonData):
             )
             area = await area_loader(context=info.context).load(gss)
         if area:
-            graphql_area = await django_model_instance_to_strawberry_type(area, Area)
+            graphql_area = django_model_instance_to_strawberry_type(area, Area)
             graphql_area.geojson_feature_properties = self.to_dict()
             return graphql_area
 
     @strawberry_django.field
-    async def areas_overlapping(self, info: Info) -> List[Area]:
+    async def areas(self, info: Info) -> List[Area]:
         if self.postcode_data is None:
             return []
 
@@ -1624,9 +1612,9 @@ def generic_data_by_external_data_source(
         "can_display_details"
     ):
         raise ValueError(f"User {user} does not have permission to view points")
-    return models.GenericData.objects.filter(
-        data_type__data_set__external_data_source=external_data_source
-    )
+    qs = external_data_source.get_import_data()
+
+    return list(qs)
 
 
 def generic_data_from_source_about_area(
@@ -1650,7 +1638,7 @@ def generic_data_from_source_about_area(
         stats.filter_generic_data_using_gss_code(gss, mode)
     )
 
-    return qs
+    return list(qs)
 
 
 def statistics(

@@ -39,9 +39,7 @@ class Command(BaseCommand):
                 f"Processing source {i + 1} of {source_count}: {source} ({source.id})"
             )
             source: ExternalDataSource
-            qs: list[GenericData] = GenericData.objects.filter(
-                data_type__data_set__external_data_source_id=source.id
-            ).order_by("id")
+            qs: list[GenericData] = source.get_import_data().order_by("id")
             source_column_types = {}
 
             data_count = qs.count()

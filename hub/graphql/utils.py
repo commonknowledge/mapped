@@ -44,7 +44,5 @@ def graphql_type_to_dict(value, delete_null_keys=False):
     )
 
 
-async def django_model_instance_to_strawberry_type(
-    instance, graphql_type: strawberry.type
-):
+def django_model_instance_to_strawberry_type(instance, graphql_type: strawberry.type):
     return cast(graphql_type, instance)
