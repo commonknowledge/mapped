@@ -676,7 +676,11 @@ class Area:
                 "area_type_name": self.area_type.name,
                 "area_type_code": self.area_type.code,
             },
-            "data": self.geojson_feature_properties if hasattr(self, "geojson_feature_properties") else {},
+            "data": (
+                self.geojson_feature_properties
+                if hasattr(self, "geojson_feature_properties")
+                else {}
+            ),
         }
 
         return AreaPolygonFeature.from_geodjango(
@@ -692,7 +696,11 @@ class Area:
                 "area_type_name": self.area_type.name,
                 "area_type_code": self.area_type.code,
             },
-            "data": self.geojson_feature_properties if hasattr(self, "geojson_feature_properties") else {},
+            "data": (
+                self.geojson_feature_properties
+                if hasattr(self, "geojson_feature_properties")
+                else {}
+            ),
         }
 
         return AreaPointFeature.from_geodjango(
