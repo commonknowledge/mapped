@@ -583,6 +583,7 @@ class AreaFeatureAreaProperties:
 class AreaFeatureProperties:
     area: AreaFeatureAreaProperties = dict_key_field()
     data: Optional[JSON] = dict_key_field()
+    generic_data: Optional["GenericData"] = dict_key_field()
 
 
 @strawberry.type
@@ -613,6 +614,7 @@ class Area:
     overlaps: auto
     # So that we can pass in properties to the geojson Feature objects
     geojson_feature_properties: strawberry.Private = None
+    geojson_feature_genericdata: strawberry.Private["GenericData"] = None
     people: List[Person] = filterable_dataloader_resolver(
         filter_type=Optional[PersonFilter],
         field_name="person",
@@ -681,6 +683,11 @@ class Area:
                 if hasattr(self, "geojson_feature_properties")
                 else {}
             ),
+            "generic_data": (
+                self.geojson_feature_genericdata
+                if hasattr(self, "geojson_feature_genericdata")
+                else None
+            ),
         }
 
         return AreaPolygonFeature.from_geodjango(
@@ -700,6 +707,11 @@ class Area:
                 self.geojson_feature_properties
                 if hasattr(self, "geojson_feature_properties")
                 else {}
+            ),
+            "generic_data": (
+                self.geojson_feature_genericdata
+                if hasattr(self, "geojson_feature_genericdata")
+                else None
             ),
         }
 
@@ -839,7 +851,7 @@ class GenericData(CommonData):
             area = await area_loader(context=info.context).load(gss)
         if area:
             graphql_area = django_model_instance_to_strawberry_type(area, Area)
-            graphql_area.geojson_feature_properties = self.to_dict()
+            graphql_area.geojson_feature_genericdata = self
             return graphql_area
 
     @strawberry_django.field
@@ -1676,6 +1688,10 @@ def statistics_for_choropleth(
     map_bounds: Optional[stats.MapBounds] = None,
 ) -> List[GroupedDataCount]:
     choropleth_config = choropleth_config or stats.ChoroplethConfig()
+    stats_config = stats_config or stats.StatisticsConfig()
+
+    if not stats_config.group_by_area:
+        raise ValueError("An area type must be specified for a choropleth")
 
     user = get_current_user(info)
     for source in stats_config.source_ids:
