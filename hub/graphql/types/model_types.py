@@ -740,7 +740,6 @@ class GroupedDataCount:
     formatted_count: Optional[str] = None
     area_data: Optional[strawberry.Private[Area]] = None
     is_percentage: bool = False
-    area: Optional[Area] = None
 
     @strawberry_django.field
     async def area(self, info: Info) -> Optional[Area]:
@@ -893,7 +892,10 @@ class Analytics:
             postcode_io_key=analytical_area_type.value,
             layer_ids=layer_ids,
         )
-        return [GroupedDataCount(**datum) for datum in data]
+        return [
+            GroupedDataCount(**datum, area_data=datum.get("area", None))
+            for datum in data
+        ]
 
     @strawberry_django.field
     def imported_data_count_of_areas(
@@ -940,7 +942,7 @@ class Analytics:
         )
         if len(res) == 0:
             return None
-        return GroupedDataCount(**res[0])
+        return GroupedDataCount(**res[0], area_data=res[0].get("area", None))
 
 
 @strawberry.type
