@@ -13,7 +13,7 @@ export function getGeocodingConfigFromGeographyColumn(
           type: 'area_code'
           field: string
           value: ''
-          metadata: { lih_area_type__code: HubAreaType }
+          metadata: { lih_area_type__code: HubAreaType[] }
         },
       ]
     }
@@ -25,24 +25,30 @@ export function getGeocodingConfigFromGeographyColumn(
         type: 'area_code',
         field: geographyColumn,
         value: '',
-        metadata: { lih_area_type__code: '' },
+        metadata: { lih_area_type__code: [''] },
       },
     ],
   }
 
   if (geographyColumnType === 'PARLIAMENTARY_CONSTITUENCY_2024') {
-    geocodingConfig.components[0].metadata.lih_area_type__code = 'WMC23'
+    geocodingConfig.components[0].metadata.lih_area_type__code = ['WMC23']
     return geocodingConfig
   } else if (geographyColumnType === 'WARD') {
-    geocodingConfig.components[0].metadata.lih_area_type__code = 'WD23'
+    geocodingConfig.components[0].metadata.lih_area_type__code = ['WD23']
     return geocodingConfig
   } else if (geographyColumnType === 'ADMIN_DISTRICT') {
-    return {}
+    geocodingConfig.components[0].metadata.lih_area_type__code = ['DIS', 'STC']
+    return geocodingConfig
   } else if (geographyColumnType === 'POSTCODE') {
     return {}
   } else if (geographyColumnType === 'ADDRESS') {
     return {}
   } else if (geographyColumnType === 'OUTPUT_AREA') {
-    return {}
+    geocodingConfig.components[0].metadata.lih_area_type__code = [
+      'LSOA',
+      'MSOA',
+      'OA21',
+    ]
+    return geocodingConfig
   } else return {}
 }
