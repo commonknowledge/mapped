@@ -111,7 +111,11 @@ export function UpdateExternalDataSourceFields({
                         <SelectGroup>
                           <SelectLabel>Geography type</SelectLabel>
                           {locationTypeOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
+                            <SelectItem
+                              key={option.value}
+                              value={option.value}
+                              disabled={option.disabled}
+                            >
                               {option.label}
                             </SelectItem>
                           ))}
