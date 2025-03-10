@@ -58,6 +58,7 @@ import toSpaceCase from 'to-space-case'
 import { CREATE_MAP_REPORT } from '../../../reports/ReportList/CreateReportCard'
 import ExternalDataSourceBadCredentials from './ExternalDataSourceBadCredentials'
 import { ManageSourceSharing } from './ManageSourceSharing'
+import { getGeocodingConfigFromGeographyColumn } from './getGeocodingConfigFromGeographyColumn'
 import { DELETE_UPDATE_CONFIG, GET_UPDATE_CONFIG } from './graphql-queries'
 import importData, { cancelImport } from './importData'
 
@@ -89,8 +90,21 @@ export default function InspectExternalDataSource({
     notifyOnNetworkStatusChange: true,
   })
 
-  // Begin polling on successful datasource query
   useEffect(() => {
+    // Add geocoding config if not present
+    if (
+      !!data?.externalDataSource.geographyColumnType &&
+      !!data?.externalDataSource.geographyColumn
+    ) {
+      updateMutation({
+        geocodingConfig: getGeocodingConfigFromGeographyColumn(
+          data.externalDataSource.geographyColumn,
+          data.externalDataSource.geographyColumnType
+        ),
+      })
+    }
+
+    // Begin polling on successful datasource query
     const status = data?.externalDataSource?.importProgress?.status
     if (
       data?.externalDataSource &&
@@ -422,7 +436,6 @@ export default function InspectExternalDataSource({
               <UpdateExternalDataSourceFields
                 crmType={source.crmType}
                 fieldDefinitions={source.fieldDefinitions}
-                allowGeocodingConfigChange={!source.usesValidGeocodingConfig}
                 initialData={{
                   geographyColumn: source.geographyColumn,
                   geographyColumnType: source.geographyColumnType,
@@ -738,9 +751,7 @@ export default function InspectExternalDataSource({
   )
 
   function UpdateGecodingConfig({
-    externalDataSourceId,
     geocodingConfig,
-    fieldDefinitions,
     onSubmit,
   }: {
     externalDataSourceId: string
@@ -797,6 +808,15 @@ export default function InspectExternalDataSource({
     e?: React.BaseSyntheticEvent<object, any, any> | undefined
   ) {
     e?.preventDefault()
+
+    // Update the geocoding config
+    if (!!data?.geographyColumnType && !!data?.geographyColumn) {
+      data.geocodingConfig = getGeocodingConfigFromGeographyColumn(
+        data.geographyColumn,
+        data.geographyColumnType
+      )
+    }
+
     const update = client.mutate<
       UpdateExternalDataSourceMutation,
       UpdateExternalDataSourceMutationVariables
