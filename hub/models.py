@@ -1952,7 +1952,7 @@ class ExternalDataSource(PolymorphicModel, Analytics):
             for column_types in all_column_types:
                 merge_column_types(combined_column_types, column_types)
             await self.update_field_definition_types(combined_column_types)
-       
+
         elif (
             self.geography_column
             and self.geography_column_type == self.GeographyTypes.ADDRESS
