@@ -18,13 +18,13 @@ export const locationTypeOptions = [
     label: 'Council',
   },
   {
-    value: GeographyTypes.ParliamentaryConstituency,
+    value: GeographyTypes.ParliamentaryConstituency_2024,
     label: 'Constituency',
   },
-  {
-    value: GeographyTypes.ParliamentaryConstituency_2024,
-    label: 'Constituency (2024)',
-  },
+  // {
+  //   value: GeographyTypes.ParliamentaryConstituency_2024,
+  //   label: 'Constituency (2024)',
+  // },
   {
     value: GeographyTypes.OutputArea,
     label: 'Output Area',
