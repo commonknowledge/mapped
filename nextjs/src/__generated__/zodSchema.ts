@@ -510,7 +510,8 @@ export function StatisticsConfigSchema(): z.ZodObject<Properties<StatisticsConfi
     preGroupByCalculatedColumns: z.array(CalculatedColumnSchema()).nullish(),
     queryId: z.string().nullish(),
     returnColumns: z.array(z.string()).nullish(),
-    sourceIds: z.array(z.string()).nullish()
+    sourceIds: z.array(z.string()).nullish(),
+    summaryCalculations: z.boolean().default(true).nullish()
   })
 }
 

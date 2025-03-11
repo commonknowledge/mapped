@@ -14,7 +14,23 @@ export enum BoundaryType {
   POSTCODES = 'postcodes',
 }
 
-export function dbAreaTypeToBoundaryType(id: string): BoundaryType | undefined {
+export type HubAreaType =
+  | 'WMC23'
+  | 'WD23'
+  | 'EER'
+  | 'STC'
+  | 'DIS'
+  | 'PC'
+  | 'PCS'
+  | 'PCD'
+  | 'PCA'
+  | 'MSOA'
+  | 'LSOA'
+  | 'OA21'
+
+export function dbAreaTypeToBoundaryType(
+  id: HubAreaType
+): BoundaryType | undefined {
   const boundaryType = BoundaryType[id as keyof typeof BoundaryType]
   if (boundaryType) {
     return boundaryType

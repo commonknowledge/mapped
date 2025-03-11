@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { FieldPath, FormProvider, useForm } from 'react-hook-form'
 
 import {
@@ -53,6 +53,11 @@ export function UpdateExternalDataSourceFields({
   const form = useForm<FormInputs>({
     defaultValues: initialData,
   })
+
+  // Re-initailize form with new default values when initialData changes
+  useEffect(() => {
+    form.reset(initialData)
+  }, [initialData])
 
   function FPreopulatedSelectField({
     name,
@@ -168,7 +173,11 @@ export function UpdateExternalDataSourceFields({
         {collectFields?.map((field) => (
           <FPreopulatedSelectField key={field} name={field} />
         ))}
-        <Button type="submit" className="mt-4">
+        <Button
+          type="submit"
+          className="mt-4"
+          disabled={!form.formState.isDirty}
+        >
           Save settings
         </Button>
       </form>
