@@ -10,7 +10,7 @@ export function getGeocodingConfigFromGeographyColumn(
       type: 'AREA'
       components: [
         {
-          type: 'area_code'
+          type: 'area'
           field: string
           value: ''
           metadata: { lih_area_type__code: HubAreaType[] }
@@ -22,7 +22,7 @@ export function getGeocodingConfigFromGeographyColumn(
     type: 'AREA',
     components: [
       {
-        type: 'area_code',
+        type: 'area',
         field: geographyColumn,
         value: '',
         metadata: { lih_area_type__code: [''] },
