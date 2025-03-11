@@ -58,135 +58,9 @@ import toSpaceCase from 'to-space-case'
 import { CREATE_MAP_REPORT } from '../../../reports/ReportList/CreateReportCard'
 import ExternalDataSourceBadCredentials from './ExternalDataSourceBadCredentials'
 import { ManageSourceSharing } from './ManageSourceSharing'
+import { getGeocodingConfigFromGeographyColumn } from './getGeocodingConfigFromGeographyColumn'
+import { DELETE_UPDATE_CONFIG, GET_UPDATE_CONFIG } from './graphql-queries'
 import importData, { cancelImport } from './importData'
-
-const GET_UPDATE_CONFIG = gql`
-  query ExternalDataSourceInspectPage($ID: ID!) {
-    externalDataSource(id: $ID) {
-      id
-      name
-      dataType
-      remoteUrl
-      crmType
-      connectionDetails {
-        ... on AirtableSource {
-          apiKey
-          baseId
-          tableId
-        }
-        ... on MailchimpSource {
-          apiKey
-          listId
-        }
-        ... on ActionNetworkSource {
-          apiKey
-          groupSlug
-        }
-        ... on TicketTailorSource {
-          apiKey
-        }
-      }
-      lastImportJob {
-        id
-        lastEventAt
-        status
-      }
-      lastUpdateJob {
-        id
-        lastEventAt
-        status
-      }
-      autoImportEnabled
-      autoUpdateEnabled
-      hasWebhooks
-      allowUpdates
-      automatedWebhooks
-      webhookUrl
-      webhookHealthcheck
-      geographyColumn
-      geographyColumnType
-      geocodingConfig
-      usesValidGeocodingConfig
-      postcodeField
-      firstNameField
-      lastNameField
-      fullNameField
-      emailField
-      phoneField
-      addressField
-      titleField
-      descriptionField
-      imageField
-      startTimeField
-      endTimeField
-      publicUrlField
-      socialUrlField
-      canDisplayPointField
-      isImportScheduled
-      importProgress {
-        id
-        hasForecast
-        status
-        total
-        succeeded
-        estimatedFinishTime
-        actualFinishTime
-        inQueue
-        numberOfJobsAheadInQueue
-        sendEmail
-      }
-      isUpdateScheduled
-      updateProgress {
-        id
-        hasForecast
-        status
-        total
-        succeeded
-        estimatedFinishTime
-        actualFinishTime
-        inQueue
-        numberOfJobsAheadInQueue
-        sendEmail
-      }
-      importedDataCount
-      importedDataGeocodingRate
-      regionCount: importedDataCountOfAreas(
-        analyticalAreaType: european_electoral_region
-      )
-      constituencyCount: importedDataCountOfAreas(
-        analyticalAreaType: parliamentary_constituency
-      )
-      ladCount: importedDataCountOfAreas(analyticalAreaType: admin_district)
-      wardCount: importedDataCountOfAreas(analyticalAreaType: admin_ward)
-      fieldDefinitions(refreshFromSource: true) {
-        label
-        value
-        description
-        editable
-      }
-      updateMapping {
-        source
-        sourcePath
-        destinationColumn
-      }
-      sharingPermissions {
-        id
-      }
-      organisation {
-        id
-        name
-      }
-    }
-  }
-`
-
-const DELETE_UPDATE_CONFIG = gql`
-  mutation DeleteUpdateConfig($id: String!) {
-    deleteExternalDataSource(data: { id: $id }) {
-      id
-    }
-  }
-`
 
 export default function InspectExternalDataSource({
   externalDataSourceId,
@@ -216,12 +90,45 @@ export default function InspectExternalDataSource({
     notifyOnNetworkStatusChange: true,
   })
 
-  // Begin polling on successful datasource query
   useEffect(() => {
-    if (data?.externalDataSource) {
+    // Add geocoding config if not present
+    if (
+      !!data?.externalDataSource.geographyColumnType &&
+      !!data?.externalDataSource.geographyColumn
+    ) {
+      updateMutation({
+        geocodingConfig: getGeocodingConfigFromGeographyColumn(
+          data.externalDataSource.geographyColumn,
+          data.externalDataSource.geographyColumnType
+        ),
+      })
+    }
+
+    // Begin polling on successful datasource query
+    const status = data?.externalDataSource?.importProgress?.status
+    if (
+      data?.externalDataSource &&
+      status &&
+      !['cancelled', 'failed', 'succeeded'].includes(status)
+    ) {
       setPollInterval(5000)
     }
   }, [data])
+
+  // Stop polling on unmount
+  useEffect(() => {
+    return () => {
+      setPollInterval(undefined)
+    }
+  }, [])
+
+  // Stop polling when job is no longer in progress
+  useEffect(() => {
+    const status = data?.externalDataSource?.importProgress?.status
+    if (status && ['cancelled', 'failed', 'succeeded'].includes(status)) {
+      setPollInterval(undefined)
+    }
+  }, [data?.externalDataSource?.importProgress?.status])
 
   const notFound = !loading && !data?.externalDataSource
   if (error || notFound) {
@@ -529,7 +436,6 @@ export default function InspectExternalDataSource({
               <UpdateExternalDataSourceFields
                 crmType={source.crmType}
                 fieldDefinitions={source.fieldDefinitions}
-                allowGeocodingConfigChange={!source.usesValidGeocodingConfig}
                 initialData={{
                   geographyColumn: source.geographyColumn,
                   geographyColumnType: source.geographyColumnType,
@@ -845,9 +751,7 @@ export default function InspectExternalDataSource({
   )
 
   function UpdateGecodingConfig({
-    externalDataSourceId,
     geocodingConfig,
-    fieldDefinitions,
     onSubmit,
   }: {
     externalDataSourceId: string
@@ -904,6 +808,15 @@ export default function InspectExternalDataSource({
     e?: React.BaseSyntheticEvent<object, any, any> | undefined
   ) {
     e?.preventDefault()
+
+    // Update the geocoding config
+    if (!!data?.geographyColumnType && !!data?.geographyColumn) {
+      data.geocodingConfig = getGeocodingConfigFromGeographyColumn(
+        data.geographyColumn,
+        data.geographyColumnType
+      )
+    }
+
     const update = client.mutate<
       UpdateExternalDataSourceMutation,
       UpdateExternalDataSourceMutationVariables

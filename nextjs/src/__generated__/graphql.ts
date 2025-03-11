@@ -2931,6 +2931,7 @@ export type StatisticsConfig = {
   queryId?: InputMaybe<Scalars['String']['input']>;
   returnColumns?: InputMaybe<Array<Scalars['String']['input']>>;
   sourceIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  summaryCalculations?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type StrFilterLookup = {
