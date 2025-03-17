@@ -38,12 +38,14 @@ def ensure_alpha2(country_strings: str | list[str]):
 
 def google_forward_geocode_payload(query: GeocodingQuery):
     if query.country:
-        country_cctld = ensure_cctld(query.country)
-        country_alpha2 = ensure_alpha2(query.country)
+        country_cctld = ensure_cctld(query.country)[0]
+        country_alpha2 = ensure_alpha2(query.country)[0]
         return {
             "address": query.query,
-            "region": ",".join(country_cctld),
-            "components": "|".join(f"country:{country_alpha2}" for country_alpha2 in country_alpha2),
+            "region": country_cctld,
+            "components": {
+                "country": country_alpha2,
+            },
         }
     else:
         return {"address": query.query}
