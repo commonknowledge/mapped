@@ -28,15 +28,25 @@ class GeocodingQuery:
     country: str | list[str] = "GB"
 
 
-def ensure_cctld(iso3166: str | list[str]):
-    return ensure_list(coco.convert(names=ensure_list(iso3166), to="ccTLD"))
+def ensure_cctld(country_strings: str | list[str]):
+    return ensure_list(coco.convert(names=ensure_list(country_strings), to="ccTLD"))
+
+
+def ensure_alpha2(country_strings: str | list[str]):
+    return ensure_list(coco.convert(names=ensure_list(country_strings), to="ISO2"))
 
 
 def google_forward_geocode_payload(query: GeocodingQuery):
-    return {
-        "address": query.query,
-        "region": ",".join(ensure_cctld(query.country)),
-    }
+    if query.country:
+        country_cctld = ensure_cctld(query.country)
+        country_alpha2 = ensure_alpha2(query.country)
+        return {
+            "address": query.query,
+            "region": ",".join(country_cctld),
+            "components": "|".join(f"country:{country_alpha2}" for country_alpha2 in country_alpha2),
+        }
+    else:
+        return {"address": query.query}
 
 
 def google_geocode_cache_key(query: GeocodingQuery):
