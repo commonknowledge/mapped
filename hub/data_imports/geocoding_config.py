@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.gis.geos import Point
+from django.contrib.gis.geos.collections import MultiPolygon
 from django.db.models import Q
 
 from asgiref.sync import sync_to_async
@@ -534,7 +535,8 @@ async def import_area_data(
 
 
 async def get_postcode_data_for_area(area: "Area", loaders: "Loaders", steps: list):
-    sample_point = area.polygon.centroid
+    polygon: MultiPolygon = area.polygon
+    sample_point = polygon.point_on_surface or polygon.centroid
 
     # get postcodeIO result for area.coordinates
     postcode_data = None

@@ -46,7 +46,7 @@ class TestStatistics(TestGraphQLClientCase):
         # Some of that dataset uses out of date councils,
         # which have been merged together in the geocoding
         # (see `duplicate_councils`)
-        self.geocodable_council_count = 315
+        self.geocodable_council_count = 318
         self.count_regions = models.Area.objects.filter(area_type__code="EER").count()
 
     def test_count_by_area(self):
