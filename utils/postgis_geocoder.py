@@ -86,7 +86,9 @@ def _get_bulk_postcode_geo_from_coords(
             if mapit_gen:
                 area_filter += f" AND mapit_generation_high = {mapit_gen}"
 
-            gis_query = f"SELECT id FROM hub_area WHERE {area_filter} ORDER BY temp.point <-> polygon LIMIT 1"
+            gis_query = f"""
+            SELECT id FROM hub_area WHERE {area_filter} AND ST_Contains(polygon, temp.point) LIMIT 1
+            """
             join = f"LEFT JOIN hub_area AS {alias} ON {alias}.id = ({gis_query})"
             area_joins.append(join)
 
