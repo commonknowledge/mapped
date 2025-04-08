@@ -4484,8 +4484,9 @@ class EditableGoogleSheetsSource(ExternalDataSource):
             .batchGet(spreadsheetId=self.spreadsheet_id, ranges=ranges)
             .execute()
         )
+
         rows = []
-        for value_range in result["valueRanges"]:
+        for value_range in result.get("valueRanges", []):
             rows = rows + value_range["values"]
 
         records = [dict(zip(self.headers, row)) for row in rows]
@@ -4509,6 +4510,16 @@ class EditableGoogleSheetsSource(ExternalDataSource):
         id_column_index = self.headers.index(self.id_field)
         id_column = google_sheets.column_index_to_letters(id_column_index)
 
+        body = {
+            "values": [
+                [
+                    f"=MATCH(\"{id}\", "
+                    f"ARRAYFORMULA(TO_TEXT('{self.sheet_name}'!{id_column}:{id_column})), 0)"
+                ]
+                for id in id_list
+            ],
+        }
+
         result = (
             self.spreadsheets.values()
             .update(
@@ -4516,14 +4527,7 @@ class EditableGoogleSheetsSource(ExternalDataSource):
                 range="MAPPED_LOOKUP_SHEET!A1",
                 valueInputOption="USER_ENTERED",
                 includeValuesInResponse=True,
-                body={
-                    "values": [
-                        [
-                            f"=MATCH(\"{id}\", '{self.sheet_name}'!{id_column}:{id_column}, 0)"
-                        ]
-                        for id in id_list
-                    ],
-                },
+                body=body
             )
             .execute()
         )
@@ -4531,9 +4535,9 @@ class EditableGoogleSheetsSource(ExternalDataSource):
         for row in result["updatedData"]["values"]:
             try:
                 row_number = int(row[0])
+                row_numbers.append(row_number)
             except ValueError:
                 row_number = None
-            row_numbers.append(row_number)
         if len(row_numbers) != len(id_list):
             raise ValueError(
                 f"Could not get row numbers for Google Sheets source {self} and ids {id_list}: "

@@ -77,8 +77,9 @@ class PipelineHealthRetryStrategy(BaseRetryStrategy):
     def get_retry_decision(
         self, *, exception: Exception, job: ProcrastinateJob
     ) -> RetryDecision:
-        # Run actual business logic in a thread, because async_to_sync() doesn't work in
-        # an async context, and it's not possible to use "await" in this function.
+        # Run actual business logic in a thread, because this function gets
+        # called from an async context, but the function itself is not
+        # declared as "async", so "await" is not possible.
         thread_result = {"retry_decision": None}
 
         def thread_fn(thread_result):
