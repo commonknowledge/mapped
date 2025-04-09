@@ -6,6 +6,7 @@ import math
 import threading
 import uuid
 from datetime import datetime, timedelta, timezone
+from random import randrange
 from typing import List, Optional, Self, Type, TypedDict, Union
 from urllib.parse import urlencode, urljoin
 
@@ -4513,21 +4514,25 @@ class EditableGoogleSheetsSource(ExternalDataSource):
         body = {
             "values": [
                 [
-                    f"=MATCH(\"{id}\", "
+                    f'=MATCH("{id}", '
                     f"ARRAYFORMULA(TO_TEXT('{self.sheet_name}'!{id_column}:{id_column})), 0)"
                 ]
                 for id in id_list
             ],
         }
 
+        # Choose a random column to avoid risk of clashes when multiple workers are active
+        lookup_column_index = randrange(0, 26)
+        lookup_column = google_sheets.column_index_to_letters(lookup_column_index)
+
         result = (
             self.spreadsheets.values()
             .update(
                 spreadsheetId=self.spreadsheet_id,
-                range="MAPPED_LOOKUP_SHEET!A1",
+                range=f"MAPPED_LOOKUP_SHEET!{lookup_column}1",
                 valueInputOption="USER_ENTERED",
                 includeValuesInResponse=True,
-                body=body
+                body=body,
             )
             .execute()
         )
