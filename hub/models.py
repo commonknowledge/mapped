@@ -4521,15 +4521,26 @@ class EditableGoogleSheetsSource(ExternalDataSource):
             ],
         }
 
-        # Choose a random column to avoid risk of clashes when multiple workers are active
+        # Choose a random cell to avoid risk of clashes when multiple workers are active
         lookup_column_index = randrange(0, 26)
         lookup_column = google_sheets.column_index_to_letters(lookup_column_index)
+        lookup_row = 1
+        # If there is only 1 ID also spread over rows, because this is probably from a webhook,
+        # which has a greater chance of concurrency issues as multiple webhooks may have been
+        # fired at the same time.
+        if len(id_list) == 1:
+            lookup_row = randrange(1, 500)
+        lookup_cell = f"{lookup_column}{lookup_row}"
+
+        logger.debug(
+            f"Looking up row numbers for {id_list} using {body} in cell {lookup_cell}"
+        )
 
         result = (
             self.spreadsheets.values()
             .update(
                 spreadsheetId=self.spreadsheet_id,
-                range=f"MAPPED_LOOKUP_SHEET!{lookup_column}1",
+                range=f"MAPPED_LOOKUP_SHEET!{lookup_cell}",
                 valueInputOption="USER_ENTERED",
                 includeValuesInResponse=True,
                 body=body,
