@@ -76,7 +76,7 @@ export default function MapView({
 
   return (
     <>
-      <div className="absolute w-[-webkit-fill-available] h-full flex flex-row pointer-events-none">
+      <div className="absolute w-[-webkit-fill-available] w-[-moz-available] w-full h-full flex flex-row pointer-events-none">
         <div className="w-full h-full pointer-events-auto">
           {loading && (
             <div className="absolute bottom-12 right-0 z-10 p-4">
